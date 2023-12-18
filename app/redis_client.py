@@ -1,13 +1,14 @@
-# redis_client.py
 import os
 import redis
+
+import app
 
 redis_connection_pool = None
 
 
 def setup_redis_connection_pool():
 	global redis_connection_pool
-	redis_connection_pool = redis.ConnectionPool.from_url(os.environ["REDIS_URL"])
+	redis_connection_pool = redis.ConnectionPool.from_url(app.ENV_CONFIG_DICT[os.environ['ENV']].REDIS_URL)
 
 
 def get_redis_connection():

@@ -1,63 +1,71 @@
+import json
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch, MagicMock
 
-# Assuming your product retrieval function is in the module `product_utils.py`
-from product_utils import retrieve_product
+from app.models.product import ProductModel, MondayError, _BaseProductModel
+import app.services.monday as monday_module
+from moncli.entities import Item
+
+# Sample data for the mock to return
+product_id = '123'
+product_data = {'id': product_id, 'price': 100.0, 'name': 'Sample Product'}
+cached_product_data = json.dumps(product_data).encode('utf-8')
 
 
-# Set up the mock for Redis
+# This is the mock_cache setup
 @pytest.fixture
-def mock_redis():
-	with patch('redis.StrictRedis') as mock:
-		yield mock
+def mock_cache():
+    with patch('app.models.product.cache') as mock_cache:
+        mock_redis_instance = MagicMock()
+        # Ensure the get method returns the mocked cached data for the correct key
+        mock_redis_instance.get.side_effect = lambda k: cached_product_data if k == f"product:{product_id}" else None
+        # Assign the mocked cache instance to the mocked get_redis_connection function
+        mock_cache.return_value = mock_redis_instance
+        yield mock_cache
 
 
-# Set up the mock for monday.com API client
 @pytest.fixture
-def mock_monday_client():
-	with patch('monday.MondayClient') as mock:
-		yield mock
+def mock_monday():
+    with patch('app.services.monday.client.get_items') as mock_monday:
+        # Create a fake Item instance with desired attributes
+        monday_item = MagicMock(spec=Item)
+        monday_item.id = product_id
+        monday_item.column_values = {
+            'numbers': MagicMock(value=str(product_data['price'])),
+            'name': MagicMock(value=product_data['name'])
+        }
+
+        # Configure the mock to return a list containing the fake Item
+        mock_monday.return_value = [monday_item]
+        yield mock_monday
 
 
-# This fixture sets up your product retrieval function, using the above mocks
-@pytest.fixture
-def product_retrieval(mock_redis, mock_monday_client):
-	return lambda product_id: retrieve_product(product_id, mock_redis, mock_monday_client)
+# This is the test for the cache hit scenario
+def test_product_data_with_cache_hit(mock_cache):
+	product = ProductModel(product_id)
+	assert product.data == product_data
+	mock_cache.get.assert_called_once_with(f"product:{product_id}")
+	mock_cache.set.assert_not_called()  # The cache hit, no need to set again
 
 
-def test_retrieves_from_cache_first(mock_redis, product_retrieval):
-	product_id = '123'
-	mock_redis.get.return_value = '{"name": "Product 123"}'  # Mock cached data
-
-	product = product_retrieval(product_id)
-
-	mock_redis.get.assert_called_with(product_id)  # Check if cache was accessed
-	assert product['name'] == 'Product 123'  # Confirm the product was retrieved from the cache
-
-
-def test_falls_back_to_monday_if_no_cache(mock_redis, mock_monday_client, product_retrieval):
-	product_id = '123'
-	mock_redis.get.return_value = None  # No cached data
-	mock_monday_client.get_item_by_id.return_value = {'name': 'Product 123'}  # Mock monday.com response
-
-	product = product_retrieval(product_id)
-
-	mock_redis.get.assert_called_with(product_id)  # Confirm cache was checked
-	mock_monday_client.get_item_by_id.assert_called_with(product_id)  # Confirm monday.com was queried
-	assert product['name'] == 'Product 123'  # Confirm the correct product was retrieved
+# If you want to add a test for a cache miss scenario, make sure to adjust the `mock_cache.get.return_value` accordingly before constructing the `ProductModel` instance
+def test_product_data_with_cache_miss_and_api_hit(mock_cache, mock_monday):
+	mock_cache.get.return_value = None  # Now we simulate a cache miss explicitly
+	product = ProductModel(product_id)
+	assert product.data == product_data
+	mock_cache.set.assert_called_once_with(f"product:{product_id}", json.dumps(product_data).encode('utf-8'))
+	mock_monday.get_items.assert_called_once_with(ids=[product_id], get_column_values=True)
 
 
-def test_caches_monday_data_when_not_already_cached(mock_redis, mock_monday_client, product_retrieval):
-	product_id = '123'
-	mock_redis.get.return_value = None  # No cached data
-	monday_response = {'name': 'Product 123'}  # Mock monday.com response
+def test_product_data_with_api_failure(mock_cache):
+	mock_cache.get.return_value = None  # simulate a cache miss
 
-	mock_monday_client.get_item_by_id.return_value = monday_response
+	with patch.object(monday_module, 'client', new_callable=MagicMock) as mock_monday:
+		mock_monday.get_items.side_effect = monday_module.MondayError('API error')  # simulate an API error
 
-	product = product_retrieval(product_id)
+		with pytest.raises(MondayError) as exec_info:
+			product = ProductModel(product_id)
+			_ = product.data
 
-	# Note: You may need to serialize your monday.com response data before caching it
-	mock_redis.set.assert_called_once_with(product_id, str(monday_response))
-	assert product == monday_response  # Confirm the correct product was retrieved
-
-# Add more tests as needed
+		assert 'API Error' in str(exec_info.value)
+		mock_cache.set.assert_not_called()

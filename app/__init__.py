@@ -2,13 +2,13 @@ import os
 
 from flask import Flask
 
-from config import DevelopmentConfig, ProductionConfig, TestingConfig
+import config
 
 # Set configuration from environment variable or default to DevelopmentConfig
 ENV_CONFIG_DICT = {
-	"development": DevelopmentConfig,
-	"production": ProductionConfig,
-	"testing": TestingConfig
+	"development": config.DevelopmentConfig,
+	"production": config.ProductionConfig,
+	"testing": config.TestingConfig
 }
 
 

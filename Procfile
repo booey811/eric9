@@ -1,1 +1,1 @@
-web: env PROC_TYPE=web gunicorn app:app
+web: env PROC_TYPE=web gunicorn main:eric

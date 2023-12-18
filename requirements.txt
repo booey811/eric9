@@ -1,0 +1,5 @@
+moncli @ git+https://github.com/booey811/moncli@master
+redis~=5.0.1
+flask~=3.0.0
+python-dotenv~=1.0.0
+pytest~=7.4.3

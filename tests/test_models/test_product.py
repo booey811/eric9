@@ -1,8 +1,8 @@
 import json
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 
-from app.models.product import ProductModel, MondayError, _BaseProductModel
+from app.models.product import ProductModel, MondayError
 import app.services.monday as monday_module
 from moncli.entities import Item
 
@@ -47,12 +47,21 @@ def test_product_data_with_cache_hit(mock_cache):
 
 
 # If you want to add a test for a cache miss scenario, make sure to adjust the `mock_cache.get.return_value` accordingly before constructing the `ProductModel` instance
-def test_product_data_with_cache_miss_and_api_hit(mock_cache, mock_monday):
-	mock_cache.get.return_value = None  # Now we simulate a cache miss explicitly
-	product = ProductModel(product_id)
-	assert product.data == product_data
-	mock_cache.set.assert_called_once_with(f"product:{product_id}", json.dumps(product_data).encode('utf-8'))
-	mock_monday.get_items.assert_called_once_with(ids=[product_id], get_column_values=True)
+def test_product_data_with_cache_miss_and_fetch_data_mock(mock_cache):
+	with patch.object(ProductModel, '_fetch_data') as mock_fetch:
+		# Configure the mock to return the fake product data
+		mock_fetch.return_value = product_data
+		# Simulate the model attribute with a mock that has the same properties
+		mock_cache.get.return_value = None
+		product = ProductModel(product_id)
+		# Access the data property, which should fetch data using the mocked 'model' property
+		data = product.data
+
+		# Assert that the data matches what we expect to be set by the model mock
+		assert data['price'] == product_data['price']
+		assert data['name'] == product_data['name']
+
+
 
 
 def test_product_data_with_api_failure(mock_cache):

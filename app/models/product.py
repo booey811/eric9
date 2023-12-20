@@ -24,32 +24,31 @@ class ProductModel:
 
 	@property
 	def data(self):
-		if not self._data:
-			cached = self._data = get_redis_connection().get(f"product:{self.id}")
-			if not cached:
-				data = self._fetch_data()
-				get_redis_connection().set(
-					f"product:{self.id}",
-					json.dumps(data)
-				)
-			else:
-				data = json.loads(cached)
-			self._data = data
+		if self._data is None:
+			self._data = self._fetch_data()
 		return self._data
 
 	def _fetch_data(self):
-		try:
-			monday_item = monday.get_items(ids=[self.id], get_column_values=True)[0]
-		except moncli.MoncliError as e:
-			raise MondayError(e)
-		except IndexError:
-			raise MondayError(f"No Items found with ID '{self.id}'")
-		self._model = _BaseProductModel(monday_item)
-		cache_data = {
-			"id": str(self.id),
-			"price": self.price,
-			"name": self.model.name
-		}
+		cache = get_redis_connection().get(f"product:{self.id}")
+		if cache:
+			cache_data = json.loads(cache)
+		else:
+			try:
+				monday_item = monday.get_items(ids=[self.id], get_column_values=True)[0]
+			except moncli.MoncliError as e:
+				raise MondayError(e)
+			except IndexError:
+				raise MondayError(f"No Items found with ID '{self.id}'")
+			self._model = _BaseProductModel(monday_item)
+			cache_data = {
+				"id": str(self.id),
+				"price": self.price,
+				"name": self.model.name
+			}
+			get_redis_connection().set(
+				f"product:{self.id}",
+				json.dumps(cache_data)
+			)
 		return cache_data
 
 	@property

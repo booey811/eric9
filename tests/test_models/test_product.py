@@ -17,7 +17,6 @@ cached_product_data = json.dumps(product_data).encode('utf-8')
 def mock_cache():
 	with patch('app.models.product.get_redis_connection') as mock_cache:
 		mock_instance = MagicMock()
-		mock_instance.get.return_value = cached_product_data
 		mock_cache.return_value = mock_instance
 		yield mock_instance
 
@@ -40,6 +39,7 @@ def mock_monday():
 
 # This is the test for the cache hit scenario
 def test_product_data_with_cache_hit(mock_cache):
+	mock_cache.get.return_value = cached_product_data
 	product = ProductModel(product_id)
 	assert product.data == product_data
 	mock_cache.get.assert_called_once_with(f"product:{product_id}")

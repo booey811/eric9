@@ -1,12 +1,5 @@
-import os
-
-import moncli
-
-moncli.api.api_key = os.environ['MON-SYSTEM']
-
 from ... import EricError
-
-client = moncli.client
+from .client import client
 
 
 class MondayError(EricError):

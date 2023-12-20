@@ -1,40 +1,15 @@
 import json
 import pytest
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import patch, MagicMock
 
-from app.models.product import ProductModel, MondayError
+from app.models.base import MondayError
+from app.models.product import ProductModel
 import app.services.monday as monday_module
-from moncli.entities import Item
 
 # Sample data for the mock to return
 product_id = '123'
 product_data = {'id': product_id, 'price': 100.0, 'name': 'Sample Product'}
 cached_product_data = json.dumps(product_data).encode('utf-8')
-
-
-# This is the mock_cache setup
-@pytest.fixture
-def mock_cache():
-	with patch('app.models.product.get_redis_connection') as mock_cache:
-		mock_instance = MagicMock()
-		mock_cache.return_value = mock_instance
-		yield mock_instance
-
-
-@pytest.fixture
-def mock_monday():
-	with patch('app.services.monday.client.get_items') as mock_monday:
-		# Create a fake Item instance with desired attributes
-		monday_item = MagicMock(spec=Item)
-		monday_item.id = product_id
-		monday_item.column_values = {
-			'numbers': MagicMock(value=str(product_data['price'])),
-			'name': MagicMock(value=product_data['name'])
-		}
-
-		# Configure the mock to return a list containing the fake Item
-		mock_monday.return_value = [monday_item]
-		yield mock_monday
 
 
 # This is the test for the cache hit scenario
@@ -60,8 +35,6 @@ def test_product_data_with_cache_miss_and_fetch_data_mock(mock_cache):
 		# Assert that the data matches what we expect to be set by the model mock
 		assert data['price'] == product_data['price']
 		assert data['name'] == product_data['name']
-
-
 
 
 def test_product_data_with_api_failure(mock_cache):

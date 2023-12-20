@@ -4,7 +4,7 @@ import abc
 import moncli
 
 from ..services.monday import MondayError, client as monday
-from ..redis_client import get_redis_connection
+from ..cache import get_redis_connection
 
 
 class BaseEricModel(abc.ABC):

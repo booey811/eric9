@@ -1,4 +1,4 @@
-from app.redis_client import redis_connection_pool, get_redis_connection
+from app.cache.redis_client import get_redis_connection
 
 
 def post_worker_init(worker):

@@ -3,12 +3,9 @@ import json
 import moncli
 from moncli.models import MondayModel
 from moncli import types as column
-import redis
 
 from ..services.monday import MondayError, client as monday
 from ..redis_client import get_redis_connection
-
-cache = get_redis_connection()
 
 
 class _BaseProductModel(MondayModel):
@@ -28,14 +25,15 @@ class ProductModel:
 	@property
 	def data(self):
 		if not self._data:
-			try:
-				data = self._data = json.loads(cache.get(f"product:{self.id}"))
-			except TypeError:
+			cached = self._data = get_redis_connection().get(f"product:{self.id}")
+			if not cached:
 				data = self._fetch_data()
-			cache.set(
-				f"product:{self.id}",
-				json.dumps(data)
-			)
+				get_redis_connection().set(
+					f"product:{self.id}",
+					json.dumps(data)
+				)
+			else:
+				data = json.loads(cached)
 			self._data = data
 		return self._data
 
@@ -48,10 +46,10 @@ class ProductModel:
 			raise MondayError(f"No Items found with ID '{self.id}'")
 		self._model = _BaseProductModel(monday_item)
 		cache_data = {
-				"id": str(self.id),
-				"price": self.price,
-				"name": self.model.name
-			}
+			"id": str(self.id),
+			"price": self.price,
+			"name": self.model.name
+		}
 		return cache_data
 
 	@property
@@ -71,5 +69,4 @@ class ProductModel:
 		if self._price is None:
 			self._price = self.data['price']
 		return self._price
-
 

@@ -15,29 +15,27 @@ cached_product_data = json.dumps(product_data).encode('utf-8')
 # This is the mock_cache setup
 @pytest.fixture
 def mock_cache():
-    with patch('app.models.product.cache') as mock_cache:
-        mock_redis_instance = MagicMock()
-        # Ensure the get method returns the mocked cached data for the correct key
-        mock_redis_instance.get.side_effect = lambda k: cached_product_data if k == f"product:{product_id}" else None
-        # Assign the mocked cache instance to the mocked get_redis_connection function
-        mock_cache.return_value = mock_redis_instance
-        yield mock_cache
+	with patch('app.models.product.get_redis_connection') as mock_cache:
+		mock_instance = MagicMock()
+		mock_instance.get.return_value = cached_product_data
+		mock_cache.return_value = mock_instance
+		yield mock_instance
 
 
 @pytest.fixture
 def mock_monday():
-    with patch('app.services.monday.client.get_items') as mock_monday:
-        # Create a fake Item instance with desired attributes
-        monday_item = MagicMock(spec=Item)
-        monday_item.id = product_id
-        monday_item.column_values = {
-            'numbers': MagicMock(value=str(product_data['price'])),
-            'name': MagicMock(value=product_data['name'])
-        }
+	with patch('app.services.monday.client.get_items') as mock_monday:
+		# Create a fake Item instance with desired attributes
+		monday_item = MagicMock(spec=Item)
+		monday_item.id = product_id
+		monday_item.column_values = {
+			'numbers': MagicMock(value=str(product_data['price'])),
+			'name': MagicMock(value=product_data['name'])
+		}
 
-        # Configure the mock to return a list containing the fake Item
-        mock_monday.return_value = [monday_item]
-        yield mock_monday
+		# Configure the mock to return a list containing the fake Item
+		mock_monday.return_value = [monday_item]
+		yield mock_monday
 
 
 # This is the test for the cache hit scenario

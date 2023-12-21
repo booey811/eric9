@@ -10,6 +10,5 @@ if __name__ == '__main__':
 
 	if env == 'development':
 		pass
-
 	else:
 		raise Exception(f"Invalid ENV: {env}")

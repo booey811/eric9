@@ -9,11 +9,11 @@ from ..cache import get_redis_connection
 
 class BaseEricModel(abc.ABC):
 
-	def __init__(self, item_id):
+	def __init__(self, item_id, moncli_model=None):
 		self.id = str(item_id)
 
 		self._data = None
-		self._model = None
+		self._model = moncli_model
 		self._cache_key = None
 		self._name = None
 

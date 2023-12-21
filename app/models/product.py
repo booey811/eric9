@@ -10,8 +10,8 @@ class _BaseProductModel(MondayModel):
 
 class ProductModel(BaseEricModel):
 
-	def __init__(self, product_id):
-		super().__init__(product_id)
+	def __init__(self, product_id, moncli_model: _BaseProductModel = None):
+		super().__init__(product_id, moncli_model)
 		self._cache_key = f"product:{self.id}"
 
 		self._price = None

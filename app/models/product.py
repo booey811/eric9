@@ -41,6 +41,9 @@ class ProductModel(BaseEricModel):
 
 		self._price = None
 
+	def __str__(self):
+		return f"Product({self.id})"
+
 	def _fetch_data(self):
 		if not self._model:
 			self._model = _BaseProductModel(self._call_monday())

@@ -1,10 +1,13 @@
 import json
 import abc
+import logging
 
 import moncli
 
 from ..services.monday import MondayError, client as monday
 from ..cache import get_redis_connection
+
+log = logging.getLogger('eric')
 
 
 class BaseEricModel(abc.ABC):
@@ -17,8 +20,14 @@ class BaseEricModel(abc.ABC):
 		self._cache_key = None
 		self._name = None
 
+		log.debug(f"Created {self}")
+
+	def __str__(self):
+		return f"BaseEricModel({self.id})"
+
 	def _call_monday(self):
 		try:
+			log.debug(f"Calling monday.get_items({self.id})")
 			return monday.get_items(ids=[self.id], get_column_values=True)[0]
 		except moncli.MoncliError as e:
 			raise MondayError(e)
@@ -28,6 +37,7 @@ class BaseEricModel(abc.ABC):
 	@property
 	def data(self):
 		if not self._data:
+			log.debug(f"{str(self)} missing data")
 			cached = self.get_from_cache()
 			if cached is not None:
 				self._data = json.loads(cached)
@@ -37,14 +47,20 @@ class BaseEricModel(abc.ABC):
 		return self._data
 
 	def get_from_cache(self):
+		log.debug(f"Fetching from cache: {str(self)}")
 		cache = get_redis_connection().get(self.cache_key)
-		if cache == 'null':
+		if cache == 'null' or cache is None:
+			log.debug("Cache: MISS")
 			return None
 		else:
+			log.debug('Cache: HIT')
+			log.debug(cache)
 			return cache
 
 	def save_to_cache(self):
 		# Implement saving to cache
+		log.debug("Cache: SAVE")
+		log.debug(f"{self.cache_key}: {self._data}")
 		get_redis_connection().set(
 			self.cache_key,
 			json.dumps(self._data)
@@ -64,10 +80,8 @@ class BaseEricModel(abc.ABC):
 
 	@abc.abstractmethod
 	def _fetch_data(self):
-		# This method should be implemented in subclasses to fetch data
 		pass
 
 	@abc.abstractmethod
 	def cache_key(self):
-		return f"device:{self.id}"
-
+		pass

@@ -37,7 +37,7 @@ if __name__ == '__main__':
 		asyncio.run(main())
 
 	elif env == 'development':
-		asyncio.run(main())
+		pass
 
 	else:
 		raise Exception(f"Invalid ENV: {env}")

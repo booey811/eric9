@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from quart import Quart
 
 import config
 
@@ -15,10 +15,12 @@ ENV_CONFIG_DICT = {
 
 
 def create_app(config_name):
-	app = Flask(__name__)
+	app = Quart(__name__)
 	app.config.from_object(ENV_CONFIG_DICT.get(config_name))
 
 	# Here, import and register blueprints
+	from .services.monday import routes
+	app.register_blueprint(routes.blueprint)
 
 	# logging config
 	formatter = logging.Formatter(

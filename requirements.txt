@@ -1,9 +1,14 @@
 aiofiles==23.2.1
+aiohttp==3.9.1
+aiosignal==1.3.1
+attrs==23.1.0
 blinker==1.7.0
 certifi==2023.11.17
 charset-normalizer==3.3.2
 click==8.1.7
 Deprecated==1.2.14
+Flask==3.0.0
+frozenlist==1.4.1
 h11==0.14.0
 h2==4.1.0
 hpack==4.0.0
@@ -15,6 +20,7 @@ itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.3
 moncli @ git+https://github.com/booey811/moncli@a74fb76f0aa6ff93cc89dfa1e82681b6eb0739c4
+multidict==6.0.4
 packaging==23.2
 pluggy==1.3.0
 priority==2.0.0
@@ -32,3 +38,4 @@ urllib3==2.1.0
 Werkzeug==3.0.1
 wrapt==1.16.0
 wsproto==1.2.0
+yarl==1.9.4

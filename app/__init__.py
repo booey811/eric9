@@ -14,9 +14,8 @@ ENV_CONFIG_DICT = {
 }
 
 
-def create_app():
+def create_app(config_name):
 	app = Flask(__name__)
-	config_name = os.getenv('ENV', 'development')
 	app.config.from_object(ENV_CONFIG_DICT.get(config_name))
 
 	# Here, import and register blueprints

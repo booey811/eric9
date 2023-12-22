@@ -2,9 +2,10 @@ import os
 
 import app
 
+env = os.getenv('ENV', 'development')
+eric = app.create_app(env)
+
 if __name__ == '__main__':
-	eric = app.create_app()
-	env = os.getenv('ENV')
 	if env == 'production':
 		eric.run()
 

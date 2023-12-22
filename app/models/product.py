@@ -38,7 +38,6 @@ class ProductModel(BaseEricModel):
 			super().__init__(product_id, _BaseProductModel(moncli_item))
 		else:
 			super().__init__(product_id)
-		self._cache_key = f"product:{self.id}"
 
 		self._price = None
 
@@ -51,6 +50,10 @@ class ProductModel(BaseEricModel):
 			"name": self.model.name
 		}
 		return cache_data
+
+	@property
+	def cache_key(self):
+		return f"product:{self.id}"
 
 	@property
 	def price(self):

@@ -1,4 +1,6 @@
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask
 
@@ -18,6 +20,35 @@ def create_app():
 	app.config.from_object(ENV_CONFIG_DICT.get(config_name))
 
 	# Here, import and register blueprints
+
+	# logging config
+	formatter = logging.Formatter(
+		"%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
+	)
+
+	if config_name == 'development':
+		app.logger.setLevel(logging.DEBUG)
+		handler = logging.StreamHandler()
+
+		handler.setFormatter(formatter)
+		app.logger.addHandler(handler)
+
+	elif config_name == 'production':
+		# Production logger configuration
+		app.logger.setLevel(logging.WARNING)
+
+		# File logging
+		if not os.path.exists('logs'):
+			os.mkdir('logs')
+
+		file_handler = RotatingFileHandler(
+			'logs/myapp.log',
+			maxBytes=10240,
+			backupCount=10
+		)
+
+		file_handler.setFormatter(formatter)
+		app.logger.addHandler(file_handler)
 
 	return app
 

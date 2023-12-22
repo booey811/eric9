@@ -37,7 +37,7 @@ class BaseEricModel(abc.ABC):
 		return self._data
 
 	def get_from_cache(self):
-		cache = get_redis_connection().get(self._cache_key)
+		cache = get_redis_connection().get(self.cache_key)
 		if cache == 'null':
 			return None
 		else:
@@ -46,7 +46,7 @@ class BaseEricModel(abc.ABC):
 	def save_to_cache(self):
 		# Implement saving to cache
 		get_redis_connection().set(
-			self._cache_key,
+			self.cache_key,
 			json.dumps(self._data)
 		)
 
@@ -66,3 +66,8 @@ class BaseEricModel(abc.ABC):
 	def _fetch_data(self):
 		# This method should be implemented in subclasses to fetch data
 		pass
+
+	@abc.abstractmethod
+	def cache_key(self):
+		return f"device:{self.id}"
+

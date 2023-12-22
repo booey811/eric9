@@ -9,6 +9,9 @@ from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
 env = os.getenv('ENV', 'development')
 port = int(os.environ.get('PORT', 8000))  # Default to 8000 for local development
 
+eric = app.create_app(env)
+slack_app = AsyncApp(token=os.environ['SLACK_APP'])  # Initialize with your token
+
 
 async def run_quart():
 	await eric.run_task(port)
@@ -30,9 +33,6 @@ def print_routes():
 
 
 if __name__ == '__main__':
-	# Note: Heroku requires web apps to listen on the port number given by the $PORT environment variable
-	eric = app.create_app(env)
-	slack_app = AsyncApp(token=os.environ['SLACK_APP'])  # Initialize with your token
 	if env == 'production':
 		asyncio.run(main())
 

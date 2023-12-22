@@ -38,7 +38,10 @@ class BaseEricModel(abc.ABC):
 
 	def get_from_cache(self):
 		cache = get_redis_connection().get(self._cache_key)
-		return cache
+		if cache == 'null':
+			return None
+		else:
+			return cache
 
 	def save_to_cache(self):
 		# Implement saving to cache

@@ -1,5 +1,6 @@
 from moncli.models import MondayModel
 from moncli import types as column
+import moncli
 
 from .base import BaseEricModel
 from ..cache import get_redis_connection
@@ -32,17 +33,21 @@ class _BaseProductModel(MondayModel):
 
 class ProductModel(BaseEricModel):
 
-	def __init__(self, product_id, moncli_model: _BaseProductModel = None):
-		super().__init__(product_id, moncli_model)
+	def __init__(self, product_id, moncli_item: moncli.en.Item = None):
+		if moncli_item:
+			super().__init__(product_id, _BaseProductModel(moncli_item))
+		else:
+			super().__init__(product_id)
 		self._cache_key = f"product:{self.id}"
 
 		self._price = None
 
 	def _fetch_data(self):
-		self._model = _BaseProductModel(self._call_monday())
+		if not self._model:
+			self._model = _BaseProductModel(self._call_monday())
 		cache_data = {
 			"id": str(self.id),
-			"price": self.price,
+			"price": self.model.price,
 			"name": self.model.name
 		}
 		return cache_data

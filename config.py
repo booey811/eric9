@@ -1,3 +1,5 @@
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 
 from dotenv import load_dotenv
@@ -5,6 +7,40 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv()
+
+
+def configure_logging(config_name):
+	# Create a custom logger
+	logger = logging.getLogger('eric')
+	logger.propagate = False  # To prevent double logging
+
+	if not logger.handlers:
+
+		# Create handlers
+		c_handler = logging.StreamHandler()
+
+		# Create formatters and add it to handlers
+		c_format = logging.Formatter(
+			'%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+		)
+
+		c_handler.setFormatter(c_format)
+
+		# Set the level and add handlers
+		if config_name == 'development':
+			logger.setLevel(logging.DEBUG)
+			c_handler.setLevel(logging.DEBUG)
+		elif config_name == 'production':
+			logger.setLevel(logging.WARNING)
+			c_handler.setLevel(logging.WARNING)
+		elif config_name == 'testing':
+			logger.setLevel(logging.ERROR)
+			c_handler.setLevel(logging.ERROR)
+
+		# Add handlers to the logger
+		logger.addHandler(c_handler)
+
+	return logger
 
 
 class Config(object):

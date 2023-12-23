@@ -9,6 +9,14 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv()
 
 
+def get_config(env):
+	conf = ENV_CONFIG_DICT.get(env)
+	if not conf:
+		raise Exception(f"Invalid config: {env}")
+
+	return conf
+
+
 def configure_logging(config_name):
 	# Create a custom logger
 	logger = logging.getLogger('eric')
@@ -45,20 +53,36 @@ def configure_logging(config_name):
 
 class Config(object):
 	"""Base config, uses staging database server."""
+	CONFIG = "BASE"
 	DEBUG = False
 	TESTING = False
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///default.db'
 	SECRET_KEY = os.environ.get('SECRET_KEY') or 'default-secret-key'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+	SLACK_APP_TOKEN = os.environ.get("SLACK_DEV_APP")  # development workspace
+
+	def get_vars(self):
+		return (
+			f"CONFIG: {self.CONFIG}",
+			f"DEBUG: {self.DEBUG}",
+			f"TESTING: {self.TESTING}",
+			f"DATABASE_URI: {self.DATABASE_URI}",
+			f"SECRET_KEY: {self.SECRET_KEY}",
+			f"REDIS_URL: {self.REDIS_URL}",
+			f"SLACK_APP_TOKEN: {self.SLACK_APP_TOKEN}",
+		)
 
 
 class ProductionConfig(Config):
 	"""Uses production database server."""
+	CONFIG = "PRODUCTION"
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
+	SLACK_APP_TOKEN = os.environ.get("SLACK_APP")  # icorrect workspace
 
 
 class DevelopmentConfig(Config):
 	"""Uses development database server and enables debug mode."""
+	CONFIG = "DEVELOPMENT"
 	DEBUG = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
@@ -66,5 +90,13 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
 	"""Uses a separate database for tests and enables testing mode."""
+	CONFIG = "TESTING"
 	TESTING = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///testing.db'
+
+
+ENV_CONFIG_DICT = {
+	"development": DevelopmentConfig,
+	"production": ProductionConfig,
+	"testing": TestingConfig
+}

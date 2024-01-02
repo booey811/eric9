@@ -7,9 +7,8 @@ eric = app.create_app(env)
 
 if __name__ == '__main__':
 	if env == 'production':
-		eric.run()
-
-	if env == 'development':
+		pass
+	elif env == 'development':
 		from app.services import monday
 		from app.models import ProductModel
 		from app.models import DeviceModel

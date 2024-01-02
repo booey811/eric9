@@ -5,7 +5,6 @@ import app
 
 redis_connection_pool = None
 
-
 def setup_redis_connection_pool():
 	global redis_connection_pool
 	redis_connection_pool = redis.ConnectionPool.from_url(

@@ -8,7 +8,7 @@ import app.services.monday as monday_module
 
 # Sample data for the mock to return
 product_id = '123'
-product_data = {'id': product_id, 'price': 100.0, 'name': 'Sample Product'}
+product_data = {'id': product_id, 'price': 100.0, 'name': 'Sample Product', 'device_id': "device:12345678"}
 cached_product_data = json.dumps(product_data).encode('utf-8')
 
 
@@ -27,6 +27,8 @@ def test_product_data_with_cache_hit(mock_cache):
 	mock_cache.get.return_value = cached_product_data
 	product = ProductModel(product_id)
 	assert product.data == product_data
+	assert int(product.price) == int(product_data['price'])
+	assert product.device_id == product_data['device_id']
 	mock_cache.get.assert_called_once_with(f"product:{product_id}")
 	mock_cache.set.assert_not_called()  # The cache hit, no need to set again
 

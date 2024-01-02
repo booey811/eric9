@@ -5,6 +5,7 @@ import moncli
 from .base import BaseEricModel
 from ..cache import get_redis_connection
 from ..services import monday
+from .. import EricError
 
 
 def get_products(product_ids: list):
@@ -29,6 +30,7 @@ def get_products(product_ids: list):
 
 class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
+	device_id = column.ItemLinkType(id='link_to_devices6')
 
 
 class ProductModel(BaseEricModel):
@@ -40,6 +42,7 @@ class ProductModel(BaseEricModel):
 			super().__init__(product_id)
 
 		self._price = None
+		self._device_id = None
 
 	def _fetch_data(self):
 		if not self._model:
@@ -47,7 +50,8 @@ class ProductModel(BaseEricModel):
 		cache_data = {
 			"id": str(self.id),
 			"price": self.model.price,
-			"name": self.model.name
+			"name": self.model.name,
+			"device_id": str(self.model.device_id)
 		}
 		return cache_data
 
@@ -59,4 +63,24 @@ class ProductModel(BaseEricModel):
 	def price(self):
 		if self._price is None:
 			self._price = self.data['price']
+			if self._price is None:
+				raise MissingProductData(self.id, "Price")
 		return self._price
+
+	@property
+	def device_id(self):
+		if self._device_id is None:
+			self._device_id = self.data['device_id']
+			if self._device_id is None:
+				raise MissingProductData(self.id, "Device ID")
+		return self._device_id
+
+
+class MissingProductData(EricError):
+
+	def __init__(self, product_id, missing_data_name):
+		self.p_id = product_id
+		self.missing_field = missing_data_name
+
+	def __str__(self):
+		return f"Product({self.p_id}) missing '{self.missing_field}' field"

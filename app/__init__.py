@@ -2,9 +2,12 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from quart import Quart
 
 import config
+
+env = os.getenv('ENV', 'development')
+logger = config.configure_logging(env)
 
 # Set configuration from environment variable or default to DevelopmentConfig
 ENV_CONFIG_DICT = {
@@ -15,39 +18,41 @@ ENV_CONFIG_DICT = {
 
 
 def create_app(config_name):
-	app = Flask(__name__)
-	app.config.from_object(ENV_CONFIG_DICT.get(config_name))
+	conf = ENV_CONFIG_DICT.get(config_name)
 
-	# Here, import and register blueprints
+	app = Quart(__name__)
+	app.logger = logger
+	from quart import request, got_request_exception
 
-	# logging config
-	formatter = logging.Formatter(
-		"%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
-	)
+	# Example to log every request
+	@app.before_request
+	async def before_request():
+		logger.info(f"Request starting: {request.method} {request.path}")
+
+	# Example to log responses
+	@app.after_request
+	async def after_request(response):
+		logger.info(f"Request complete: {response.status_code}")
+		return response
+
+	# Log exceptions
+	@got_request_exception.connect
+	async def handle_exception(sender, exception):
+		logger.error(f"Unhandled Exception: {exception}")
 
 	if config_name == 'development':
-		app.logger.setLevel(logging.DEBUG)
-		handler = logging.StreamHandler()
-
-		handler.setFormatter(formatter)
-		app.logger.addHandler(handler)
-
+		pass
 	elif config_name == 'production':
-		# Production logger configuration
-		app.logger.setLevel(logging.WARNING)
+		pass
 
-		# File logging
-		if not os.path.exists('logs'):
-			os.mkdir('logs')
+	logger.info(f"Creating App in {config_name} env; {__name__}")
+	app.config.from_object(conf)
+	logger.debug(f"{config_name} config loaded")
 
-		file_handler = RotatingFileHandler(
-			'logs/myapp.log',
-			maxBytes=10240,
-			backupCount=10
-		)
+	# Here, import and register blueprints
+	from .services.monday import routes
 
-		file_handler.setFormatter(formatter)
-		app.logger.addHandler(file_handler)
+	app.register_blueprint(routes.test_bp)
 
 	return app
 

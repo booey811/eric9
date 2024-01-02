@@ -1,1 +1,1 @@
-web: env PROC_TYPE=web gunicorn main:eric
+web: env PROC_TYPE=web hypercorn main:eric -b 0.0.0.0:$PORT

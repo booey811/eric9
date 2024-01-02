@@ -13,6 +13,7 @@ if __name__ == '__main__':
 		from app.services import monday
 		from app.models import ProductModel
 		from app.models import DeviceModel
+		from app.services import slack
 		# products_board = monday.client.get_board(2477699024)
 		# air_3 = products_board.get_group('ipad_air_3')
 		# iphone_13_pro = products_board.get_group('iphone_13_pro')

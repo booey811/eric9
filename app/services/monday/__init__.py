@@ -1,11 +1,39 @@
+import logging
+
+import moncli
+
 from ... import EricError
 from .client import client
+
+log = logging.getLogger('eric')
+
+
+def get_items(item_ids: list):
+	log.debug(f'get_items(item_ids={item_ids})')
+	try:
+		items = client.get_items(ids=item_ids)
+		log.error(f'Fetched {len(items)} items')
+	except moncli.MoncliError as e:
+		log.debug(f"API Call Failed: {str(e)}")
+		raise MondayAPIError(e)
+	except Exception as e:
+		raise e
+	return items
 
 
 class MondayError(EricError):
 
 	def __str__(self):
-		return f"Monday API Error: {str(self.error)}"
+		return f"Monday Error: {str(self.m)}"
 
-	def __init__(self, e):
-		self.error = e
+	def __init__(self, message):
+		self.m = message
+
+
+class MondayAPIError(MondayError):
+
+	def __int__(self, e):
+		self.e = e
+
+	def __str__(self):
+		return f"MondayAPI Error: {self.e}"

@@ -8,10 +8,10 @@ from .client import client
 log = logging.getLogger('eric')
 
 
-def get_items(item_ids: list):
+def get_items(item_ids: list, column_values=False):
 	log.debug(f'get_items(item_ids={item_ids})')
 	try:
-		items = client.get_items(ids=item_ids)
+		items = client.get_items(ids=item_ids, get_column_values=column_values)
 		log.error(f'Fetched {len(items)} items')
 	except moncli.MoncliError as e:
 		log.debug(f"API Call Failed: {str(e)}")

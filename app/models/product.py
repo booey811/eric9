@@ -36,11 +36,10 @@ class ProductModel(BaseEricCacheModel):
 	@property
 	def model(self):
 		if not self._model:
-			model = super().model
-			self._name = model.name
-			self._price = model.price
-			self._device_id = model.device_connect[0]
-			self.save_to_cache()
+			super().model
+		self._name = self._model.name
+		self._price = self._model.price
+		self._device_id = self._model.device_connect[0]
 		return self._model
 
 	def get_from_cache(self):
@@ -59,14 +58,20 @@ class ProductModel(BaseEricCacheModel):
 
 	@property
 	def price(self):
-		if not self._price:
-			self.get_from_cache()
+		if self._price is None:
+			try:
+				self.get_from_cache()
+			except CacheMiss:
+				self.model
 		return self._price
 
 	@property
 	def device_id(self):
-		if not self._device_id:
-			self.get_from_cache()
+		if self._device_id is None:
+			try:
+				self.get_from_cache()
+			except CacheMiss:
+				self.model
 		return self._device_id
 
 

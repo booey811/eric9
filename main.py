@@ -22,7 +22,10 @@ if __name__ == '__main__':
 	elif env == 'development':
 		from app.models import ProductModel
 		from app.cache import get_redis_connection, CacheMiss
-		get_redis_connection().flushall()
-
+		from app.cache.utilities import build_product_cache
+		p = ProductModel(3690578626)
+		print(p.name)
+		print(p.price)
+		print(p.model)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

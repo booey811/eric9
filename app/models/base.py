@@ -41,7 +41,7 @@ class BaseEricModel:
 		"""
 		if not self._moncli_item:
 			log.debug(f"Fetching {str(self)}")
-			items = get_items([self.id])
+			items = get_items([self.id], column_values=True)
 			if not items:
 				log.debug('Failure: Failed to fetch any items')
 				raise MondayError(f"{str(self)} fetched no items")

@@ -23,12 +23,6 @@ if __name__ == '__main__':
 		from app.models import ProductModel
 		from app.cache import get_redis_connection, CacheMiss
 		get_redis_connection().flushall()
-		p = ProductModel(2682914871)
-		try:
-			print(p.name)
-		except CacheMiss:
-			p.model
-		print(p.name)
 
 	else:
 		raise Exception(f"Invalid ENV: {env}")

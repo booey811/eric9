@@ -107,7 +107,7 @@ class BaseEricCacheModel(BaseEricModel):
 			raise CacheMiss(str(self), data)
 		if not data:
 			raise CacheMiss(self.cache_key, data)
-		log.debug(f"Cache HIT: {str(self)}: {data}")
+		log.debug(f"Cache HIT {str(self)}: {data}")
 		return data
 
 	def save_to_cache(self):
@@ -118,7 +118,7 @@ class BaseEricCacheModel(BaseEricModel):
 		The cache data dictionary that was saved.
 		"""
 		data = self.prepare_cache_data()
-		log.debug(f"Caching {self}: {data}")
+		log.debug(f"Cache SAVE {self}: {data}")
 		get_redis_connection().set(
 			self.cache_key,
 			json.dumps(data)

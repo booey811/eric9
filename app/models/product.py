@@ -1,11 +1,15 @@
+import logging
+
 from moncli.models import MondayModel
 from moncli import types as column
 import moncli
 
 from .base import BaseEricModel, BaseEricCacheModel
-from ..cache import get_redis_connection
+from ..cache import get_redis_connection, CacheMiss
 from ..services import monday
 from .. import EricError, DataError
+
+log = logging.getLogger('eric')
 
 
 def get_products(product_ids: list):

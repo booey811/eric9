@@ -12,6 +12,3 @@ class DeviceAndProductViews:
 		pass
 
 
-
-
-

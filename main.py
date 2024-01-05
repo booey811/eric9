@@ -23,9 +23,7 @@ if __name__ == '__main__':
 		from app.models import ProductModel
 		from app.cache import get_redis_connection, CacheMiss
 		from app.cache.utilities import build_product_cache
-		p = ProductModel(3690578626)
-		print(p.name)
-		print(p.price)
-		print(p.model)
+		from app.models.main_item import MainModel
+		m = MainModel(5799423568)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

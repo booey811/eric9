@@ -1,2 +1,2 @@
-from .product import ProductModel, get_products
+from .product import ProductModel
 from .device import DeviceModel

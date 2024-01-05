@@ -12,26 +12,6 @@ from .. import EricError, DataError
 log = logging.getLogger('eric')
 
 
-def get_products(product_ids: list):
-	results = []
-	keys = [f"product:{_}" for _ in product_ids]
-	cache_results = get_redis_connection().mget(keys)
-	missed = []
-
-	for p_id, result in zip(product_ids, cache_results):
-		if not result:
-			missed.append(p_id)
-		else:
-			results.append(ProductModel(p_id))
-
-	if missed:
-		moncli_results = monday.client.get_items(ids=missed, get_column_values=True)
-		for mon in moncli_results:
-			results.append(ProductModel(mon.id, mon))
-
-	return results
-
-
 class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
 	device_connect = column.ItemLinkType(id='link_to_devices6')

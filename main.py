@@ -2,22 +2,27 @@ import os
 
 import app
 
-env = os.getenv('ENV', 'development')
+import config
+
+env = os.getenv('ENV', 'testing')
+port = int(os.environ.get('PORT', 8000))  # Default to 8000 for local development
+conf = config.get_config(env)
+if env != 'production':
+	for v in conf().get_vars():
+		print(v)
+
 eric = app.create_app(env)
+
 
 if __name__ == '__main__':
 	if env == 'production':
-		eric.run()
-
-	if env == 'development':
-		from app.services import monday
+		pass
+	elif env == 'testing':
+		pass
+	elif env == 'development':
 		from app.models import ProductModel
-		from app.models import DeviceModel
-		from app.services import slack
-		# products_board = monday.client.get_board(2477699024)
-		# air_3 = products_board.get_group('ipad_air_3')
-		# iphone_13_pro = products_board.get_group('iphone_13_pro')
-		# items = air_3.get_items(get_column_values=True) + iphone_13_pro.get_items(get_column_values=True)
-		# prods = [ProductModel(item.id, item) for item in items]
+		from app.cache import get_redis_connection, CacheMiss
+		get_redis_connection().flushall()
+
 	else:
 		raise Exception(f"Invalid ENV: {env}")

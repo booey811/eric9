@@ -2,6 +2,7 @@ import os
 import redis
 
 import app
+from config import get_config
 
 redis_connection_pool = None
 
@@ -9,7 +10,7 @@ redis_connection_pool = None
 def setup_redis_connection_pool():
 	global redis_connection_pool
 	redis_connection_pool = redis.ConnectionPool.from_url(
-		url=app.ENV_CONFIG_DICT[os.environ['ENV']].REDIS_URL,
+		url=get_config(os.environ.get('ENV')).REDIS_URL,
 		decode_responses=True
 	)
 

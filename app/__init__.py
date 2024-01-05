@@ -9,21 +9,14 @@ import config
 env = os.getenv('ENV', 'development')
 logger = config.configure_logging(env)
 
-# Set configuration from environment variable or default to DevelopmentConfig
-ENV_CONFIG_DICT = {
-	"development": config.DevelopmentConfig,
-	"production": config.ProductionConfig,
-	"testing": config.TestingConfig
-}
-
 
 def create_app(config_name):
-	conf = ENV_CONFIG_DICT.get(config_name)
-
+	conf = config.get_config(config_name)
 	app = Quart(__name__)
 	app.logger = logger
-	from quart import request, got_request_exception
+	app.config.from_object(conf)
 
+	from quart import request, got_request_exception
 	# Example to log every request
 	@app.before_request
 	async def before_request():
@@ -40,15 +33,6 @@ def create_app(config_name):
 	async def handle_exception(sender, exception):
 		logger.error(f"Unhandled Exception: {exception}")
 
-	if config_name == 'development':
-		pass
-	elif config_name == 'production':
-		pass
-
-	logger.info(f"Creating App in {config_name} env; {__name__}")
-	app.config.from_object(conf)
-	logger.debug(f"{config_name} config loaded")
-
 	# Here, import and register blueprints
 	from .services.monday import routes
 
@@ -59,3 +43,12 @@ def create_app(config_name):
 
 class EricError(Exception):
 	"""Base error for the application"""
+
+
+class DataError(EricError):
+
+	def __init__(self, message):
+		self.message = message
+
+	def __str__(self):
+		return f"DataError: {self.message}"

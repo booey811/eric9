@@ -53,7 +53,7 @@ class BaseEricModel:
 		return self._moncli_item
 
 	@property
-	def model(self):
+	def model(self) -> type(MONCLI_MODEL):
 		"""
 		Return the Moncli model for this item, instantiating it if needed.
 

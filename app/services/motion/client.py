@@ -20,7 +20,6 @@ def create_task(
 		assignee_id: str = "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",
 		duration=60
 ):
-
 	url = "https://api.usemotion.com/v1/tasks"
 
 	payload = {
@@ -77,9 +76,7 @@ def get_me():
 	return response.json()
 
 
-
 def list_tasks(assignee_id=""):
-
 	url = "https://api.usemotion.com/v1/tasks"
 
 	querystring = {"assigneeId": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2"}
@@ -92,6 +89,16 @@ def list_tasks(assignee_id=""):
 	response = requests.get(url, headers=headers, params=querystring)
 
 	return response.json()
+
+
+def delete_task(task_id):
+	url = f"https://api.usemotion.com/v1/tasks/{task_id}"
+	headers = {"X-API-Key": api_key}
+	response = requests.delete(url, headers=headers)
+	if response.status_code == 204:
+		return True
+	else:
+		raise MotionError(f"Could Not Delete Motion Task: {response.text}")
 
 
 class MotionError(EricError):

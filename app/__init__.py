@@ -1,8 +1,9 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+import traceback
 
-from quart import Quart
+from flask import Flask, jsonify
 
 import config
 
@@ -12,26 +13,26 @@ logger = config.configure_logging(env)
 
 def create_app(config_name):
 	conf = config.get_config(config_name)
-	app = Quart(__name__)
+	app = Flask(__name__)
 	app.logger = logger
 	app.config.from_object(conf)
 
-	from quart import request, got_request_exception
-	# Example to log every request
-	@app.before_request
-	async def before_request():
-		logger.info(f"Request starting: {request.method} {request.path}")
+	@app.errorhandler(Exception)
+	def handle_uncaught_exception(error):
+		# Log the full stack trace, but do not send it to the client for security reasons
+		trace = traceback.format_exc()
+		logger.error(f'Unhandled Exception: {trace}')
 
-	# Example to log responses
-	@app.after_request
-	async def after_request(response):
-		logger.info(f"Request complete: {response.status_code}")
+		# Here you can integrate a notification service to notify you of the exception details
+		notify_admins_of_error(trace)
+
+		# Return a generic "internal server error" response
+		response = jsonify({
+			'status': 'error',
+			'message': 'An unexpected error occurred. Our engineers have been informed.'
+		})
+		response.status_code = 500
 		return response
-
-	# Log exceptions
-	@got_request_exception.connect
-	async def handle_exception(sender, exception):
-		logger.error(f"Unhandled Exception: {exception}")
 
 	# Here, import and register blueprints
 	from .services.monday import routes
@@ -39,6 +40,12 @@ def create_app(config_name):
 	app.register_blueprint(routes.test_bp)
 
 	return app
+
+
+def notify_admins_of_error(trace):
+	# Integrate with an error notification tool (e.g., email, Slack, PagerDuty)
+	# This function is where you would include your custom notification logic
+	print(trace)
 
 
 class EricError(Exception):

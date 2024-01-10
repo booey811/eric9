@@ -37,8 +37,6 @@ def create_app(config_name):
 	# Here, import and register blueprints
 	from .services.monday import routes
 
-	app.register_blueprint(routes.test_bp)
-
 	return app
 
 

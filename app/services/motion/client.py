@@ -18,12 +18,13 @@ def create_task(
 		description: str = "",
 		project_id=None,
 		assignee_id: str = "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",
-		duration=60
+		duration=60,
+		labels=['Repair']
 ):
 	url = "https://api.usemotion.com/v1/tasks"
 
 	payload = {
-		"dueDate": deadline,
+		"dueDate": deadline.isoformat(),
 		"duration": duration,
 		"status": "auto-scheduled",
 		"autoScheduled": {
@@ -38,6 +39,8 @@ def create_task(
 		"priority": "MEDIUM",
 		"assigneeId": assignee_id
 	}
+	if labels:
+		payload['labels'] = labels
 	headers = {
 		"Content-Type": "application/json",
 		"Accept": "application/json",
@@ -46,6 +49,25 @@ def create_task(
 
 	response = requests.post(url, json=payload, headers=headers)
 	if response.status_code == 201:
+		return response.json()
+	else:
+		raise MotionError(response.text)
+
+
+def update_task(task_id, deadline: datetime.datetime = None):
+	url = f"https://api.usemotion.com/v1/tasks/{task_id}"
+
+	payload = {
+		"dueDate": deadline.isoformat(),
+	}
+	headers = {
+		"Content-Type": "application/json",
+		"Accept": "application/json",
+		"X-API-Key": api_key
+	}
+
+	response = requests.patch(url, json=payload, headers=headers)
+	if response.status_code == 200:
 		return response.json()
 	else:
 		raise MotionError(response.text)
@@ -76,10 +98,12 @@ def get_me():
 	return response.json()
 
 
-def list_tasks(assignee_id=""):
+def list_tasks(assignee_id="", label=''):
 	url = "https://api.usemotion.com/v1/tasks"
 
 	querystring = {"assigneeId": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2"}
+	if label:
+		querystring["label"] = "Repair"
 
 	headers = {
 		"Accept": "application/json",

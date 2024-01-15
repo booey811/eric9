@@ -1,1 +1,1 @@
-from . import client
+from .client import create_task, update_task, delete_task, list_tasks

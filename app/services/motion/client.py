@@ -98,12 +98,12 @@ def get_me():
 	return response.json()
 
 
-def list_tasks(assignee_id="", label=''):
+def list_tasks(assignee_id="vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2", label='Repair'):
 	url = "https://api.usemotion.com/v1/tasks"
 
 	querystring = {"assigneeId": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2"}
 	if label:
-		querystring["label"] = "Repair"
+		querystring["label"] = label
 
 	headers = {
 		"Accept": "application/json",

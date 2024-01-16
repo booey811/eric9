@@ -1,4 +1,5 @@
 import functools
+import os
 
 
 def ensure_attribute_set(property_func):
@@ -22,6 +23,7 @@ class User:
 		self._slack_id = None
 		self._monday_id = None
 		self._repair_group_id = None
+		self._motion_api_key = None
 
 		self._load_data(user_data)
 
@@ -31,6 +33,7 @@ class User:
 		self._slack_id = user_data.get('slack_id')
 		self._monday_id = user_data.get('monday_id')
 		self._repair_group_id = user_data.get('repair_group_id')
+		self._motion_api_key = os.environ[f"MOTION_{self._name.upper()}"]
 
 	@property
 	@ensure_attribute_set
@@ -56,6 +59,11 @@ class User:
 	@ensure_attribute_set
 	def repair_group_id(self):
 		return self._repair_group_id
+
+	@property
+	@ensure_attribute_set
+	def motion_api_key(self):
+		return self._motion_api_key
 
 
 def get_user(name='', slack_id='', monday_id='', repair_group_id='', motion_assignee_id=''):

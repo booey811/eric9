@@ -64,6 +64,9 @@ class Config(object):
 	MAIN_DEV_GROUP_ID = "new_group49546"
 	TEST_PROOF_ITEMS = "new_group26478"
 
+	# MONDAY IDS
+	MONDAY_MAIN_BOARD_ID = 349212843
+
 
 	def get_vars(self):
 		return (

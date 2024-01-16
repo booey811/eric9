@@ -1,6 +1,7 @@
 import logging
 import json
 from functools import wraps
+import time
 
 from flask import request, jsonify
 import moncli
@@ -21,6 +22,27 @@ def get_items(item_ids: list, column_values=False):
 		raise MondayAPIError(e)
 	except Exception as e:
 		raise e
+	return items
+
+
+def get_group_items(board_id: int, group_id: str):
+
+	# get repair group
+	before_board = time.time()
+	main_board = client.get_boards('id', 'groups.[id, title]', ids=[board_id], groups={'ids': [group_id]})[0]
+	after_board = time.time()
+	log.debug(f'Got Board in {before_board - after_board} seconds')
+	group = main_board.get_group(id=group_id)
+	after_group = time.time()
+	log.debug(f'Got Group in {after_board - after_group} seconds')
+
+	# get repair group items
+	simple_item_data = group.get_items(get_column_values=False)
+	after_simple = time.time()
+	log.debug(f"Got {len(simple_item_data)} simple items in {after_group - after_simple}")
+	items = get_items(item_ids=[str(item.id) for item in simple_item_data], column_values=True)
+	log.debug(f'Got {len(items)} full items in {after_simple - time.time()} seconds')
+
 	return items
 
 

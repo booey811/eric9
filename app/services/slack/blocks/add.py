@@ -1,3 +1,6 @@
+from . import elements
+
+
 def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False):
 	return {
 		"type": "input",
@@ -11,4 +14,11 @@ def input_block(block_title, element, dispatch_action=False, block_id="", hint="
 		"block_id": block_id,
 		"hint": hint,
 		"optional": optional
+	}
+
+
+def text_block(content):
+	return {
+		"type": "rich_text",
+		"elements": [elements.text_element(content)]
 	}

@@ -30,3 +30,15 @@ def generate_option_groups(options_dict):
 
 		final['option_groups'].append(inner)
 	return final
+
+
+def text_element(content):
+	return {
+		"type": "rich_text_section",
+		"elements": [
+			{
+				"type": "text",
+				"text": content
+			}
+		]
+	}

@@ -1,1 +1,1 @@
-from .client import create_task, update_task, delete_task, list_tasks
+from .client import create_task, update_task, delete_task, list_tasks, MotionError

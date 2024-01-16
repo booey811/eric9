@@ -15,9 +15,9 @@ WORKSPACE_IDS = {
 def create_task(
 		name,
 		deadline: datetime.datetime,
+		assignee_id: str,
 		description: str = "",
 		project_id=None,
-		assignee_id: str = "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",
 		duration=60,
 		labels=['Repair']
 ):
@@ -98,10 +98,10 @@ def get_me():
 	return response.json()
 
 
-def list_tasks(assignee_id="vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2", label='Repair'):
+def list_tasks(assignee_id, label='Repair'):
 	url = "https://api.usemotion.com/v1/tasks"
 
-	querystring = {"assigneeId": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2"}
+	querystring = {"assigneeId": assignee_id}
 	if label:
 		querystring["label"] = label
 

@@ -4,10 +4,17 @@ from dateutil.parser import parse
 from ...services import monday
 from ...models import MainModel
 from ...services.motion import create_task, update_task, list_tasks
+from ...utilities import users
 
 
-def sync_schedule(user_info):
-	pass
+def sync_schedule(user: users.User):
+	"""this will sync motion's current schedule with Monday"""
+	# get motion schedule
+	schedule = list_tasks(user.motion_assignee_id)
+
+
+
+
 
 def sync_monday_with_motion(group_id="new_group26478"):
 	main_board = monday.client.get_board(349212843)

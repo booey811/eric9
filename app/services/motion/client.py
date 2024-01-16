@@ -46,11 +46,11 @@ def rate_limit_decorator(func):
 
 		# Retrieve the corresponding RateLimiter for the given API token,
 		# or initialize one if it's the first time we're seeing this token.
-		if user.motion_api_token not in rate_limiters:
+		if user.motion_api_key not in rate_limiters:
 			# Note: You'll need to determine the right max_calls and period for your case.
-			rate_limiters[user.motion_api_token] = RateLimiter(user.motion_api_token, max_calls=12, period=60)
+			rate_limiters[user.motion_api_key] = RateLimiter(user.motion_api_key, max_calls=12, period=60)
 
-		rate_limiter = rate_limiters[user.motion_api_token]
+		rate_limiter = rate_limiters[user.motion_api_key]
 		if rate_limiter.is_rate_limited():
 			raise MotionRateLimitError(user.name)
 

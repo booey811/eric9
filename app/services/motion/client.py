@@ -1,3 +1,4 @@
+import logging
 import os
 import functools
 
@@ -8,173 +9,152 @@ from ... import EricError
 from ...cache import get_redis_connection
 from ...utilities import users
 
+log = logging.getLogger('eric')
+
 WORKSPACE_IDS = {
 	"test": "YtAs_s8Ec0orh6ck5qc2T"
 }
 
 
-class RateLimiter:
-	def __init__(self, name, max_calls, period):
-		self.redis = get_redis_connection()
-		self.key = f"rate_limit:{name}"
-		self.max_calls = max_calls
-		self.period = period
+class MotionClient:
+	"""basic interaction with the Motion API"""
 
-	def is_rate_limited(self):
-		count = self.redis.get(self.key)
-		print(count)
+	def __init__(self, user: users.User):
+		self._user = user
+		self._api_key = None
+
+	@property
+	def api_key(self):
+		if self._api_key is None:
+			self._api_key = os.environ.get(f"MOTION_{self._user.name.upper()}")
+			if not self._api_key:
+				raise EnvironmentError(f"No env variable: MOTION_{self._user.name.upper()}")
+		return self._api_key
+
+	def rate_limit(self):
+		"""checks if this user has hit their rate limit"""
+		key = f"motion_rate:{self._user.name}"
+		max_calls = 12
+		duration = 60
+		log.debug(f"Checking rate limit with key: {key}, max_calls: {max_calls}, duration={duration}")
+
+		count = get_redis_connection().get(key)
+		log.debug(f"Got {count}")
 		if not count:
 			# If the key does not exist, no calls have been made in the period
-			self.redis.setex(self.key, self.period, 1)
-			return False
-		elif int(count) < self.max_calls:
+			log.debug(f'MISS: setting {key}, {duration} seconds, 1 counts')
+			get_redis_connection().setex(key, duration, 1)
+			return 0
+		elif int(count) < max_calls:
 			# If the number of calls made is less than the maximum, increment the counter
-			self.redis.incr(self.key)
-			return False
-		return True  # The limit has been reached
+			count = int(count) + 1
+			log.debug(f'Limit not reached, count increased to {count}')
+			get_redis_connection().incr(key)
+			return count
+		log.error(f"Motion Rate limit hit: {self._user.name}")
+		raise MotionRateLimitError(self._user.name)
 
+	def create_task(
+			self,
+			name: str,
+			deadline: datetime.datetime,
+			description: str = "",
+			duration: int = 60,
+			labels: list = ()
+	):
+		url = "https://api.usemotion.com/v1/tasks"
 
-rate_limiters = {}
+		payload = {
+			"dueDate": deadline.isoformat(),
+			"duration": duration,
+			"status": "auto-scheduled",
+			"autoScheduled": {
+				"startDate": datetime.datetime.now().isoformat(),
+				"deadlineType": "HARD",
+				"schedule": "Work Hours"
+			},
+			"name": name,
+			"projectId": "",
+			"workspaceId": "lrZBuj9OLURaRVGRfe-kM",
+			"description": description,
+			"priority": "MEDIUM",
+			"assigneeId": self._user.motion_assignee_id
+		}
+		if labels:
+			payload['labels'] = labels
+		headers = {
+			"Content-Type": "application/json",
+			"Accept": "application/json",
+			"X-API-Key": self.api_key
+		}
 
+		self.rate_limit()
 
-def rate_limit_decorator(func):
-	"""Decorator that checks rate limits before executing the function."""
+		response = requests.post(url, json=payload, headers=headers)
+		if response.status_code == 201:
+			return response.json()
+		else:
+			raise MotionError(response.text)
 
-	@functools.wraps(func)
-	def wrapper(*args, **kwargs):
-		user = kwargs.get('user')
+	def update_task(self, task_id, deadline: datetime.datetime = None):
+		url = f"https://api.usemotion.com/v1/tasks/{task_id}"
 
-		# Retrieve the corresponding RateLimiter for the given API token,
-		# or initialize one if it's the first time we're seeing this token.
-		if user.motion_api_key not in rate_limiters:
-			# Note: You'll need to determine the right max_calls and period for your case.
-			rate_limiters[user.motion_api_key] = RateLimiter(user.motion_api_key, max_calls=12, period=60)
+		payload = {
+			"dueDate": deadline.isoformat(),
+		}
+		headers = {
+			"Content-Type": "application/json",
+			"Accept": "application/json",
+			"X-API-Key": self.api_key
+		}
 
-		rate_limiter = rate_limiters[user.motion_api_key]
-		if rate_limiter.is_rate_limited():
-			raise MotionRateLimitError(user.name)
+		self.rate_limit()
 
-		return func(*args, **kwargs)
+		response = requests.patch(url, json=payload, headers=headers)
+		if response.status_code in (200, 201):
+			return response.json()
+		else:
+			raise MotionError(response.text)
 
-	return wrapper
+	def get_me(self):
+		url = "https://api.usemotion.com/v1/users/me"
 
+		headers = {
+			"Accept": "application/json",
+			"X-API-Key": self.api_key
+		}
 
-@rate_limit_decorator
-def create_task(
-		name,
-		deadline: datetime.datetime,
-		user: users.User,
-		description: str = "",
-		duration=60,
-		labels=['Repair']
-):
-	url = "https://api.usemotion.com/v1/tasks"
+		self.rate_limit()
+		response = requests.get(url, headers=headers)
 
-	payload = {
-		"dueDate": deadline.isoformat(),
-		"duration": duration,
-		"status": "auto-scheduled",
-		"autoScheduled": {
-			"startDate": datetime.datetime.now().isoformat(),
-			"deadlineType": "HARD",
-			"schedule": "Work Hours"
-		},
-		"name": name,
-		"projectId": "",
-		"workspaceId": "lrZBuj9OLURaRVGRfe-kM",
-		"description": description,
-		"priority": "MEDIUM",
-		"assigneeId": user.motion_assignee_id
-	}
-	if labels:
-		payload['labels'] = labels
-	headers = {
-		"Content-Type": "application/json",
-		"Accept": "application/json",
-		"X-API-Key": user.motion_api_key
-	}
-
-	response = requests.post(url, json=payload, headers=headers)
-	if response.status_code == 201:
 		return response.json()
-	else:
-		raise MotionError(response.text)
 
+	def list_tasks(self, label=''):
+		url = "https://api.usemotion.com/v1/tasks"
 
-@rate_limit_decorator
-def update_task(task_id, user: users.User, deadline: datetime.datetime = None):
-	url = f"https://api.usemotion.com/v1/tasks/{task_id}"
+		querystring = {"assigneeId": self._user.motion_assignee_id}
+		if label:
+			querystring["label"] = label
 
-	payload = {
-		"dueDate": deadline.isoformat(),
-	}
-	headers = {
-		"Content-Type": "application/json",
-		"Accept": "application/json",
-		"X-API-Key": user.motion_api_key
-	}
+		headers = {
+			"Accept": "application/json",
+			"X-API-Key": self.api_key
+		}
+		self.rate_limit()
+		response = requests.get(url, headers=headers, params=querystring)
 
-	response = requests.patch(url, json=payload, headers=headers)
-	if response.status_code in (200, 201):
 		return response.json()
-	else:
-		raise MotionError(response.text)
 
-
-@rate_limit_decorator
-def get_users(user: users.User):
-	url = "https://api.usemotion.com/v1/users"
-	headers = {
-		"Accept": "application/json",
-		"X-API-Key": user.motion_api_key
-	}
-
-	response = requests.get(url, headers=headers)
-
-	return response.json()
-
-
-@rate_limit_decorator
-def get_me(user: users.User):
-	url = "https://api.usemotion.com/v1/users/me"
-
-	headers = {
-		"Accept": "application/json",
-		"X-API-Key": user.motion_api_key
-	}
-
-	response = requests.get(url, headers=headers)
-
-	return response.json()
-
-
-@rate_limit_decorator
-def list_tasks(user, label='Repair'):
-	url = "https://api.usemotion.com/v1/tasks"
-
-	querystring = {"assigneeId": user.motion_assignee_id}
-	if label:
-		querystring["label"] = label
-
-	headers = {
-		"Accept": "application/json",
-		"X-API-Key": user.motion_api_key
-	}
-
-	response = requests.get(url, headers=headers, params=querystring)
-
-	return response.json()
-
-
-@rate_limit_decorator
-def delete_task(task_id, user: users.User):
-	url = f"https://api.usemotion.com/v1/tasks/{task_id}"
-	headers = {"X-API-Key": user.motion_api_key}
-	response = requests.delete(url, headers=headers)
-	if response.status_code == 204:
-		return True
-	else:
-		raise MotionError(f"Could Not Delete Motion Task: {response.text}")
+	def delete_task(self, task_id):
+		url = f"https://api.usemotion.com/v1/tasks/{task_id}"
+		headers = {"X-API-Key": self.api_key}
+		self.rate_limit()
+		response = requests.delete(url, headers=headers)
+		if response.status_code == 204:
+			log.debug(f"Deleted task {task_id}")
+			return True
+		else:
+			raise MotionError(f"Could Not Delete Motion Task: {response.text}")
 
 
 class MotionError(EricError):

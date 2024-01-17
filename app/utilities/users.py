@@ -1,6 +1,23 @@
 import functools
 import os
 
+USER_DATA = [
+	{
+		"name": "gabe",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U024H79546T",  # gabe
+		"monday_id": "4251271",  # gabe
+		"repair_group_id": 'new_group6580'  # client services group
+	},
+	{
+		"name": "dev",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U024H79546T",  # gabe
+		"monday_id": "4251271",  # gabe
+		"repair_group_id": 'new_group49546'  # dev group
+	}
+]
+
 
 def ensure_attribute_set(property_func):
 	"""Decorator to ensure a property attribute has been set before accessing it."""
@@ -17,7 +34,8 @@ def ensure_attribute_set(property_func):
 
 class User:
 
-	def __init__(self, user_data: dict):
+	def __init__(self, name='', slack_id='', monday_id='', repair_group_id='', motion_assignee_id=''):
+
 		self._name = None
 		self._motion_assignee_id = None
 		self._slack_id = None
@@ -25,7 +43,29 @@ class User:
 		self._repair_group_id = None
 		self._motion_api_key = None
 
-		self._load_data(user_data)
+		try:
+			if not name and not slack_id and not monday_id and not repair_group_id and not motion_assignee_id:
+				raise RuntimeError("Must use an attribute to search for a user")
+			elif name:
+				dct = [data for data in USER_DATA if data['name'] == name][0]
+			elif slack_id:
+				dct = [data for data in USER_DATA if data['slack_id'] == slack_id][0]
+			elif monday_id:
+				dct = [data for data in USER_DATA if data['monday_id'] == monday_id][0]
+			elif repair_group_id:
+				dct = [data for data in USER_DATA if data['repair_group_id'] == repair_group_id][0]
+			elif motion_assignee_id:
+				dct = [data for data in USER_DATA if data['motion_assignee_id'] == motion_assignee_id][0]
+			else:
+				raise RuntimeError(
+					"Must provide input: name, monday_id, slack_id, repair_group_id or motion_assignee_id")
+
+		except IndexError:
+			raise ValueError(
+				f"No User Found From Search; name:{name} slack_id:{slack_id}, monday_id:{monday_id}, "
+				f"repair_group_id::{repair_group_id}, motion_assignee_id:{motion_assignee_id}")
+
+		self._load_data(dct)
 
 	def _load_data(self, user_data: dict):
 		self._name = user_data.get('name')
@@ -64,45 +104,3 @@ class User:
 	@ensure_attribute_set
 	def motion_api_key(self):
 		return self._motion_api_key
-
-
-def get_user(name='', slack_id='', monday_id='', repair_group_id='', motion_assignee_id=''):
-	USER_DATA = [
-		{
-			"name": "gabe",
-			"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
-			"slack_id": "U024H79546T",  # gabe
-			"monday_id": "4251271",  # gabe
-			"repair_group_id": 'new_group6580'  # client services group
-		},
-		{
-			"name": "dev",
-			"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
-			"slack_id": "U024H79546T",  # gabe
-			"monday_id": "4251271",  # gabe
-			"repair_group_id": 'new_group49546'  # dev group
-		}
-	]
-
-	try:
-		if not name and not slack_id and not monday_id and not repair_group_id and not motion_assignee_id:
-			raise RuntimeError("Must use an attribute to search for a user")
-		elif name:
-			user = [User(data) for data in USER_DATA if data['name'] == name][0]
-		elif slack_id:
-			user = [User(data) for data in USER_DATA if data['slack_id'] == slack_id][0]
-		elif monday_id:
-			user = [User(data) for data in USER_DATA if data['monday_id'] == monday_id][0]
-		elif repair_group_id:
-			user = [User(data) for data in USER_DATA if data['repair_group_id'] == repair_group_id][0]
-		elif motion_assignee_id:
-			user = [User(data) for data in USER_DATA if data['motion_assignee_id'] == motion_assignee_id][0]
-		else:
-			raise RuntimeError("Must provide input: name, monday_id, slack_id, repair_group_id or motion_assignee_id")
-
-		return user
-
-	except IndexError:
-		raise ValueError(
-			f"No User Found From Search; name:{name} slack_id:{slack_id}, monday_id:{monday_id}, "
-			f"repair_group_id::{repair_group_id}, motion_assignee_id:{motion_assignee_id}")

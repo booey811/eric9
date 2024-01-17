@@ -7,7 +7,7 @@ from .base import BaseEricModel
 
 class _BaseMainModel(MondayModel):
 	hard_deadline = col_type.DateType(id='date36')
-	phase_deadline = col_type.DateType(id='date19', has_time=True)
+	phase_deadline = col_type.DateType(id='date65', has_time=True)
 	description = col_type.TextType(id='text368')
 	motion_task_id = col_type.TextType(id='text76')
 	requested_repairs = col_type.TextType(id='text368')

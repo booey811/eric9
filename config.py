@@ -9,7 +9,9 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv()
 
 
-def get_config(env):
+def get_config(env=None):
+	if not env:
+		env = os.environ["ENV"]
 	conf = ENV_CONFIG_DICT.get(env)
 	if not conf:
 		raise Exception(f"Invalid config: {env}")

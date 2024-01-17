@@ -13,7 +13,7 @@ from ...utilities import users
 from ... import EricError
 
 log = logging.getLogger('eric')
-conf = config.get_config(os.environ['ENV'])
+conf = config.get_config()
 
 
 def clean_motion_tasks(user, repairs=[]):

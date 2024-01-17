@@ -6,13 +6,14 @@ import traceback
 from flask import Flask, jsonify
 
 import config
+from config import get_config
 
 env = os.getenv('ENV', 'development')
 logger = config.configure_logging(env)
 
 
 def create_app(config_name):
-	conf = config.get_config(config_name)
+	conf = get_config(config_name)
 	app = Flask(__name__)
 	app.logger = logger
 	app.config.from_object(conf)

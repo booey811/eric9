@@ -7,16 +7,13 @@ from rq.job import Job
 
 import config
 from ...services import monday
-from ...services import slack
 from ...models import MainModel
 from ...services.motion import MotionClient, MotionRateLimitError
 from ...utilities import users
-from ... import EricError
+from ... import EricError, conf
 from app.cache import rq, get_redis_connection
 
 log = logging.getLogger('eric')
-conf = config.get_config()
-
 
 def schedule_update(repair_group_id):
 	user = users.User(repair_group_id=repair_group_id)

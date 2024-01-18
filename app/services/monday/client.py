@@ -2,6 +2,8 @@ import os
 
 import moncli
 
-moncli.api.api_key = os.environ['MON_SYSTEM']
+from ... import conf
+
+moncli.api.api_key = conf.MONDAY_KEYS["system"]
 
 client = moncli.client

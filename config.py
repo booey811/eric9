@@ -64,11 +64,21 @@ class Config(object):
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
 
-	# MONDAY IDS
+	# MONDAY BOARD IDS
 	MONDAY_MAIN_BOARD_ID = 349212843
 	MAIN_DEV_GROUP_ID = "new_group49546"
 	TEST_PROOF_ITEMS = "new_group26478"
 
+	# MONDAY KEYS
+	MONDAY_KEYS = {
+		"system": os.environ["MON_SYSTEM"],
+	}
+
+	# MOTION KEYS
+	MOTION_KEYS = {
+		"gabe": os.environ["MOTION_GABE"],
+		"dev": os.environ["MOTION_DEV"],
+	}
 
 	def get_vars(self):
 		return (

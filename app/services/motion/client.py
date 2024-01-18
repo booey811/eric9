@@ -5,7 +5,7 @@ import functools
 import requests
 import datetime
 
-from ... import EricError
+from ... import EricError, conf
 from ...cache import get_redis_connection
 from ...utilities import users
 
@@ -26,7 +26,7 @@ class MotionClient:
 	@property
 	def api_key(self):
 		if self._api_key is None:
-			self._api_key = os.environ.get(f"MOTION_{self._user.name.upper()}")
+			self._api_key = conf.MOTION_KEYS.get(self._user.name)
 			if not self._api_key:
 				raise EnvironmentError(f"No env variable: MOTION_{self._user.name.upper()}")
 		return self._api_key

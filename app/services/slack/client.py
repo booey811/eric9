@@ -1,8 +1,6 @@
-import os
+from slack_sdk import WebClient
 
 import config
-
-from slack_sdk import WebClient
 
 conf = config.get_config()
 

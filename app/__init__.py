@@ -15,7 +15,7 @@ logger = config.configure_logging(env)
 conf = get_config(env)
 
 
-def create_app(config_name):
+def create_app():
 	app = Flask(__name__)
 	app.logger = logger
 	app.config.from_object(conf)

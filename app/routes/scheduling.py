@@ -22,7 +22,7 @@ def handle_repair_group_change():
 	data = json.loads(data)['event']
 	new_group_id = data['destGroupId']
 	old_group_id = data['sourceGroupId']
-	repair_group_ids = [user.repair_group_id for user in users.USER_DATA]
+	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
 	# if moving from non repair group to non repair group, do nothing
 	if old_group_id not in repair_group_ids and new_group_id not in repair_group_ids:
@@ -31,7 +31,7 @@ def handle_repair_group_change():
 	main_id = data['pulseId']
 	item = get_items([main_id])[0]
 	main = MainModel(item)
-	repair_group_ids = [user.repair_group_id for user in users.USER_DATA]
+	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
 	if old_group_id in repair_group_ids and main.model.motion_task_id:
 		# moving from a repairer group - delete from this repairers schedule

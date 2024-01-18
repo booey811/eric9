@@ -51,7 +51,7 @@ def handle_repair_group_change():
 				description=main.model.requested_repairs,
 				labels=['Repair']
 			)
-		except scheduling.MissingDeadlineInMonday:
+		except (scheduling.MissingDeadlineInMonday, AttributeError):
 			return jsonify({'message': 'Missing Deadline'}), 200
 
 		main.model.motion_task_id = task['id']

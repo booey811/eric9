@@ -58,16 +58,16 @@ class Config(object):
 	CONFIG = "BASE"
 	DEBUG = False
 	TESTING = False
-	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///default.db'
-	SECRET_KEY = os.environ.get('SECRET_KEY') or 'default-secret-key'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+
 	SLACK_APP_TOKEN = os.environ.get("SLACK_BOT")  # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
-	MAIN_DEV_GROUP_ID = "new_group49546"
-	TEST_PROOF_ITEMS = "new_group26478"
+	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
 
 	# MONDAY IDS
 	MONDAY_MAIN_BOARD_ID = 349212843
+	MAIN_DEV_GROUP_ID = "new_group49546"
+	TEST_PROOF_ITEMS = "new_group26478"
 
 
 	def get_vars(self):
@@ -86,7 +86,6 @@ class ProductionConfig(Config):
 	"""Uses production database server."""
 	CONFIG = "PRODUCTION"
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
-	SLACK_APP_TOKEN = os.environ.get("SLACK_APP")  # icorrect workspace
 
 
 class DevelopmentConfig(Config):
@@ -95,6 +94,10 @@ class DevelopmentConfig(Config):
 	DEBUG = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
+
+	SLACK_APP_TOKEN = os.environ.get("SLACK_DEV_BOT")  # dev workspace
+	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
+	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 
 
 class TestingConfig(Config):

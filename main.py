@@ -16,20 +16,10 @@ eric = app.create_app(env)
 
 if __name__ == '__main__':
 	if env == 'production':
-		pass
+		eric.run()
 	elif env == 'testing':
 		pass
 	elif env == 'development':
-		from app.tasks import scheduling
-		from app.utilities import users
-		from app.services import monday
-		from app.models import MainModel
-
-		user = users.User('gabe')
-
-		# repairs = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.TEST_PROOF_ITEMS)
-		# repairs = [MainModel(r.id, r) for r in repairs]
-		# scheduling.sync_schedule(user, "new_group26478")
-
+		pass
 	else:
 		raise Exception(f"Invalid ENV: {env}")

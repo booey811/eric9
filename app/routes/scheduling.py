@@ -22,7 +22,7 @@ def handle_repair_group_change():
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
 	new_group_id = data['destGroupId']
-	old_group_id = data['new_group56509']
+	old_group_id = data['sourceGroupId']
 	repair_group_ids = [user.repair_group_id for user in users.USER_DATA]
 
 	# if moving from non repair group to non repair group, do nothing

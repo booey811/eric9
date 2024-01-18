@@ -25,9 +25,10 @@ if __name__ == '__main__':
 		from app.services import monday
 		from app.models import MainModel
 
-		user = users.get_user('dev')
-		repairs = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.TEST_PROOF_ITEMS)
-		repairs = [MainModel(r.id, r) for r in repairs]
+		user = users.User('gabe')
+
+		# repairs = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.TEST_PROOF_ITEMS)
+		# repairs = [MainModel(r.id, r) for r in repairs]
 		# scheduling.sync_schedule(user, "new_group26478")
 
 	else:

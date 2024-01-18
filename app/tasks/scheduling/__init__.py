@@ -3,6 +3,7 @@ import time
 from dateutil.parser import parse
 import os
 import datetime
+from rq.job import Job
 
 import config
 from ...services import monday
@@ -11,10 +12,50 @@ from ...models import MainModel
 from ...services.motion import MotionClient, MotionRateLimitError
 from ...utilities import users
 from ... import EricError
+from app.cache import rq, get_redis_connection
 
 log = logging.getLogger('eric')
 conf = config.get_config()
 
+
+def schedule_update(repair_group_id):
+	user = users.User(repair_group_id=repair_group_id)
+	job_id = f"schedule_sync:{user.monday_id}"
+
+	scheduled_registry = rq.queues['high'].scheduled_job_registry
+
+	# Check if there are any existing jobs for this task/user and cancel them
+	for job_id in scheduled_registry.get_job_ids():
+		job = Job(job_id, get_redis_connection())
+		if job.meta.get('schedule_task_id') == job_id:
+			scheduled_registry.remove(job)
+
+	# Schedule a new job to update Monday.com after the delay period
+	job = rq.queues['high'].enqueue_in(
+		time_delta=datetime.timedelta(seconds=10),
+		func=sync_repair_schedule,
+		args=(user.repair_group_id,)
+	)
+	job.meta['schedule_task_id'] = job_id
+	job.save_meta()
+
+
+def sync_repair_schedule(monday_group_id):
+	log.debug("Schedule Sync Requested")
+
+	user = users.User(repair_group_id=monday_group_id)
+
+	log.debug(f"Syncing for user: {user.name}")
+	repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+	log.debug(f"Syncing for repairs: {[repair.model.name for repair in repairs]}")
+
+	clean_motion_tasks(user, repairs)
+	add_monday_tasks_to_motion(user, repairs)
+
+	log.info(f"Waiting 5 Seconds to allow Motion to complete scheduling")
+	sync_monday_phase_deadlines(user, repairs)
+
+	return True
 
 def clean_motion_tasks(user, repairs=[]):
 	# delete unassigned tasks in motion
@@ -77,19 +118,25 @@ def add_monday_tasks_to_motion(user: users.User, repairs=[]):
 			log.debug(f"Monday Task ID {monday_task_id} not in Motion, creating and reassigning monday reference")
 		else:
 			raise RuntimeError("Impossible")
-		while True:
-			try:
-				log.debug("Creating task....")
-				task = motion.create_task(
-					name=repair.model.name,
-					deadline=repair.model.hard_deadline,
-					description=repair.model.requested_repairs,
-					labels=['Repair']
-				)
-				break
-			except MotionRateLimitError:
-				log.debug("Waiting 20 seconds for rate limit")
-				time.sleep(20)
+		try:
+			if not repair.model.hard_deadline:
+				raise MissingDeadlineInMonday(repair)
+			while True:
+				try:
+					log.debug("Creating task....")
+					task = motion.create_task(
+						name=repair.model.name,
+						deadline=repair.model.hard_deadline,
+						description=repair.model.requested_repairs,
+						labels=['Repair']
+					)
+					break
+				except MotionRateLimitError:
+					log.debug("Waiting 20 seconds for rate limit")
+					time.sleep(20)
+		except MissingDeadlineInMonday:
+			log.debug('Cannot plot task to Motion as no deadline has been provided')
+			continue
 
 		log.debug(f"Updating Monday Motion Task ID: {task['id']}")
 		repair.model.motion_task_id = task['id']
@@ -117,8 +164,10 @@ def sync_monday_phase_deadlines(user, repairs=[]):
 			try:
 				motion_task = [t for t in schedule if t['id'] == repair.model.motion_task_id][0]
 			except IndexError:
+				# this means we have Motion Task ID in Monday that does not exist in Motion, we should replace this value
 				log.debug(f"Cannot find Motion task with ID: {repair.model.motion_task_id}")
-				raise SchedulingError(repair)
+
+				continue
 
 			start = parse(motion_task['scheduledStart'])
 			motion_deadline = parse(motion_task['scheduledEnd'])

@@ -3,12 +3,11 @@ import json
 
 from flask import Blueprint, request, jsonify
 
-from app.services.monday import monday_challenge, get_items
-from app.models import MainModel
-from app.services.motion import MotionClient
-from app.utilities import users
-from app.tasks import scheduling
-from . import exceptions
+from ..services.monday import monday_challenge, get_items
+from ..models import MainModel
+from ..services.motion import MotionClient
+from ..utilities import users
+from ..tasks import scheduling
 
 log = logging.getLogger('eric')
 

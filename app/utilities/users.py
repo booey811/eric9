@@ -1,13 +1,15 @@
 import functools
 import os
 
+from .. import get_config
+
 USER_DATA = [
 	{
 		"name": "gabe",
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
 		"slack_id": "U024H79546T",  # gabe
 		"monday_id": "4251271",  # gabe
-		"repair_group_id": 'new_group6580'  # client services group
+		"repair_group_id": get_config().TEST_PROOF_ITEMS  # test proof items group
 	},
 	{
 		"name": "dev",

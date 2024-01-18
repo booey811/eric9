@@ -94,7 +94,7 @@ class MotionClient:
 		if response.status_code == 201:
 			return response.json()
 		else:
-			raise MotionError(response.text)
+			raise MotionError(f"Could Not Create Motion Task ({response.status_code}): {response.text}")
 
 	def update_task(self, task_id, deadline: datetime.datetime = None):
 		url = f"https://api.usemotion.com/v1/tasks/{task_id}"
@@ -114,7 +114,7 @@ class MotionClient:
 		if response.status_code in (200, 201):
 			return response.json()
 		else:
-			raise MotionError(response.text)
+			raise MotionError(f"Could Not Update Motion Task ({response.status_code}): {response.text}")
 
 	def get_me(self):
 		url = "https://api.usemotion.com/v1/users/me"
@@ -154,7 +154,7 @@ class MotionClient:
 			log.debug(f"Deleted task {task_id}")
 			return True
 		else:
-			raise MotionError(f"Could Not Delete Motion Task: {response.text}")
+			raise MotionError(f"Could Not Delete Motion Task ({response.status_code}): {response.text}")
 
 
 class MotionError(EricError):

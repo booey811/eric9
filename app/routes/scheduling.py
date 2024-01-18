@@ -30,7 +30,7 @@ def handle_repair_group_change():
 
 	main_id = data['pulseId']
 	item = get_items([main_id])[0]
-	main = MainModel(item)
+	main = MainModel(item.id, item)
 	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
 	if old_group_id in repair_group_ids and main.model.motion_task_id:

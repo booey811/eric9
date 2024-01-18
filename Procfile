@@ -1,1 +1,2 @@
-web: env PROC_TYPE=web hypercorn main:eric -b 0.0.0.0:$PORT
+web: env PROC_TYPE=web gunicorn main:eric
+worker: env PROC_TYPE=worker python worker.py --with-scheduler

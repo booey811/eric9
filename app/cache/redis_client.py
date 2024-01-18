@@ -11,7 +11,7 @@ def setup_redis_connection_pool():
 	global redis_connection_pool
 	redis_connection_pool = redis.ConnectionPool.from_url(
 		url=get_config(os.environ.get('ENV')).REDIS_URL,
-		decode_responses=True
+		decode_responses=False
 	)
 
 
@@ -22,5 +22,5 @@ def get_redis_connection():
 	return redis.StrictRedis(
 		connection_pool=redis_connection_pool,
 		charset='utf-8',
-		decode_responses=True
+		decode_responses=False
 	)

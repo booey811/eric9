@@ -37,7 +37,7 @@ def create_app(config_name):
 
 	# Here, import and register blueprints
 	from .routes import scheduling
-	app.register_blueprint(scheduling.scheduling_blueprint)
+	app.register_blueprint(scheduling.scheduling_bp)
 
 	return app
 

@@ -15,7 +15,7 @@ log = logging.getLogger('eric')
 scheduling_bp = Blueprint('scheduling', __name__, url_prefix="/scheduling")
 
 
-@scheduling_bp.route("/repair-moves-group")
+@scheduling_bp.route("/repair-moves-group", methods=["POST"])
 @monday_challenge
 def handle_repair_group_change():
 	try:

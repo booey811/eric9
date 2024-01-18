@@ -37,15 +37,8 @@ def configure_logging(config_name):
 		c_handler.setFormatter(c_format)
 
 		# Set the level and add handlers
-		if config_name == 'development':
-			logger.setLevel(logging.DEBUG)
-			c_handler.setLevel(logging.DEBUG)
-		elif config_name == 'production':
-			logger.setLevel(logging.WARNING)
-			c_handler.setLevel(logging.WARNING)
-		elif config_name == 'testing':
-			logger.setLevel(logging.ERROR)
-			c_handler.setLevel(logging.ERROR)
+		logger.setLevel(os.environ['LOG_LEVEL'])
+		c_handler.setLevel(os.environ['LOG_LEVEL'])
 
 		# Add handlers to the logger
 		logger.addHandler(c_handler)

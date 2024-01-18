@@ -6,31 +6,33 @@ from flask import Blueprint, request, jsonify
 from app.services.monday import monday_challenge, get_items
 from app.models import MainModel
 from app.services import motion
+from app.utilities import users
 
 log = logging.getLogger('eric')
 
 scheduling = Blueprint('scheduling', __name__, url_prefix="/scheduling")
 
 
-@scheduling.route("/add_repair")
+@scheduling.route("/repair-moves-group")
 @monday_challenge
-def add_repair_to_schedule():
+def handle_repair_group_change():
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
 	main_id = data['pulseId']
-	item = get_items([main_id])[0]
+	new_group_id = data['destGroupId']
+	old_group_id = data['new_group56509']
 
-	main = MainModel(item)
+	repair_group_ids = [user.repair_group_id for user in users.USER_DATA]
 
-	if main.model.motion_task_id:
+	if old_group_id in repair_group_ids:
+		# Repair has been removed from repairer list, delete motion task
 		pass
-	else:
-		motion.client.create_task(
-			name=main.model.name,
-			deadline=main.model.hard_deadline,
-			description=main.model.requested_repairs,
-		)
-	return jsonify({'result': 'Added to Schedule'}), 200
 
+	if new_group_id in repair_group_ids:
+		# repair has been moved a repairer's group, add motion task
+		pass
+
+	item = get_items([main_id])[0]
+	main = MainModel(item)
 

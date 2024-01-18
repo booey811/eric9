@@ -7,13 +7,15 @@ from flask import Flask, jsonify
 
 import config
 from config import get_config
+from .services.slack import slack_client, blocks
 
 env = os.getenv('ENV', 'development')
 logger = config.configure_logging(env)
 
+conf = get_config(env)
+
 
 def create_app(config_name):
-	conf = get_config(config_name)
 	app = Flask(__name__)
 	app.logger = logger
 	app.config.from_object(conf)
@@ -36,8 +38,9 @@ def create_app(config_name):
 		return response
 
 	# Here, import and register blueprints
-	from .routes import scheduling
+	from .routes import scheduling, r_tests
 	app.register_blueprint(scheduling.scheduling_bp)
+	app.register_blueprint(r_tests.test_bp)
 
 	return app
 
@@ -45,7 +48,15 @@ def create_app(config_name):
 def notify_admins_of_error(trace):
 	# Integrate with an error notification tool (e.g., email, Slack, PagerDuty)
 	# This function is where you would include your custom notification logic
-	print(trace)
+	s_blocks = [
+		blocks.add.text_block("Error"),
+		blocks.add.text_block(trace)
+	]
+	slack_client.chat_postMessage(
+		channel=conf.SLACK_ERROR_CHANNEL,
+		text='eric9:Unhandled Error',
+		blocks=s_blocks
+	)
 
 
 class EricError(Exception):

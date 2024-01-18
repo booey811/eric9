@@ -146,6 +146,7 @@ class MotionClient:
 		return response.json()
 
 	def delete_task(self, task_id):
+		log.debug(f"Deleting task {task_id}")
 		url = f"https://api.usemotion.com/v1/tasks/{task_id}"
 		headers = {"X-API-Key": self.api_key}
 		self.rate_limit()
@@ -153,6 +154,9 @@ class MotionClient:
 		if response.status_code == 204:
 			log.debug(f"Deleted task {task_id}")
 			return True
+		elif response.status_code == 404:
+			log.debug(f"Task {task_id} not found")
+			return False
 		else:
 			raise MotionError(f"Could Not Delete Motion Task ({response.status_code}): {response.text}")
 

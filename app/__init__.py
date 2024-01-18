@@ -36,7 +36,8 @@ def create_app(config_name):
 		return response
 
 	# Here, import and register blueprints
-	from .services.monday import routes
+	from .routes import scheduling
+	app.register_blueprint(scheduling.scheduling_blueprint)
 
 	return app
 

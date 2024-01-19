@@ -92,15 +92,25 @@ def handle_client_side_deadline_adjustment():
 	main = MainModel(item.id, item)
 
 	if main.model.motion_task_id:
-		motion.update_task(
-			task_id=main.model.motion_task_id,
-			deadline=main.model.hard_deadline
-		)
-		log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
-		main.model.motion_scheduling_status = 'Awaiting Sync'
-		main.model.save()
-		scheduling.schedule_update(group_id)
-		return jsonify({'message': 'OK'}), 200
+		if not main.model.hard_deadline:
+			log.debug(f"{main.model.name} missing deadline, deleting task")
+			motion.delete_task(main.model.motion_task_id)
+			main.model.motion_task_id = None
+			main.model.motion_scheduling_status = "No Deadline"
+			main.model.save()
+			return jsonify({'message': 'Missing Deadline'}), 200
+
+		else:
+			log.debug(f"Updating Motion Task({main.model.motion_task_id}) deadline for {main.model.hard_deadline}")
+			motion.update_task(
+				task_id=main.model.motion_task_id,
+				deadline=main.model.hard_deadline
+			)
+			log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
+			main.model.motion_scheduling_status = 'Awaiting Sync'
+			main.model.save()
+			scheduling.schedule_update(group_id)
+			return jsonify({'message': 'OK'}), 200
 	else:
 		log.debug(f"MainItem({main.id}) missing motion task, Cannot update Task. Creating instead")
 		try:

@@ -8,7 +8,7 @@ from rq.job import Job
 import config
 from ...services import monday
 from ...models import MainModel
-from ...services.motion import MotionClient, MotionRateLimitError
+from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users
 from ... import EricError, conf
 from app.cache import rq, get_redis_connection
@@ -163,11 +163,11 @@ def sync_monday_phase_deadlines(user, repairs=[]):
 			except IndexError:
 				# this means we have Motion Task ID in Monday that does not exist in Motion, we should replace this value
 				log.debug(f"Cannot find Motion task with ID: {repair.model.motion_task_id}")
-
 				continue
-
-			start = parse(motion_task['scheduledStart'])
-			motion_deadline = parse(motion_task['scheduledEnd'])
+			try:
+				motion_deadline = parse(motion_task['scheduledEnd'])
+			except TypeError:
+				raise MotionError(f"Motion Task {motion_task['id']} has no scheduledEnd")
 			motion_deadline.replace(microsecond=0, second=0)
 			log.debug(f"Motion Deadline: {motion_deadline.strftime('%c')}")
 

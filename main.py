@@ -15,7 +15,7 @@ if __name__ == '__main__':
 	if env == 'production':
 		eric.run()
 	elif env == 'testing':
-		pass
+		eric.run()
 	elif env == 'development':
 		pass
 	else:

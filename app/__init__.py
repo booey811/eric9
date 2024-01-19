@@ -20,11 +20,11 @@ def create_app():
 	app.logger = logger
 	app.config.from_object(conf)
 
-	@app.errorhandler(Exception)
+	@app.errorhandler(EricError)
 	def handle_uncaught_exception(error):
 		# Log the full stack trace, but do not send it to the client for security reasons
 		trace = traceback.format_exc()
-		logger.error(f'Unhandled Exception: {trace}')
+		logger.error(f'Eric Exception: {trace}')
 
 		# Here you can integrate a notification service to notify you of the exception details
 		notify_admins_of_error(trace)

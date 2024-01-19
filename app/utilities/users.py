@@ -1,7 +1,7 @@
 import functools
 import os
 
-from .. import get_config
+from .. import conf
 
 USER_DATA = [
 	{
@@ -9,7 +9,7 @@ USER_DATA = [
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
 		"slack_id": "U024H79546T",  # gabe
 		"monday_id": "4251271",  # gabe
-		"repair_group_id": get_config().TEST_PROOF_ITEMS  # test proof items group
+		"repair_group_id": conf.TEST_PROOF_ITEMS  # test proof items group
 	},
 	{
 		"name": "dev",
@@ -75,7 +75,7 @@ class User:
 		self._slack_id = user_data.get('slack_id')
 		self._monday_id = user_data.get('monday_id')
 		self._repair_group_id = user_data.get('repair_group_id')
-		self._motion_api_key = os.environ[f"MOTION_{self._name.upper()}"]
+		self._motion_api_key = conf.MOTION_KEYS[self._name]
 
 	@property
 	@ensure_attribute_set

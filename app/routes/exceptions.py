@@ -2,10 +2,7 @@ from ..services import slack
 from .. import EricError
 
 
-from .. import get_config
-
-
-conf = get_config()
+from .. import conf
 
 
 class ErrorInRoute(EricError):

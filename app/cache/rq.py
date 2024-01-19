@@ -2,9 +2,7 @@ from rq import Queue
 
 from .redis_client import get_redis_connection
 
-from .. import get_config
 
-conf = get_config()
 a_sync = True
 # if conf.DEBUG:
 #     a_sync = False

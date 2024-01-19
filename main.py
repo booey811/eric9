@@ -3,18 +3,12 @@ import os
 
 import app
 
-import config
-
 log = logging.getLogger('eric')
 
-env = os.getenv('ENV', 'testing')
+env = os.getenv('ENV', 'development')
 port = int(os.environ.get('PORT', 8000))  # Default to 8000 for local development
-conf = config.get_config(env)
-if env != 'production':
-	for v in conf().get_vars():
-		log.debug(v)
 
-eric = app.create_app(env)
+eric = app.create_app()
 
 
 if __name__ == '__main__':

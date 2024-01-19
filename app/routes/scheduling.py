@@ -20,28 +20,35 @@ def handle_repair_group_change():
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
+	main_id = data['pulseId']
 	new_group_id = data['destGroupId']
 	old_group_id = data['sourceGroupId']
 	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
+	log.debug(f"MainItem({main_id}) moved from group({old_group_id}) to group({new_group_id})")
+
 	# if moving from non repair group to non repair group, do nothing
 	if old_group_id not in repair_group_ids and new_group_id not in repair_group_ids:
+		log.debug(f"MainItem({main_id}) moved from non repair group to non repair group, do nothing")
 		return jsonify({'message': 'Not a repair group'}), 200
 
-	main_id = data['pulseId']
 	item = get_items([main_id])[0]
 	main = MainModel(item.id, item)
 	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
 	if old_group_id in repair_group_ids and main.model.motion_task_id:
 		# moving from a repairer group - delete from this repairers schedule
+		log.debug(f"MainItem({main_id}) moved from repair group({old_group_id})")
 		user = users.User(repair_group_id=old_group_id)
 		motion = MotionClient(user)
 		motion.delete_task(main.model.motion_task_id)
+		main.model.motion_task_id = None
+		main.model.motion_scheduling_status = "Not In Repair Schedule"
 		scheduling.schedule_update(old_group_id)
 
 	if new_group_id in repair_group_ids:
 		# repair has been moved a repairer's group, add motion task to new repairer schedule
+		log.debug(f"MainItem({main_id}) moved to repair group({new_group_id})")
 		user = users.User(repair_group_id=new_group_id)
 		motion = MotionClient(user)
 		try:
@@ -51,7 +58,9 @@ def handle_repair_group_change():
 				description=main.model.requested_repairs,
 				labels=['Repair']
 			)
+			log.debug(f"Created Motion Task({task['id']}) for MainItem({main_id})")
 		except (scheduling.MissingDeadlineInMonday, AttributeError):
+			log.debug(f"MainItem({main_id}) missing deadline, not creating motion task")
 			return jsonify({'message': 'Missing Deadline'}), 200
 
 		main.model.motion_task_id = task['id']

@@ -1,14 +1,20 @@
+import logging
+
 import moncli
 from moncli.models import MondayModel
 from moncli import types as cols
 
 from .base import BaseEricModel
 from .product import ProductModel
+from ..services import monday
+
+log = logging.getLogger('eric')
 
 
 class _BaseDeviceModel(MondayModel):
 	product_ids = cols.ItemLinkType(id='connect_boards5')
 	legacy_eric_device_id = cols.TextType(id='text')
+	product_index_connect = cols.ItemLinkType(id='connect_boards4')
 
 
 class DeviceModel(BaseEricModel):
@@ -47,5 +53,25 @@ class DeviceModel(BaseEricModel):
 
 	@property
 	def products(self):
-		return [ProductModel(_) for _ in self.product_ids]
+		if self._products is None:
+			items = monday.get_items(self.product_ids)
+			self._products = [ProductModel(_.id, _) for _ in items]
+		return self._products
 
+	def connect_to_product_group(self):
+		if not self.model.legacy_eric_device_id or self.model.legacy_eric_device_id == "new_group77067":  # index Group ID:
+			log.debug(f"Correcting legacy ID for {self.model.name}: {self.model.legacy_eric_device_id}")
+			if self.products:
+				prod = self.products[0]
+				device_group_id = prod.model.item.get_group().id
+				if device_group_id == "new_group77067":  # index Group ID
+					prod = self.products[1]
+					device_group_id = prod.model.item.get_group().id
+				self.model.legacy_eric_device_id = device_group_id
+				for p in self.products:
+					if not p.model.legacy_eric_device_id or p.model.legacy_eric_device_id == "new_group77067":  # index Group ID
+						p.model.legacy_eric_device_id = device_group_id
+						p.model.save()
+				self.model.save()
+		else:
+			return True

@@ -214,6 +214,7 @@ class MissingDeadlineInMonday(SchedulingError):
 
 	def __init__(self, monday_item: MainModel):
 		monday_item.model.motion_scheduling_status = "No Deadline"
+		monday_item.model.phase_deadline = None
 		super().__init__(monday_item)
 
 	def __str__(self):
@@ -223,6 +224,7 @@ class MissingDeadlineInMonday(SchedulingError):
 class NotEnoughTime(SchedulingError):
 	def __init__(self, monday_item: MainModel):
 		monday_item.model.motion_scheduling_status = "Not Enough Time"
+		monday_item.model.phase_deadline = None
 		super().__init__(monday_item)
 
 	def __str__(self):

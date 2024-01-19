@@ -70,3 +70,50 @@ def handle_repair_group_change():
 
 	main.model.save()
 	return jsonify({'message': 'OK'}), 200
+
+
+@scheduling_bp.route("/client-side-deadline-adjusted", methods=["POST"])
+@monday_challenge
+def handle_client_side_deadline_adjustment():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+	group_id = data['groupId']
+
+	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
+
+	if group_id not in repair_group_ids:
+		log.debug("CS Deadline Adjusted within non-repair group, do nothing")
+		return jsonify({'message': 'Not a repair group'}), 200
+
+	user = users.User(repair_group_id=group_id)
+	motion = MotionClient(user)
+	item = get_items([data['pulseId']])[0]
+	main = MainModel(item.id, item)
+
+	if main.model.motion_task_id:
+		motion.update_task(
+			task_id=main.model.motion_task_id,
+			deadline=main.model.hard_deadline
+		)
+		log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
+		main.model.motion_scheduling_status = 'Awaiting Sync'
+		main.model.save()
+		scheduling.schedule_update(group_id)
+		return jsonify({'message': 'OK'}), 200
+	else:
+		log.debug(f"MainItem({main.id}) missing motion task, Cannot update Task. Creating instead")
+		try:
+			task = motion.create_task(
+				name=main.model.name,
+				deadline=main.model.hard_deadline,
+				description=main.model.requested_repairs,
+				labels=['Repair']
+			)
+			log.debug(f"Created Motion Task({task['id']}) for MainItem({main.id})")
+		except (scheduling.MissingDeadlineInMonday, AttributeError):
+			log.debug(f"MainItem({main.id}) missing deadline, not creating motion task")
+			main.model.save()
+			return jsonify({'message': 'Missing Deadline'}), 200
+
+	return jsonify({'message': 'Added Motion Task'}), 200

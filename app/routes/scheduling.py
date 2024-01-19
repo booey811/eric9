@@ -61,6 +61,7 @@ def handle_repair_group_change():
 			log.debug(f"Created Motion Task({task['id']}) for MainItem({main_id})")
 		except (scheduling.MissingDeadlineInMonday, AttributeError):
 			log.debug(f"MainItem({main_id}) missing deadline, not creating motion task")
+			main.model.save()
 			return jsonify({'message': 'Missing Deadline'}), 200
 
 		main.model.motion_task_id = task['id']

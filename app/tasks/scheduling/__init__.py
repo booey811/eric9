@@ -199,6 +199,7 @@ class SchedulingError(EricError):
 
 	def __init__(self, monday_item: MainModel):
 		self.item = monday_item
+		monday_item.model.phase_deadline = None
 		monday_item.model.save()
 
 	def __str__(self):

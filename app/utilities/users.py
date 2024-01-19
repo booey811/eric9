@@ -16,7 +16,7 @@ USER_DATA = [
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
 		"slack_id": "U024H79546T",  # gabe
 		"monday_id": "4251271",  # gabe
-		"repair_group_id": 'new_group49546'  # dev group
+		"repair_group_id": conf.MAIN_DEV_GROUP_ID  # test proof items group
 	}
 ]
 

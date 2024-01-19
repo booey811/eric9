@@ -86,7 +86,7 @@ class ProductionConfig(Config):
 	"""Uses production database server."""
 	CONFIG = "PRODUCTION"
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
-	SLACK_APP_TOKEN = os.environ.get("SLACK_APP")  # icorrect workspace
+	SLACK_APP_TOKEN = os.environ["SLACK_BOT"]  # icorrect workspace
 
 
 class DevelopmentConfig(Config):

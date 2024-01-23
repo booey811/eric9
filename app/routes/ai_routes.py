@@ -18,7 +18,7 @@ ai_bp = Blueprint('ai', __name__, url_prefix="/ai")
 q_hi = rq.queues['high']
 
 
-@ai_bp.route("/ai/request-translation/", methods=["POST"])
+@ai_bp.route("/request-translation/", methods=["POST"])
 @monday_challenge
 def process_ai_translation_request():
 	log.debug("AI Translation Requested Route")

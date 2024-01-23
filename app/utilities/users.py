@@ -56,15 +56,15 @@ class User:
 			if not name and not slack_id and not monday_id and not repair_group_id and not motion_assignee_id:
 				raise RuntimeError("Must use an attribute to search for a user")
 			elif name:
-				dct = [data for data in USER_DATA if data['name'] == name][0]
+				dct = [data for data in USER_DATA if data['name'] == str(name)][0]
 			elif slack_id:
-				dct = [data for data in USER_DATA if data['slack_id'] == slack_id][0]
+				dct = [data for data in USER_DATA if data['slack_id'] == str(slack_id)][0]
 			elif monday_id:
-				dct = [data for data in USER_DATA if data['monday_id'] == monday_id][0]
+				dct = [data for data in USER_DATA if data['monday_id'] == str(monday_id)][0]
 			elif repair_group_id:
-				dct = [data for data in USER_DATA if data['repair_group_id'] == repair_group_id][0]
+				dct = [data for data in USER_DATA if data['repair_group_id'] == str(repair_group_id)][0]
 			elif motion_assignee_id:
-				dct = [data for data in USER_DATA if data['motion_assignee_id'] == motion_assignee_id][0]
+				dct = [data for data in USER_DATA if data['motion_assignee_id'] == str(motion_assignee_id)][0]
 			else:
 				raise RuntimeError(
 					"Must provide input: name, monday_id, slack_id, repair_group_id or motion_assignee_id")

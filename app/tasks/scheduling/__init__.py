@@ -39,19 +39,21 @@ def schedule_update(repair_group_id):
 
 def sync_repair_schedule(monday_group_id):
 	log.debug("Schedule Sync Requested")
-
 	user = users.User(repair_group_id=monday_group_id)
 
-	log.debug(f"Syncing for user: {user.name}")
-	repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
-	log.debug(f"Syncing for repairs: {[repair.model.name for repair in repairs]}")
+	try:
+		log.debug(f"Syncing for user: {user.name}")
+		repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+		log.debug(f"Syncing for repairs: {[repair.model.name for repair in repairs]}")
 
-	clean_motion_tasks(user, repairs)
-	add_monday_tasks_to_motion(user, repairs)
+		clean_motion_tasks(user, repairs)
+		add_monday_tasks_to_motion(user, repairs)
 
-	log.info(f"Waiting 5 Seconds to allow Motion to complete scheduling")
-	sync_monday_phase_deadlines(user, repairs)
-
+		log.info(f"Waiting 5 Seconds to allow Motion to complete scheduling")
+		sync_monday_phase_deadlines(user, repairs)
+	except MotionRateLimitError as e:
+		log.error(f"Motion Rate Limit Error: {e}")
+		schedule_update(monday_group_id)
 	return True
 
 def clean_motion_tasks(user, repairs=[]):

@@ -39,10 +39,13 @@ def process_ai_translation_request():
 
 	run = ai.create_and_run_thread(
 		assistant_id=conf.OPEN_AI_ASSISTANTS['translator'],
-		endpoint=f'{conf.APP_URL}/ai/translator-results/',
-		kwargs={
+		messages=[
+			data['textBody']
+		],
+		metadata={
 			"main_id": data['pulseId'],
-			"notes_thread": data['updateId']
+			"notes_thread": data['updateId'],
+			"endpoint": f'{conf.APP_URL}/ai/translator-results/'
 		}
 	)
 

@@ -15,7 +15,7 @@ log = logging.getLogger('eric')
 
 ai_bp = Blueprint('ai', __name__, url_prefix="/ai")
 
-q_hi = rq.queues['hi']
+q_hi = rq.queues['high']
 
 
 @ai_bp.route("/ai/request-translation/", methods=["POST"])

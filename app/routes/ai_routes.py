@@ -27,7 +27,12 @@ def process_ai_translation_request():
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
 
-	user = users.User(monday_id=data['userId'])
+	try:
+		user = users.User(monday_id=data['userId'])
+	except ValueError:
+		log.debug("No User Found")
+		return jsonify({'message': 'No User Found'}), 200
+
 	if user.name not in ('safan', 'gabe'):
 		log.debug("Not Safan, no translation required")
 		return jsonify({'message': 'Not Safan'}), 200

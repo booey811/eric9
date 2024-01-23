@@ -17,7 +17,14 @@ USER_DATA = [
 		"slack_id": "U024H79546T",  # gabe
 		"monday_id": "4251271",  # gabe
 		"repair_group_id": conf.MAIN_DEV_GROUP_ID  # test proof items group
-	}
+	},
+	{
+		"name": "safan",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U024H79546T",  # gabe
+		"monday_id": "4251271",  # gabe
+		"repair_group_id": conf.MAIN_DEV_GROUP_ID  # test proof items group
+	},
 ]
 
 
@@ -70,11 +77,11 @@ class User:
 		self._load_data(dct)
 
 	def _load_data(self, user_data: dict):
-		self._name = user_data.get('name')
-		self._motion_assignee_id = user_data.get('motion_assignee_id')
-		self._slack_id = user_data.get('slack_id')
-		self._monday_id = user_data.get('monday_id')
-		self._repair_group_id = user_data.get('repair_group_id')
+		self._name = str(user_data.get('name'))
+		self._motion_assignee_id = str(user_data.get('motion_assignee_id'))
+		self._slack_id = str(user_data.get('slack_id'))
+		self._monday_id = str(user_data.get('monday_id'))
+		self._repair_group_id = str(user_data.get('repair_group_id'))
 		self._motion_api_key = conf.MOTION_KEYS[self._name]
 
 	@property

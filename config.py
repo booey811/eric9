@@ -49,9 +49,17 @@ def configure_logging(config_name):
 class Config(object):
 	"""Base config, uses staging database server."""
 	CONFIG = "BASE"
+	APP_URL = "http://localhost:8000"
 	DEBUG = False
 	TESTING = False
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+
+	OPENAI_KEY = os.environ["OPENAI_API_KEY"]
+
+	OPEN_AI_ASSISTANTS = {
+		"enquiry": "asst_RLYPxU9Qdkpj4btu0bLQbJ1s",
+		"translator": "asst_PNMO7wrcHrAM1ViORqJ7oev1",
+	}
 
 	SLACK_APP_TOKEN = os.environ.get("SLACK_BOT")  # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
@@ -90,6 +98,7 @@ class ProductionConfig(Config):
 	CONFIG = "PRODUCTION"
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
 	SLACK_APP_TOKEN = os.environ["SLACK_BOT"]  # icorrect workspace
+	APP_URL = "https://eric9-c2d6de2066d6.herokuapp.com"
 
 
 class DevelopmentConfig(Config):

@@ -98,6 +98,7 @@ def handle_client_side_deadline_adjustment():
 			main.model.motion_task_id = None
 			main.model.motion_scheduling_status = "No Deadline"
 			main.model.save()
+			scheduling.schedule_update(group_id)
 			return jsonify({'message': 'Missing Deadline'}), 200
 
 		else:
@@ -107,10 +108,11 @@ def handle_client_side_deadline_adjustment():
 				deadline=main.model.hard_deadline
 			)
 			log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
+			scheduling.schedule_update(group_id)
 			main.model.motion_scheduling_status = 'Awaiting Sync'
 			main.model.save()
-			scheduling.schedule_update(group_id)
 			return jsonify({'message': 'OK'}), 200
+
 	else:
 		log.debug(f"MainItem({main.id}) missing motion task, Cannot update Task. Creating instead")
 		try:
@@ -121,8 +123,13 @@ def handle_client_side_deadline_adjustment():
 				labels=['Repair']
 			)
 			log.debug(f"Created Motion Task({task['id']}) for MainItem({main.id})")
+			main.model.motion_task_id = task['id']
+			main.model.motion_scheduling_status = 'Awaiting Sync'
+			main.model.save()
+			scheduling.schedule_update(group_id)
 		except (scheduling.MissingDeadlineInMonday, AttributeError):
 			log.debug(f"MainItem({main.id}) missing deadline, not creating motion task")
+			main.model.motion_scheduling_status = "No Deadline"
 			main.model.save()
 			return jsonify({'message': 'Missing Deadline'}), 200
 

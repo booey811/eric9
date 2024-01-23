@@ -51,7 +51,7 @@ def process_ai_translation_request():
 	return jsonify({'message': 'AI Translation Requested'}), 200
 
 
-@ai_bp.route("/translator-results", methods=["POST"])
+@ai_bp.route("/translator-results/", methods=["POST"])
 def process_ai_translation():
 	log.debug("AI Translation Route")
 	data = request.get_json()

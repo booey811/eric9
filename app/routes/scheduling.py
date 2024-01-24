@@ -23,8 +23,10 @@ def handle_repair_group_change():
 	main_id = data['pulseId']
 	new_group_id = data['destGroupId']
 	old_group_id = data['sourceGroupId']
-	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
-
+	all_users = [users.User(_['name']) for _ in users.USER_DATA]
+	repair_group_ids = [
+		user.repair_group_id for user in all_users if user.name in ('safan', 'andres')
+	]
 	log.debug(f"MainItem({main_id}) moved from group({old_group_id}) to group({new_group_id})")
 
 	# if moving from non repair group to non repair group, do nothing
@@ -34,7 +36,6 @@ def handle_repair_group_change():
 
 	item = get_items([main_id])[0]
 	main = MainModel(item.id, item)
-	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
 
 	if old_group_id in repair_group_ids and main.model.motion_task_id:
 		# moving from a repairer group - delete from this repairers schedule
@@ -80,8 +81,10 @@ def handle_client_side_deadline_adjustment():
 	data = json.loads(data)['event']
 	group_id = data['groupId']
 
-	repair_group_ids = [user['repair_group_id'] for user in users.USER_DATA]
-
+	all_users = [users.User(_['name']) for _ in users.USER_DATA]
+	repair_group_ids = [
+		user.repair_group_id for user in all_users if user.name in ('safan', 'andres')
+	]
 	if group_id not in repair_group_ids:
 		log.debug("CS Deadline Adjusted within non-repair group, do nothing")
 		return jsonify({'message': 'Not a repair group'}), 200

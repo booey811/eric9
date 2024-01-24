@@ -21,9 +21,16 @@ USER_DATA = [
 	{
 		"name": "safan",
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
-		"slack_id": "U024H79546T",  # gabe
-		"monday_id": "4251271",  # gabe
-		"repair_group_id": conf.MAIN_DEV_GROUP_ID  # test proof items group
+		"slack_id": "D02LMMHCZPA",  # safan
+		"monday_id": "25304513",  # gabe
+		"repair_group_id": "new_group95376"  # safan's group
+	},
+	{
+		"name": "andres",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "D05SXQ1F95Y",  # andres
+		"monday_id": "49001724",  # andres
+		"repair_group_id": "new_group99626"  # andres's group
 	},
 ]
 

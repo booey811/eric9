@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from ..services.monday import monday_challenge, get_items
 from ..models import MainModel
-from ..services.motion import MotionClient
+from ..services.motion import MotionClient, MotionError
 from ..utilities import users
 from ..tasks import scheduling
 
@@ -106,11 +106,20 @@ def handle_client_side_deadline_adjustment():
 
 		else:
 			log.debug(f"Updating Motion Task({main.model.motion_task_id}) deadline for {main.model.hard_deadline}")
-			motion.update_task(
-				task_id=main.model.motion_task_id,
-				deadline=main.model.hard_deadline
-			)
-			log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
+			try:
+				motion.update_task(
+					task_id=main.model.motion_task_id,
+					deadline=main.model.hard_deadline
+				)
+				log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
+			except MotionError:
+				log.debug(f"Motion Task({main.model.motion_task_id}) not found, creating instead")
+				motion.create_task(
+					name=main.model.name,
+					deadline=main.model.hard_deadline,
+					description=main.model.requested_repairs,
+					labels=['Repair']
+				)
 			scheduling.schedule_update(group_id)
 			main.model.motion_scheduling_status = 'Awaiting Sync'
 			main.model.save()

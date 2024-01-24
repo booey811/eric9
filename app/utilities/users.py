@@ -20,9 +20,9 @@ USER_DATA = [
 	},
 	{
 		"name": "safan",
-		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"motion_assignee_id": "ZaLckqS6QDUhF0ZzucTgo1NsdR42",  # safan
 		"slack_id": "D02LMMHCZPA",  # safan
-		"monday_id": "25304513",  # gabe
+		"monday_id": "25304513",  # safan
 		"repair_group_id": "new_group95376"  # safan's group
 	},
 	{

@@ -83,6 +83,9 @@ class Config(object):
 		'andres': os.environ['MOTION_GABE'],
 	}
 
+	# MOTION REFERENCES
+	TEAM_WORKSPACE_ID = "Xw5FG8E5tGNYByGOI5Ucx"
+
 	def get_vars(self):
 		return (
 			f"CONFIG: {self.CONFIG}",

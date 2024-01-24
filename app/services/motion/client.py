@@ -75,7 +75,7 @@ class MotionClient:
 			},
 			"name": name,
 			"projectId": "",
-			"workspaceId": "lrZBuj9OLURaRVGRfe-kM",
+			"workspaceId": conf.TEAM_WORKSPACE_ID,
 			"description": description,
 			"priority": "MEDIUM",
 			"assigneeId": self._user.motion_assignee_id

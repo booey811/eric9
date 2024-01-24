@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import time
 import requests
@@ -24,13 +25,18 @@ client = OpenAI(api_key=conf.OPENAI_KEY)
 
 ai_results = rq.queues['ai_results']
 
+log = logging.getLogger('eric')
+
 
 def check_run(thread_id, run_id, success_endpoint=''):
 	run = fetch_run(thread_id, run_id)
 	try:
 		if run.status == 'completed':
 			# post to success endpoint
-			data = run.metadata
+			data = run.metadata or {}
+			log.debug(f'Run complete, preparing data for endpoint: {data["endpoint"]}')
+			for d in data:
+				log.debug(f"{d}: {data[d]}")
 
 			requests.post(success_endpoint, json=data)
 
@@ -63,19 +69,12 @@ def get_assistant_data(id_or_name):
 	raise KeyError(f"No Assistant with ID or Name '{id_or_name}'")
 
 
-def create_and_run_thread(assistant_id: str = None, endpoint: str = None, kwargs: dict = None, messages: list = None):
-	metadata = {}
-
-	if endpoint:
-		metadata['endpoint'] = endpoint
-
-	for kwarg in kwargs:
-		metadata[kwarg] = kwargs[kwarg]
+def create_and_run_thread(assistant_id: str = None, metadata: dict = None, messages: list = None):
 
 	run = client.beta.threads.create_and_run(
 		assistant_id=assistant_id,
 		thread={
-			"messages": messages
+			"messages": [{"role": "user", "content": message} for message in messages]
 		},
 		metadata=metadata
 	)

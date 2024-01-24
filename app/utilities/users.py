@@ -21,9 +21,16 @@ USER_DATA = [
 	{
 		"name": "safan",
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
-		"slack_id": "U024H79546T",  # gabe
-		"monday_id": "4251271",  # gabe
-		"repair_group_id": conf.MAIN_DEV_GROUP_ID  # test proof items group
+		"slack_id": "D02LMMHCZPA",  # safan
+		"monday_id": "25304513",  # gabe
+		"repair_group_id": "new_group95376"  # safan's group
+	},
+	{
+		"name": "andres",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "D05SXQ1F95Y",  # andres
+		"monday_id": "49001724",  # andres
+		"repair_group_id": "new_group99626"  # andres's group
 	},
 ]
 
@@ -56,15 +63,15 @@ class User:
 			if not name and not slack_id and not monday_id and not repair_group_id and not motion_assignee_id:
 				raise RuntimeError("Must use an attribute to search for a user")
 			elif name:
-				dct = [str(data) for data in USER_DATA if data['name'] == name][0]
+				dct = [data for data in USER_DATA if data['name'] == str(name)][0]
 			elif slack_id:
-				dct = [str(data) for data in USER_DATA if data['slack_id'] == slack_id][0]
+				dct = [data for data in USER_DATA if data['slack_id'] == str(slack_id)][0]
 			elif monday_id:
-				dct = [str(data) for data in USER_DATA if data['monday_id'] == monday_id][0]
+				dct = [data for data in USER_DATA if data['monday_id'] == str(monday_id)][0]
 			elif repair_group_id:
-				dct = [str(data) for data in USER_DATA if data['repair_group_id'] == repair_group_id][0]
+				dct = [data for data in USER_DATA if data['repair_group_id'] == str(repair_group_id)][0]
 			elif motion_assignee_id:
-				dct = [str(data) for data in USER_DATA if data['motion_assignee_id'] == motion_assignee_id][0]
+				dct = [data for data in USER_DATA if data['motion_assignee_id'] == str(motion_assignee_id)][0]
 			else:
 				raise RuntimeError(
 					"Must provide input: name, monday_id, slack_id, repair_group_id or motion_assignee_id")
@@ -77,11 +84,11 @@ class User:
 		self._load_data(dct)
 
 	def _load_data(self, user_data: dict):
-		self._name = user_data.get('name')
-		self._motion_assignee_id = user_data.get('motion_assignee_id')
-		self._slack_id = user_data.get('slack_id')
-		self._monday_id = user_data.get('monday_id')
-		self._repair_group_id = user_data.get('repair_group_id')
+		self._name = str(user_data.get('name'))
+		self._motion_assignee_id = str(user_data.get('motion_assignee_id'))
+		self._slack_id = str(user_data.get('slack_id'))
+		self._monday_id = str(user_data.get('monday_id'))
+		self._repair_group_id = str(user_data.get('repair_group_id'))
 		self._motion_api_key = conf.MOTION_KEYS[self._name]
 
 	@property

@@ -15,6 +15,7 @@ from app.cache import rq, get_redis_connection
 
 log = logging.getLogger('eric')
 
+
 def schedule_update(repair_group_id):
 	user = users.User(repair_group_id=repair_group_id)
 	job_id = f"schedule_sync:{user.monday_id}"
@@ -42,8 +43,17 @@ def sync_repair_schedule(monday_group_id):
 	user = users.User(repair_group_id=monday_group_id)
 
 	try:
+		statuses_to_ignore = ['Clamped', 'Battery Testing', 'Software Install']
+
 		log.debug(f"Syncing for user: {user.name}")
-		repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+
+		tech_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+		under_repair_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
+		assigned_repair_group_repairs = [r for r in under_repair_group_repairs if str(r.model.technician.id) == str(user.monday_id)]
+		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.model.status not in statuses_to_ignore]
+
+		repairs = tech_group_repairs + status_valid_repairs
+
 		log.debug(f"Syncing for repairs: {[repair.model.name for repair in repairs]}")
 
 		clean_motion_tasks(user, repairs)
@@ -56,13 +66,11 @@ def sync_repair_schedule(monday_group_id):
 		schedule_update(monday_group_id)
 	return True
 
-def clean_motion_tasks(user, repairs=[]):
+
+def clean_motion_tasks(user, repairs: list):
 	# delete unassigned tasks in motion
 	log.debug(f"Cleaning Motion of unassigned tasks: {user.name}; repairs={[_.model.name for _ in repairs]}")
 	motion = MotionClient(user)
-	if not repairs:
-		repair_group_items = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, user.repair_group_id)
-		repairs = [MainModel(item.id, item) for item in repair_group_items]
 	schedule = motion.list_tasks()['tasks']
 	monday_task_ids = [repair.model.motion_task_id for repair in repairs]
 	log.debug(f"Task IDs from Monday: {monday_task_ids}")
@@ -91,13 +99,9 @@ def clean_motion_tasks(user, repairs=[]):
 			raise RuntimeError('Illogical result')
 
 
-def add_monday_tasks_to_motion(user: users.User, repairs=[]):
+def add_monday_tasks_to_motion(user: users.User, repairs: list):
 	# add any tasks that are on monday, but not motion
 	log.debug("Adding Monday tasks to Motion")
-
-	if not repairs:
-		repair_group_items = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, user.repair_group_id)
-		repairs = [MainModel(item.id, item) for item in repair_group_items]
 
 	motion = MotionClient(user)
 	schedule = motion.list_tasks()['tasks']
@@ -142,15 +146,12 @@ def add_monday_tasks_to_motion(user: users.User, repairs=[]):
 		repair.model.save()
 
 
-def sync_monday_phase_deadlines(user, repairs=[]):
+def sync_monday_phase_deadlines(user, repairs: list):
 	"""
 	gets motion tasks and syncs their scheduled deadlines with monday's phase deadlines
 	assumes that the tasks have been cleaned in both directions
 	uses monday as the source of truth and cycles through the repairs, searching for them in Motion
 	"""
-	if not repairs:
-		repair_group_items = monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, user.repair_group_id)
-		repairs = [MainModel(item.id, item) for item in repair_group_items]
 
 	log.debug(f"Syncing Monday Deadlines to Motion: {repairs}")
 

@@ -38,7 +38,13 @@ def handle_repair_group_change():
 	main = MainModel(item.id, item)
 
 	if old_group_id in repair_group_ids and main.model.motion_task_id:
-		# moving from a repairer group - delete from this repairers schedule
+		# moving from a repairer group
+		if new_group_id == "new_group22081":  # under repair group ID
+			# moving to under repair group, keep in schedule
+			log.debug(f"MainItem({main_id}) moved to Under Repair Group, keeping in schedule")
+			return jsonify({'message': 'OK'}), 200
+
+		# moving to another schedule, delete
 		log.debug(f"MainItem({main_id}) moved from repair group({old_group_id})")
 		user = users.User(repair_group_id=old_group_id)
 		motion = MotionClient(user)

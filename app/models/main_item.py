@@ -12,6 +12,8 @@ class _BaseMainModel(MondayModel):
 	motion_task_id = col_type.TextType(id='text76')
 	requested_repairs = col_type.TextType(id='text368')
 	motion_scheduling_status = col_type.StatusType(id='status_19')
+	technician = col_type.PeopleType(id='person')
+	status = col_type.StatusType(id='status4')
 
 
 class MainModel(BaseEricModel):

@@ -1,4 +1,8 @@
+import logging
+
 from app.models import MainModel
+
+log = logging.getLogger('eric')
 
 
 def add_message_to_update_thread(update_thread_id, update, title='', main_id=None, main_item=None):
@@ -17,7 +21,11 @@ def add_message_to_update_thread(update_thread_id, update, title='', main_id=Non
 		message = update
 
 	try:
-		update = [str(u) for u in main_item.model.item.get_updates() if str(u['id']) == str(update_thread_id)][0]
+		updates = main_item.model.item.get_updates()
+		log.debug("Updates: " + str(updates))
+		for u in updates:
+			print(f"Update ID: {u['id']} comparing with desired ID: {update_thread_id}")
+		update = [u for u in updates if str(u['id']) == str(update_thread_id)][0]
 	except IndexError:
 		raise RuntimeError(f"Update Thread ID {update_thread_id} not found in MainItem({main_item.model.id})")
 

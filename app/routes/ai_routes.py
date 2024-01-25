@@ -64,7 +64,7 @@ def process_ai_translation():
 	q_hi.enqueue(
 		f=updates.add_message_to_update_thread,
 		kwargs={
-			"update_thread_id": {data['notes_thread']},
+			"update_thread_id": data['notes_thread'],
 			"update": message,
 			"title": "!- Beta:Notes Updates -!",
 			"main_id": data['main_id']

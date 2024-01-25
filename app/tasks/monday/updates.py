@@ -17,7 +17,7 @@ def add_message_to_update_thread(update_thread_id, update, title='', main_id=Non
 		message = update
 
 	try:
-		update = [u for u in main_item.model.item.get_updates() if u['id'] == update_thread_id][0]
+		update = [str(u) for u in main_item.model.item.get_updates() if str(u['id']) == str(update_thread_id)][0]
 	except IndexError:
 		raise RuntimeError(f"Update Thread ID {update_thread_id} not found in MainItem({main_item.model.id})")
 

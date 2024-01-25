@@ -67,7 +67,7 @@ class MotionClient:
 		payload = {
 			"dueDate": deadline.isoformat(),
 			"duration": duration,
-			"status": "auto-scheduled",
+			"status": "",
 			"autoScheduled": {
 				"startDate": datetime.datetime.now().isoformat(),
 				"deadlineType": "HARD",

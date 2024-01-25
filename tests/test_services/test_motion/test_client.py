@@ -45,6 +45,7 @@ def mock_requests_200():
 		mock_req.delete.return_value = mock_response
 		yield mock_req
 
+
 @pytest.fixture
 def mock_requests_201():
 	with patch('app.services.motion.client.requests') as mock_req:
@@ -58,6 +59,7 @@ def mock_requests_201():
 		mock_req.delete.return_value = mock_response
 		yield mock_req
 
+
 def test_create_task_within_rate_limit(motion_client, mock_requests_201, mock_redis):
 	"""Test creating a task without exceeding the rate limit"""
 	deadline = datetime.now()
@@ -68,7 +70,7 @@ def test_create_task_within_rate_limit(motion_client, mock_requests_201, mock_re
 
 	task = motion_client.create_task(name, deadline, description, duration, labels)
 	assert task == {"success": True}
-	mock_requests_200.post.assert_called_once()
+	mock_requests_201.post.assert_called_once()
 	mock_redis.get.assert_called_once()
 	# Ensure counter is incremented
 	mock_redis.incr.assert_called_once()

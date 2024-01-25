@@ -39,7 +39,11 @@ class ProductModel(BaseEricCacheModel):
 			super().model
 		self._name = self._model.name
 		self._price = self._model.price
-		self._device_id = self._model.device_connect[0]
+		try:
+			self._device_id = self._model.device_connect[0]
+		except IndexError:
+			log.warning(f"{str(self)} has no device connection")
+			self._device_id = None
 		return self._model
 
 	def get_from_cache(self):

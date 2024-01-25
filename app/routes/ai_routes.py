@@ -59,12 +59,12 @@ def process_ai_translation():
 	log.debug("AI Translation Route")
 	data = request.get_json()
 
-	message = ai.list_messages(data['thread_id'], limit=1)[0].data[0].content[0].text.value
+	message = ai.list_messages(data['thread_id'], limit=1).data[0].content[0].text.value
 
 	q_hi.enqueue(
-		func=updates.add_message_to_update_thread,
+		f=updates.add_message_to_update_thread,
 		kwargs={
-			"update_thread_id": {data['update_thread_id']},
+			"update_thread_id": {data['notes_thread']},
 			"update": message,
 			"title": "!- Beta:Notes Updates -!",
 			"main_id": data['main_id']

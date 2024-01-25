@@ -7,15 +7,13 @@ from ..services.openai import utils as ai
 from ..models import MainModel
 from ..services.monday import monday_challenge
 from ..utilities import users
-from ..cache import rq
+from ..cache.rq import q_high
 from ..tasks.monday import updates
 from .. import conf
 
 log = logging.getLogger('eric')
 
 ai_bp = Blueprint('ai', __name__, url_prefix="/ai")
-
-q_hi = rq.queues['high']
 
 
 @ai_bp.route("/request-translation/", methods=["POST"])
@@ -61,7 +59,7 @@ def process_ai_translation():
 
 	message = ai.list_messages(data['thread_id'], limit=1).data[0].content[0].text.value
 
-	q_hi.enqueue(
+	q_high.enqueue(
 		f=updates.add_message_to_update_thread,
 		kwargs={
 			"update_thread_id": data['notes_thread'],

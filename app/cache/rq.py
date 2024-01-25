@@ -7,9 +7,7 @@ a_sync = True
 # if conf.DEBUG:
 #     a_sync = False
 
-queues = {
-    'low': Queue('low', connection=get_redis_connection(), is_async=a_sync),
-    'medium': Queue('medium', connection=get_redis_connection(), is_async=a_sync),
-    'high': Queue('high', connection=get_redis_connection(), is_async=a_sync),
-    "ai_results": Queue('ai_results', connection=get_redis_connection(), is_async=a_sync),
-}
+q_low = Queue('low', connection=get_redis_connection(), is_async=a_sync)
+q_med = Queue('medium', connection=get_redis_connection(), is_async=a_sync)
+q_high = Queue('high', connection=get_redis_connection(), is_async=a_sync)
+q_ai_results = Queue('ai_results', connection=get_redis_connection(), is_async=a_sync)

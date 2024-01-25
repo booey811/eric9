@@ -7,7 +7,7 @@ import requests
 from openai import OpenAI
 
 from ... import get_config, EricError
-from ...cache import rq
+from ...cache.rq import q_ai_results
 
 SLACK_AI_CHANNELS = {
 	"production": "C067N48R6NB",
@@ -23,7 +23,6 @@ conf = get_config()
 
 client = OpenAI(api_key=conf.OPENAI_KEY)
 
-ai_results = rq.queues['ai_results']
 
 log = logging.getLogger('eric')
 
@@ -45,7 +44,7 @@ def check_run(thread_id, run_id, success_endpoint=''):
 
 		elif run.status in ('in_progress', 'queued'):
 			# job still being completed, requeue
-			ai_results.enqueue_in(
+			q_ai_results.enqueue_in(
 				time_delta=datetime.timedelta(seconds=5),
 				func=check_run,
 				kwargs={

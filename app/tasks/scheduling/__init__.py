@@ -11,7 +11,8 @@ from ...models import MainModel
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users
 from ... import EricError, conf
-from app.cache import rq, get_redis_connection
+from ...cache import get_redis_connection
+from ...cache.rq import q_high
 
 log = logging.getLogger('eric')
 
@@ -20,7 +21,7 @@ def schedule_update(repair_group_id):
 	user = users.User(repair_group_id=repair_group_id)
 	job_id = f"schedule_sync:{user.monday_id}"
 
-	scheduled_registry = rq.queues['high'].scheduled_job_registry
+	scheduled_registry = q_high.scheduled_job_registry
 
 	# Check if there are any existing jobs for this task/user and cancel them
 	for job_id in scheduled_registry.get_job_ids():
@@ -29,7 +30,7 @@ def schedule_update(repair_group_id):
 			scheduled_registry.remove(job)
 
 	# Schedule a new job to update Monday.com after the delay period
-	job = rq.queues['high'].enqueue_in(
+	job = q_high.enqueue_in(
 		time_delta=datetime.timedelta(seconds=10),
 		func=sync_repair_schedule,
 		args=(user.repair_group_id,)

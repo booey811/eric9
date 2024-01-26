@@ -110,7 +110,7 @@ class BaseEricCacheModel(BaseEricModel):
 		log.debug(f"Cache HIT {str(self)}: {data}")
 		return data
 
-	def save_to_cache(self):
+	def save_to_cache(self, rq_pipeline=None):
 		"""
 		Save the model's data to the cache using the prepared cache data.
 
@@ -119,10 +119,13 @@ class BaseEricCacheModel(BaseEricModel):
 		"""
 		data = self.prepare_cache_data()
 		log.debug(f"Cache SAVE {self}: {data}")
-		get_redis_connection().set(
-			self.cache_key,
-			json.dumps(data)
-		)
+		if rq_pipeline:
+			rq_pipeline.set(self.cache_key, json.dumps(data))
+		else:
+			get_redis_connection().set(
+				self.cache_key,
+				json.dumps(data)
+			)
 		return data
 
 	@property

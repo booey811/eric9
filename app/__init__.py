@@ -38,7 +38,7 @@ def create_app():
 		return response
 
 	# Here, import and register blueprints
-	from .routes import scheduling, r_tests, ai_routes
+	from .routes import scheduling, r_tests, ai_routes, slack
 	app.register_blueprint(scheduling.scheduling_bp)
 	app.register_blueprint(r_tests.test_bp)
 	app.register_blueprint(ai_routes.ai_bp)

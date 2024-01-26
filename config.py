@@ -10,11 +10,14 @@ load_dotenv()
 
 
 def get_config(env=None):
+	import logging
 	if not env:
 		env = os.environ["ENV"]
 	conf = ENV_CONFIG_DICT.get(env)
 	if not conf:
 		raise Exception(f"Invalid config: {env}")
+
+	logging.getLogger('eric').info(f"CONFIG: {conf.CONFIG}")
 
 	return conf
 
@@ -61,7 +64,9 @@ class Config(object):
 		"translator": "asst_PNMO7wrcHrAM1ViORqJ7oev1",
 	}
 
-	SLACK_APP_TOKEN = os.environ.get("SLACK_BOT")  # icorrect workspace
+	SLACK_BOT = os.environ["SLACK_BOT"]  # icorrect workspace
+	SLACK_APP = os.environ['SLACK_APP']  # icorrect workspace
+	SLACK_SIGNING_SECRET = os.environ["SLACK_SECRET"] # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
 
@@ -103,7 +108,6 @@ class ProductionConfig(Config):
 	"""Uses production database server."""
 	CONFIG = "PRODUCTION"
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
-	SLACK_APP_TOKEN = os.environ["SLACK_BOT"]  # icorrect workspace
 	APP_URL = "https://eric9-c2d6de2066d6.herokuapp.com"
 
 
@@ -114,7 +118,9 @@ class DevelopmentConfig(Config):
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
 
-	SLACK_APP_TOKEN = os.environ.get("SLACK_DEV_BOT")  # dev workspace
+	SLACK_BOT = os.environ["SLACK_DEV_BOT"]  # dev workspace
+	SLACK_APP = os.environ["SLACK_DEV_APP"]  # dev workspace
+	SLACK_SIGNING_SECRET = os.environ["SLACK_DEV_SECRET"] # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 

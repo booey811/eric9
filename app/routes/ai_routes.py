@@ -31,7 +31,7 @@ def process_ai_translation_request():
 		log.debug("No User Found")
 		return jsonify({'message': 'No User Found'}), 200
 
-	if user.name not in ('safan', 'gabe'):
+	if user.name != 'safan':
 		log.debug("Not Safan, no translation required")
 		return jsonify({'message': 'Not Safan'}), 200
 

@@ -15,6 +15,7 @@ log = logging.getLogger('eric')
 class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
 	device_connect = column.ItemLinkType(id='link_to_devices6')
+	required_minutes = column.NumberType(id='numbers7')
 
 
 class ProductModel(BaseEricCacheModel):

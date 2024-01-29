@@ -7,7 +7,7 @@ from rq.job import Job
 
 import config
 from ...services import monday
-from ...models import MainModel
+from ...models import MainModel, ProductModel
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users
 from ... import EricError, conf
@@ -128,7 +128,7 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 			while True:
 				try:
 					if repair.model.products_connect:
-						duration = max([p.required_minutes for p in repair.model.products_connect])
+						duration = max([ProductModel(p_id).model.required_minutes for p_id in repair.model.products_connect])
 						log.debug(f"Creating task with products, maximum duration={duration}")
 					else:
 						log.debug("No Products assigned, using default duration")

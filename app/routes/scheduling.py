@@ -4,7 +4,7 @@ import json
 from flask import Blueprint, request, jsonify
 
 from ..services.monday import monday_challenge, get_items
-from ..models import MainModel
+from ..models import MainModel, ProductModel
 from ..services.motion import MotionClient, MotionError
 from ..utilities import users
 from ..tasks import scheduling
@@ -60,7 +60,7 @@ def handle_repair_group_change():
 		motion = MotionClient(user)
 		try:
 			if main.model.products_connect:
-				duration = max([_.required_minutes for _ in main.model.products_connect])
+				duration = max([ProductModel(p_id).model.required_minutes for p_id in main.model.products_connect])
 			else:
 				duration = 60
 			task = motion.create_task(
@@ -126,7 +126,9 @@ def handle_client_side_deadline_adjustment():
 			except MotionError:
 				log.debug(f"Motion Task({main.model.motion_task_id}) not found, creating instead")
 				if main.model.products_connect:
-					duration = max([_.required_minutes for _ in main.model.products_connect])
+					duration = max(
+						[ProductModel(p_id).model.required_minutes for p_id in main.model.products_connect]
+					)
 				else:
 					duration = 60
 				task = motion.create_task(

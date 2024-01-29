@@ -127,12 +127,19 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 				raise MissingDeadlineInMonday(repair)
 			while True:
 				try:
+					if repair.model.products_connect:
+						duration = max([p.required_minutes for p in repair.model.products_connect])
+						log.debug(f"Creating task with products, maximum duration={duration}")
+					else:
+						log.debug("No Products assigned, using default duration")
+						duration = 60
 					log.debug("Creating task....")
 					task = motion.create_task(
 						name=repair.model.name,
 						deadline=repair.model.hard_deadline,
 						description=repair.model.requested_repairs,
-						labels=['Repair']
+						labels=['Repair'],
+						duration=duration
 					)
 					break
 				except MotionRateLimitError:

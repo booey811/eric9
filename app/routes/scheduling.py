@@ -59,11 +59,16 @@ def handle_repair_group_change():
 		user = users.User(repair_group_id=new_group_id)
 		motion = MotionClient(user)
 		try:
+			if main.model.products_connect:
+				duration = max([_.required_minutes for _ in main.model.products_connect])
+			else:
+				duration = 60
 			task = motion.create_task(
 				name=main.model.name,
 				deadline=main.model.hard_deadline,
 				description=main.model.requested_repairs,
-				labels=['Repair']
+				labels=['Repair'],
+				duration=duration
 			)
 			log.debug(f"Created Motion Task({task['id']}) for MainItem({main_id})")
 		except (scheduling.MissingDeadlineInMonday, AttributeError):
@@ -120,12 +125,18 @@ def handle_client_side_deadline_adjustment():
 				log.debug(f"Updated Motion Task({main.model.motion_task_id}) deadline for MainItem({main.id})")
 			except MotionError:
 				log.debug(f"Motion Task({main.model.motion_task_id}) not found, creating instead")
-				motion.create_task(
+				if main.model.products_connect:
+					duration = max([_.required_minutes for _ in main.model.products_connect])
+				else:
+					duration = 60
+				task = motion.create_task(
 					name=main.model.name,
 					deadline=main.model.hard_deadline,
 					description=main.model.requested_repairs,
-					labels=['Repair']
+					labels=['Repair'],
+					duration=duration
 				)
+				main.model.motion_task_id = task['id']
 			scheduling.schedule_update(group_id)
 			main.model.motion_scheduling_status = 'Awaiting Sync'
 			main.model.save()

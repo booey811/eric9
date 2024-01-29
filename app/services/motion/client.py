@@ -60,7 +60,8 @@ class MotionClient:
 			deadline: datetime.datetime,
 			description: str = "",
 			duration: int = 60,
-			labels: list = ()
+			labels: list = (),
+			priority="MEDIUM",
 	):
 		url = "https://api.usemotion.com/v1/tasks"
 
@@ -68,18 +69,19 @@ class MotionClient:
 			"dueDate": deadline.isoformat(),
 			"duration": duration,
 			"status": "",
-			"autoScheduled": {
-				"startDate": datetime.datetime.now().isoformat(),
-				"deadlineType": "HARD",
-				"schedule": "Work Hours"
-			},
 			"name": name,
 			"projectId": "",
 			"workspaceId": conf.TEAM_WORKSPACE_ID,
 			"description": description,
-			"priority": "MEDIUM",
-			"assigneeId": self._user.motion_assignee_id
+			"priority": priority,
+			"assigneeId": self._user.motion_assignee_id,
+			"autoScheduled": {
+				"startDate": datetime.datetime.now().isoformat(),
+				"deadlineType": "HARD",
+				"schedule": "Work Hours"
+			}
 		}
+
 		if labels:
 			payload['labels'] = labels
 		headers = {

@@ -14,7 +14,7 @@ class _BaseMainModel(MondayModel):
 	motion_scheduling_status = col_type.StatusType(id='status_19')
 	technician = col_type.PeopleType(id='person')
 	status = col_type.StatusType(id='status4')
-	products_connect = col_type.ItemLinkType(id='board_relation')
+	products_connect = col_type.ItemLinkType(id='board_relation', multiple_values=True)
 
 
 class MainModel(BaseEricModel):

@@ -1,8 +1,10 @@
 import redis
 
-from .. import conf
+import config
 
 redis_connection_pool = None
+
+conf = config.get_config()
 
 
 def setup_redis_connection_pool():

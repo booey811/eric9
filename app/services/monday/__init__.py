@@ -6,7 +6,7 @@ import time
 from flask import request, jsonify
 import moncli
 
-from ... import EricError
+from ...errors import EricError
 from .client import client
 
 log = logging.getLogger('eric')

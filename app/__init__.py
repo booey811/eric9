@@ -8,6 +8,7 @@ from flask import Flask, jsonify
 import config
 from config import get_config
 from .services.slack import slack_client, blocks
+from .errors import EricError
 
 env = os.getenv('ENV', 'development')
 logger = config.configure_logging(env)
@@ -58,16 +59,3 @@ def notify_admins_of_error(trace):
 		text='eric9:Unhandled Error',
 		blocks=s_blocks
 	)
-
-
-class EricError(Exception):
-	"""Base error for the application"""
-
-
-class DataError(EricError):
-
-	def __init__(self, message):
-		self.message = message
-
-	def __str__(self):
-		return f"DataError: {self.message}"

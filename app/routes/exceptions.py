@@ -1,5 +1,5 @@
 from ..services import slack
-from .. import EricError
+from ..errors import EricError
 
 
 from .. import conf

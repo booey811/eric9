@@ -4,10 +4,9 @@ from moncli.models import MondayModel
 from moncli import types as column
 import moncli
 
-from .base import BaseEricModel, BaseEricCacheModel
-from ..cache import get_redis_connection, CacheMiss
-from ..services import monday
-from .. import EricError, DataError
+from .base import BaseEricCacheModel
+from ..cache import CacheMiss
+from ..errors import EricError
 
 log = logging.getLogger('eric')
 

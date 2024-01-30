@@ -4,9 +4,10 @@ import moncli
 from moncli.models import MondayModel
 from moncli import types as cols
 
-from .base import BaseEricModel
+from .base import BaseEricCacheModel
 from .product import ProductModel
 from ..services import monday
+from ..cache import get_redis_connection
 
 log = logging.getLogger('eric')
 
@@ -15,11 +16,16 @@ class _BaseDeviceModel(MondayModel):
 	product_ids = cols.ItemLinkType(id='connect_boards5')
 	legacy_eric_device_id = cols.TextType(id='text')
 	product_index_connect = cols.ItemLinkType(id='connect_boards4')
+	device_type = cols.StatusType(id='status9')
 
 
-class DeviceModel(BaseEricModel):
+class DeviceModel(BaseEricCacheModel):
 
 	MONCLI_MODEL = _BaseDeviceModel
+
+	@classmethod
+	def query_all(cls):
+		return get_redis_connection().keys("device:*")
 
 	def __init__(self, device_id, moncli_item: moncli.en.Item = None):
 		if moncli_item:
@@ -30,15 +36,16 @@ class DeviceModel(BaseEricModel):
 		self._product_ids = None
 		self._products = None
 
-	# def _fetch_data(self):
-	# 	if not self._model:
-	# 		self._model = _BaseDeviceModel(self._call_monday())
-	# 	cache_data = {
-	# 		"id": str(self.id),
-	# 		"name": self.model.name,
-	# 		"product_ids": self.product_ids
-	# 	}
-	# 	return cache_data
+	def __str__(self):
+		return f"Device({self.id})"
+
+	def prepare_cache_data(self):
+		return {
+			"name": self.name,
+			"device_id": str(self.id),
+			"product_ids": self.product_ids,
+			"device_type": self.model.device_type
+		}
 
 	@property
 	def cache_key(self):

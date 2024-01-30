@@ -1,7 +1,7 @@
 import logging
 
 from .redis_client import get_redis_connection
-from .. import EricError
+from ..errors import EricError
 
 log = logging.getLogger('eric')
 

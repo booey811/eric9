@@ -16,6 +16,22 @@ class DeviceAndProductViews:
 		self.view = get_modal_base("Device/Products")
 		self.blocks = self.view['blocks']
 
+	@property
+	def device(self):
+		return self._device
+
+	@device.setter
+	def device(self, device_model: DeviceModel):
+		self._device = device_model
+
+	@property
+	def products(self):
+		return self._products
+
+	@products.setter
+	def products(self, products: list):
+		self._products = products
+
 	def build_view(self):
 		log.debug('Building Device/Products view')
 		self._build_device_select()
@@ -24,7 +40,7 @@ class DeviceAndProductViews:
 		log.debug(self.view)
 		return self.view
 
-	def _build_device_select(self, device_id=None):
+	def _build_device_select(self):
 		devices = DeviceModel.query_all()
 		options_dict = {}
 		for device in devices:
@@ -35,7 +51,7 @@ class DeviceAndProductViews:
 
 		option_groups = generate_option_groups(options_dict)
 
-		self.blocks.append({
+		result = {
 			"type": "input",
 			"block_id": "device_select",
 			"label": {
@@ -53,7 +69,14 @@ class DeviceAndProductViews:
 				},
 				"option_groups": option_groups
 			}
-		})
+		}
+
+		if self.device:
+			result['element']['initial_option'] = generate_option(
+				self.device.name, self.device.id
+			)
+
+		self.blocks.append(result)
 
 	def _build_product_select(self, device_id=None):
 		options = [

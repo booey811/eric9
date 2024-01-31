@@ -32,7 +32,7 @@ def build_product_cache():
 
 def build_device_cache():
 	log.info("Building Device Cache")
-	devices_board = monday.client.get_board(349212843)  # Devices Board
+	devices_board = monday.client.get_board(3923707691)  # Devices Board
 	all_simple_items = devices_board.get_items()
 	log.info(f"Fetched {len(all_simple_items)} items (simple)")
 	block_size = 25
@@ -46,7 +46,7 @@ def build_device_cache():
 		log.info(f"Fetched {len(items)} items fully")
 		for item in items:
 			d = DeviceModel(item.id, item)
+			model = d.model
 			log.debug(str(d))
-			d.model
 			d.save_to_cache(pipe)
 	pipe.execute()

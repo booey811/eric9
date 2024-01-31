@@ -78,27 +78,40 @@ class DeviceAndProductViews:
 
 		self.blocks.append(result)
 
-	def _build_product_select(self, device_id=None):
-		options = [
-			generate_option(product.name, product.id) for product in ProductModel.query.all()
-		]
-		option_groups = generate_option_groups(options)
-		self.blocks.append({
-			"type": "input",
-			"block_id": "product_select",
-			"label": {
-				"type": "plain_text",
-				"text": "Select Product",
-				"emoji": True
-			},
-			"element": {
-				"type": "static_select",
-				"action_id": "product_select",
-				"placeholder": {
+	def _build_product_select(self):
+		if not self.device:
+			self.blocks.append({
+				"type": "section",
+				"text": {
+					"type": "mrkdwn",
+					"text": "Please select a device first to begin selecting products"
+				}
+			})
+			return
+		else:
+			options = [
+				generate_option(f"{product.name}: £{product.price}", product.id) for product in ProductModel.get_products_by_device_id(self.device.id)
+			]
+			results = {
+				"type": "input",
+				"block_id": "product_select",
+				"label": {
 					"type": "plain_text",
-					"text": "Select an item",
+					"text": "Select Product",
 					"emoji": True
 				},
-				"options": option_groups
+				"element": {
+					"type": "static_select",
+					"action_id": "product_select",
+					"placeholder": {
+						"type": "plain_text",
+						"text": "Select an item",
+						"emoji": True
+					},
+					"options": options
+				}
 			}
-		})
+
+
+			self.blocks.append(results)
+			return

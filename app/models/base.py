@@ -69,10 +69,13 @@ class BaseEricModel:
 			)
 		if not self._model:
 			self._model = self.MONCLI_MODEL(self.moncli_item)
+			self._name = self._model.name
 		return self._model
 
 
 class BaseEricCacheModel(BaseEricModel):
+
+	MONCLI_MODEL = None
 
 	def __init__(self, item_id, moncli_item: moncli.en.Item = None):
 		super().__init__(item_id, moncli_item)
@@ -131,5 +134,11 @@ class BaseEricCacheModel(BaseEricModel):
 	@property
 	def name(self):
 		if not self._name:
-			self.get_from_cache()
+			try:
+				self.get_from_cache()
+			except CacheMiss:
+				log.debug("Could not get Name from cache, fetching from monday.com")
+				pass
+			if not self._name:
+				self._name = self.model.name
 		return self._name

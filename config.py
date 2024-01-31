@@ -13,6 +13,7 @@ def get_config(env=None):
 	import logging
 	if not env:
 		env = os.environ["ENV"]
+	logging.getLogger('eric').info(f"CONFIG ENV: {env}")
 	conf = ENV_CONFIG_DICT.get(env)
 	if not conf:
 		raise Exception(f"Invalid config: {env}")

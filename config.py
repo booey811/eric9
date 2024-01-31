@@ -116,7 +116,7 @@ class DevelopmentConfig(Config):
 	CONFIG = "DEVELOPMENT"
 	DEBUG = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
-	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/3'
+	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
 
 	SLACK_BOT = os.environ["SLACK_DEV_BOT"]  # dev workspace
 	SLACK_APP = os.environ["SLACK_DEV_APP"]  # dev workspace
@@ -130,6 +130,14 @@ class TestingConfig(Config):
 	CONFIG = "TESTING"
 	TESTING = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///testing.db'
+	REDIS_URL = 'redis://localhost:6379/0'
+
+	SLACK_BOT = os.environ["SLACK_DEV_BOT"]  # dev workspace
+	SLACK_APP = os.environ["SLACK_DEV_APP"]  # dev workspace
+	SLACK_SIGNING_SECRET = os.environ["SLACK_DEV_SECRET"] # dev workspace
+	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
+	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
+
 
 
 ENV_CONFIG_DICT = {

@@ -7,7 +7,7 @@ from moncli import types as cols
 from .base import BaseEricCacheModel
 from .product import ProductModel
 from ..services import monday
-from ..cache import get_redis_connection
+from ..cache import get_redis_connection, CacheMiss
 
 log = logging.getLogger('eric')
 
@@ -25,7 +25,9 @@ class DeviceModel(BaseEricCacheModel):
 
 	@classmethod
 	def query_all(cls):
-		return get_redis_connection().keys("device:*")
+		device_keys = get_redis_connection().keys("device:*")
+		device_ids = [_.decode('utf-8').split(":")[1] for _ in device_keys]
+		return [cls(device_id) for device_id in device_ids]
 
 	def __init__(self, device_id, moncli_item: moncli.en.Item = None):
 		if moncli_item:
@@ -35,6 +37,7 @@ class DeviceModel(BaseEricCacheModel):
 
 		self._product_ids = None
 		self._products = None
+		self._device_type = None
 
 	def __str__(self):
 		return f"Device({self.id})"
@@ -42,10 +45,16 @@ class DeviceModel(BaseEricCacheModel):
 	def prepare_cache_data(self):
 		return {
 			"name": self.name,
-			"device_id": str(self.id),
 			"product_ids": self.product_ids,
 			"device_type": self.model.device_type
 		}
+
+	def get_from_cache(self):
+		data = super().get_from_cache()
+		self._name = data['name']
+		self._device_type = data['device_type']
+		self._product_ids = data['product_ids']
+		return data
 
 	@property
 	def cache_key(self):
@@ -64,6 +73,15 @@ class DeviceModel(BaseEricCacheModel):
 			items = monday.get_items(self.product_ids)
 			self._products = [ProductModel(_.id, _) for _ in items]
 		return self._products
+
+	@property
+	def device_type(self):
+		if self._device_type is None:
+			try:
+				self.get_from_cache()
+			except CacheMiss:
+				self._device_type = self.model.device_type
+		return self._device_type
 
 	def connect_to_product_group(self):
 		if not self.model.legacy_eric_device_id or self.model.legacy_eric_device_id == "new_group77067":  # index Group ID:

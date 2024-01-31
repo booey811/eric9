@@ -2,9 +2,9 @@ def generate_option(text, value):
 	return {
 		"text": {
 			"type": "plain_text",
-			"text": text
+			"text": str(text)
 		},
-		"value": value
+		"value": str(value)
 	}
 
 
@@ -20,7 +20,7 @@ def generate_option_groups(options_dict):
 		inner = {
 			"label": {
 				"type": "plain_text",
-				"text": group_title
+				"text": str(group_title)
 			},
 			"options": []
 		}

@@ -15,7 +15,7 @@ def generate_option_groups(options_dict):
 	:return: dictionary of option groups with options
 	:rtype: dict
 	"""
-	final = {"option_groups": []}
+	final = []
 	for group_title in options_dict:
 		inner = {
 			"label": {
@@ -28,7 +28,7 @@ def generate_option_groups(options_dict):
 		for text_value_pair in options_dict[group_title]:
 			inner['options'].append(generate_option(text_value_pair[0], text_value_pair[1]))
 
-		final['option_groups'].append(inner)
+		final.append(inner)
 	return final
 
 

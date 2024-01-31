@@ -3,8 +3,9 @@ import logging
 from moncli.models import MondayModel
 from moncli import types as column
 import moncli
+import json
 
-from .base import BaseEricCacheModel
+from .base import BaseEricCacheModel, get_redis_connection
 from ..cache import CacheMiss
 from ..errors import EricError
 
@@ -27,6 +28,20 @@ class ProductModel(BaseEricCacheModel):
 
 	def __str__(self):
 		return f"Product({self.id})"
+
+	@classmethod
+	def get_products_by_device_id(cls, device_id):
+		redis_connection = get_redis_connection()
+		product_keys = redis_connection.keys("product:*")
+		products = []
+		for key in product_keys:
+			product_id = str(key.decode('utf-8').split(":")[1])
+			product_data = redis_connection.get(key)
+			if product_data:
+				product_data = json.loads(product_data)
+				if str(product_data['device_id']) == str(device_id):
+					products.append(cls(product_id))
+		return products
 
 	@property
 	def cache_key(self):

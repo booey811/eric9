@@ -32,6 +32,13 @@ class RepairPhaseEntity(BaseEricModel):
 		"""
 		return self.model.required_minutes
 
+	@property
+	def main_board_phase_label(self):
+		"""
+		Return the main board phase label for this repair phase entity.
+		"""
+		return self.model.main_board_phase_label
+
 class _BaseRepairPhaseLineItem(MondayModel):
 	phase_entity_connect = col_types.ItemLinkType(id='connect_boards', multiple_values=False)
 	minutes_from_phase_entity = col_types.NumberType(id='mirror1')

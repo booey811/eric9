@@ -10,7 +10,7 @@ from ...services import monday
 from ...models import MainModel, ProductModel
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users
-from ... import EricError, conf
+from ... import EricError, conf, notify_admins_of_error
 from ...cache import get_redis_connection
 from ...cache.rq import q_high
 
@@ -130,8 +130,13 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 					if repair.model.products_connect:
 						duration = max([ProductModel(p_id).model.required_minutes for p_id in repair.model.products_connect])
 						log.debug(f"Creating task with products, maximum duration={duration}")
+						if not duration:
+							log.debug("No duration found, using default duration")
+							notify_admins_of_error(f"Repair {repair.model.name} has no duration, assuming 1 hour")
+							duration = 60
 					else:
 						log.debug("No Products assigned, using default duration")
+						notify_admins_of_error(f"Repair {repair.model.name} has no products, assuming 1 hour")
 						duration = 60
 					log.debug("Creating task....")
 					task = motion.create_task(

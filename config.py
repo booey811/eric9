@@ -13,6 +13,7 @@ def get_config(env=None):
 	import logging
 	if not env:
 		env = os.environ["ENV"]
+	logging.getLogger('eric').info(f"CONFIG ENV: {env}")
 	conf = ENV_CONFIG_DICT.get(env)
 	if not conf:
 		raise Exception(f"Invalid config: {env}")
@@ -118,9 +119,9 @@ class DevelopmentConfig(Config):
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
 	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
 
-	SLACK_BOT = os.environ["SLACK_DEV_BOT"]  # dev workspace
-	SLACK_APP = os.environ["SLACK_DEV_APP"]  # dev workspace
-	SLACK_SIGNING_SECRET = os.environ["SLACK_DEV_SECRET"] # dev workspace
+	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
+	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
+	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET") # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 
@@ -132,12 +133,11 @@ class TestingConfig(Config):
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///testing.db'
 	REDIS_URL = 'redis://localhost:6379/0'
 
-	SLACK_BOT = os.environ["SLACK_DEV_BOT"]  # dev workspace
-	SLACK_APP = os.environ["SLACK_DEV_APP"]  # dev workspace
-	SLACK_SIGNING_SECRET = os.environ["SLACK_DEV_SECRET"] # dev workspace
+	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
+	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
+	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET") # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
-
 
 
 ENV_CONFIG_DICT = {

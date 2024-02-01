@@ -12,6 +12,7 @@ log = logging.getLogger('eric')
 
 class _BaseRepairPhaseEntityModel(MondayModel):
 	required_minutes = col_types.NumberType(id='numbers')
+	main_board_phase_label = col_types.StatusType(id='color')
 
 
 class RepairPhaseEntity(BaseEricModel):
@@ -24,6 +25,12 @@ class RepairPhaseEntity(BaseEricModel):
 	def __init__(self, repair_phase_entity_id, moncli_item=None):
 		super().__init__(repair_phase_entity_id, moncli_item)
 
+	@property
+	def required_minutes(self):
+		"""
+		Return the required minutes for this repair phase entity.
+		"""
+		return self.model.required_minutes
 
 class _BaseRepairPhaseLineItem(MondayModel):
 	phase_entity_connect = col_types.ItemLinkType(id='connect_boards', multiple_values=False)
@@ -58,7 +65,9 @@ class RepairPhaseLineItem(BaseEricModel):
 		"""
 		Return the minutes from the phase entity for this repair phase line item.
 		"""
-		return self.phase_entity.model.required_minutes
+		if self.model.minutes_from_override:
+			return self.model.minutes_from_override
+		return self.phase_entity.required_minutes
 
 
 class _BaseRepairPhaseModel(MondayModel):

@@ -72,6 +72,12 @@ class BaseEricModel:
 			self._name = self._model.name
 		return self._model
 
+	@property
+	def name(self):
+		if not self._name:
+			self._name = self.model.name
+		return self._name
+
 
 class BaseEricCacheModel(BaseEricModel):
 

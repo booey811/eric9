@@ -8,6 +8,7 @@ import json
 from .base import BaseEricCacheModel, get_redis_connection
 from ..cache import CacheMiss
 from ..errors import EricError
+from .. import notify_admins_of_error
 
 log = logging.getLogger('eric')
 
@@ -58,6 +59,7 @@ class ProductModel(BaseEricCacheModel):
 			self._device_id = self._model.device_connect[0]
 		except IndexError:
 			log.warning(f"{str(self)} has no device connection")
+			notify_admins_of_error(f"{str(self.name)} has no device connection")
 			self._device_id = None
 		return self._model
 
@@ -81,7 +83,7 @@ class ProductModel(BaseEricCacheModel):
 			try:
 				self.get_from_cache()
 			except CacheMiss:
-				self.model
+				model = self.model
 		return self._price
 
 	@property
@@ -90,7 +92,7 @@ class ProductModel(BaseEricCacheModel):
 			try:
 				self.get_from_cache()
 			except CacheMiss:
-				self.model
+				model = self.model
 		return self._device_id
 
 

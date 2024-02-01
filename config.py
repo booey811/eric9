@@ -56,7 +56,7 @@ class Config(object):
 	APP_URL = "http://localhost:8000"
 	DEBUG = False
 	TESTING = False
-	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+	REDIS_URL = 'redis://localhost:6379/0'
 
 	OPENAI_KEY = os.environ["OPENAI_API_KEY"]
 
@@ -111,13 +111,15 @@ class ProductionConfig(Config):
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///production.db'
 	APP_URL = "https://eric9-c2d6de2066d6.herokuapp.com"
 
+	REDIS_URL = os.environ.get('REDIS_URL')
+
 
 class DevelopmentConfig(Config):
 	"""Uses development database server and enables debug mode."""
 	CONFIG = "DEVELOPMENT"
 	DEBUG = True
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
-	REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+	REDIS_URL = 'redis://localhost:6379/0'
 
 	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
 	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace

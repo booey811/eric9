@@ -6,7 +6,7 @@ from moncli import types as col_type
 
 from .base import BaseEricModel
 from .product import ProductModel
-from.repair_phases import RepairPhaseModel
+from .repair_phases import RepairPhaseModel
 
 log = logging.getLogger('eric')
 
@@ -58,4 +58,17 @@ class MainModel(BaseEricModel):
 			phase_model = max(phase_models, key=lambda x: x.total_time)
 		return phase_model
 
-
+	def get_next_phase(self):
+		# get_phase_model, then look at line items and match self.phase_status to line item mainboard_repair_status
+		phase_model = self.get_phase_model()
+		lines = set(phase_model.phase_line_items)
+		for i, line in enumerate(lines):
+			print(line.name)
+			if line.phase_entity.main_board_phase_label == self.model.repair_phase:
+				# Check if there is a next item
+				if i + 1 < len(lines):
+					next_line = lines[i + 1]
+					return next_line
+				else:
+					# There is no next item, handle accordingly
+					return None

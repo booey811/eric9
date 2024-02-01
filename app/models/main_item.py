@@ -6,15 +6,25 @@ from .base import BaseEricModel
 
 
 class _BaseMainModel(MondayModel):
+	# basic info
+	main_status = col_type.StatusType(id='status4')
+
+	# device/repair info
+	description = col_type.TextType(id='text368')
+	requested_repairs = col_type.TextType(id='text368')
+	products_connect = col_type.ItemLinkType(id='board_relation', multiple_values=True)
+
+	# scheduling info
+	technician = col_type.PeopleType(id='person')
 	hard_deadline = col_type.DateType(id='date36')
 	phase_deadline = col_type.DateType(id='date65', has_time=True)
-	description = col_type.TextType(id='text368')
+
 	motion_task_id = col_type.TextType(id='text76')
-	requested_repairs = col_type.TextType(id='text368')
 	motion_scheduling_status = col_type.StatusType(id='status_19')
-	technician = col_type.PeopleType(id='person')
-	status = col_type.StatusType(id='status4')
-	products_connect = col_type.ItemLinkType(id='board_relation', multiple_values=True)
+
+	# phase info
+	repair_phase = col_type.StatusType(id='status_177')
+	phase_status = col_type.StatusType(id='status_110')
 
 
 class MainModel(BaseEricModel):

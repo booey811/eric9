@@ -53,7 +53,7 @@ def sync_repair_schedule(monday_group_id):
 		tech_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
 		under_repair_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
 		assigned_repair_group_repairs = [r for r in under_repair_group_repairs if str(r.model.technician.id) == str(user.monday_id)]
-		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.model.status not in statuses_to_ignore]
+		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.model.main_status not in statuses_to_ignore]
 
 		repairs = tech_group_repairs + status_valid_repairs
 

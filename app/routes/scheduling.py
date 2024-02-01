@@ -66,7 +66,7 @@ def handle_repair_group_change():
 			task = motion.create_task(
 				name=main.model.name,
 				deadline=main.model.hard_deadline,
-				description=main.model.requested_repairs,
+				description=main.model.description,
 				labels=['Repair'],
 				duration=duration
 			)
@@ -134,7 +134,7 @@ def handle_client_side_deadline_adjustment():
 				task = motion.create_task(
 					name=main.model.name,
 					deadline=main.model.hard_deadline,
-					description=main.model.requested_repairs,
+					description=main.model.description,
 					labels=['Repair'],
 					duration=duration
 				)
@@ -150,7 +150,7 @@ def handle_client_side_deadline_adjustment():
 			task = motion.create_task(
 				name=main.model.name,
 				deadline=main.model.hard_deadline,
-				description=main.model.requested_repairs,
+				description=main.model.description,
 				labels=['Repair']
 			)
 			log.debug(f"Created Motion Task({task['id']}) for MainItem({main.id})")

@@ -1,6 +1,4 @@
 import os
-import logging
-from logging.handlers import RotatingFileHandler
 import traceback
 
 from flask import Flask, jsonify
@@ -9,6 +7,7 @@ import config
 from config import get_config
 from .services.slack import slack_client, blocks
 from .errors import EricError
+from .utilities import notify_admins_of_error
 
 env = os.getenv('ENV', 'development')
 logger = config.configure_logging(env)
@@ -47,15 +46,3 @@ def create_app():
 	return app
 
 
-def notify_admins_of_error(trace):
-	# Integrate with an error notification tool (e.g., email, Slack, PagerDuty)
-	# This function is where you would include your custom notification logic
-	s_blocks = [
-		blocks.add.text_block("Error"),
-		blocks.add.text_block(trace)
-	]
-	slack_client.chat_postMessage(
-		channel=conf.SLACK_ERROR_CHANNEL,
-		text='eric9:Unhandled Error',
-		blocks=s_blocks
-	)

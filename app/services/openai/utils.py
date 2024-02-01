@@ -6,7 +6,8 @@ import requests
 
 from openai import OpenAI
 
-from ... import get_config, EricError
+from ... import get_config
+from ...errors import EricError
 from ...cache.rq import q_ai_results
 
 SLACK_AI_CHANNELS = {

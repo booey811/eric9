@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from app.tasks.scheduling import clean_motion_tasks, add_monday_tasks_to_motion, sync_monday_phase_deadlines
 from app.models import MainModel
 from app.utilities.users import User
-from app import EricError
+from app.errors import EricError
 
 mock_list_tasks_return_missing_from_monday = {
 	'tasks': [

@@ -8,9 +8,11 @@ from rq.job import Job
 import config
 from ...services import monday
 from ...models import MainModel, ProductModel
+from ...models.repair_phases import RepairPhaseLineItem, RepairPhaseModel, RepairPhaseEntity
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
-from ...utilities import users
-from ... import EricError, conf, notify_admins_of_error
+from ...utilities import users, notify_admins_of_error
+from ... import conf
+from ...errors import EricError
 from ...cache import get_redis_connection
 from ...cache.rq import q_high
 
@@ -128,6 +130,12 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 			while True:
 				try:
 					if repair.model.products_connect:
+
+						products = [ProductModel(p_id) for p_id in repair.model.products_connect]
+
+
+
+
 						duration = max([ProductModel(p_id).model.required_minutes for p_id in repair.model.products_connect])
 						log.debug(f"Creating task with products, maximum duration={duration}")
 						if not duration:

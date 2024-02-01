@@ -5,7 +5,8 @@ import functools
 import requests
 import datetime
 
-from ... import EricError, conf
+from ... import conf
+from ...errors import EricError
 from ...cache import get_redis_connection
 from ...utilities import users
 

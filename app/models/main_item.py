@@ -1,8 +1,14 @@
+import logging
+
 import moncli
 from moncli.models import MondayModel
 from moncli import types as col_type
 
 from .base import BaseEricModel
+from .product import ProductModel
+from.repair_phases import RepairPhaseModel
+
+log = logging.getLogger('eric')
 
 
 class _BaseMainModel(MondayModel):
@@ -36,3 +42,20 @@ class MainModel(BaseEricModel):
 	@property
 	def model(self) -> _BaseMainModel:
 		return super().model
+
+	def get_phase_model(self):
+		prods = [ProductModel(_) for _ in self.model.products_connect]
+		if not prods:
+			phase_model = RepairPhaseModel(5959544605)
+			log.warning(f"No products connected to {self.model.name}, using default phase model: {phase_model}")
+		else:
+			phase_models = [RepairPhaseModel(p.phase_model_id) for p in prods]
+			# get the phase model with the highest total time, calculated by individual line items having required minutes
+			for phase_mod in phase_models:
+				lines = phase_mod.phase_line_items
+				total = sum([line.required_minutes for line in lines])
+				phase_mod.total_time = total
+			phase_model = max(phase_models, key=lambda x: x.total_time)
+		return phase_model
+
+

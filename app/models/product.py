@@ -6,9 +6,10 @@ import moncli
 import json
 
 from .base import BaseEricCacheModel, get_redis_connection
+from .repair_phases import RepairPhaseModel
 from ..cache import CacheMiss
 from ..errors import EricError
-from .. import notify_admins_of_error
+from ..utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
 
@@ -17,6 +18,7 @@ class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
 	device_connect = column.ItemLinkType(id='link_to_devices6')
 	required_minutes = column.NumberType(id='numbers7')
+	phase_model = column.ItemLinkType(id='board_relation4', multiple_values=False)
 
 
 class ProductModel(BaseEricCacheModel):
@@ -50,7 +52,7 @@ class ProductModel(BaseEricCacheModel):
 		return f"product:{self.id}"
 
 	@property
-	def model(self):
+	def model(self) -> _BaseProductModel:
 		if not self._model:
 			super().model
 		self._name = self._model.name
@@ -58,8 +60,6 @@ class ProductModel(BaseEricCacheModel):
 		try:
 			self._device_id = self._model.device_connect[0]
 		except IndexError:
-			log.warning(f"{str(self)} has no device connection")
-			notify_admins_of_error(f"{str(self.name)} has no device connection")
 			self._device_id = None
 		return self._model
 
@@ -93,7 +93,18 @@ class ProductModel(BaseEricCacheModel):
 				self.get_from_cache()
 			except CacheMiss:
 				model = self.model
+			if not self._device_id:
+				log.warning(f"{str(self)} has no device connection")
+				notify_admins_of_error(f"{str(self.name)} has no device connection")
 		return self._device_id
+
+	@property
+	def phase_model_id(self):
+		if not self.model.phase_model:
+			log.warning(f"{str(self)} has no phase model, defaulting to TEST IPHONE MODEL")
+			notify_admins_of_error(f"{str(self.name)} has no phase model, defaulting to TEST IPHONE MODEL")
+			return str(5959544605)  # TEST: iPhone Model
+		return str(self.model.phase_model)
 
 
 class MissingProductData(EricError):

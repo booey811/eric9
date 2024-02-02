@@ -28,7 +28,7 @@ def handle_tech_status_adjustment():
 		'Battery Testing',
 	)
 
-	new_label = data['label']['text']
+	new_label = data['value']['label']['text']
 	log.debug(f"Tech Status Adjustment: {new_label}")
 
 	if new_label == 'Active':

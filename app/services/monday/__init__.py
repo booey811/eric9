@@ -16,7 +16,7 @@ def get_items(item_ids: list, column_values=False):
 	log.debug(f'get_items(item_ids={item_ids})')
 	try:
 		items = client.get_items(ids=item_ids, get_column_values=column_values)
-		log.error(f'Fetched {len(items)} items')
+		log.debug(f'Fetched {len(items)} items')
 	except moncli.MoncliError as e:
 		log.debug(f"API Call Failed: {str(e)}")
 		raise MondayAPIError(e)

@@ -62,6 +62,9 @@ def handle_tech_status_adjustment():
 		main = MainModel(main_id)
 		notify_admins_of_error(f"{str(main)} paused with status: {new_label}. Actions will neeed to be taken")
 
+	elif new_label == 'Not Started':
+		log.debug('Not Started: Do Nothing')
+
 	else:
 		raise EricError(f"Unknown Tech Status: {new_label}")
 

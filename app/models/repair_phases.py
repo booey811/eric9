@@ -6,6 +6,7 @@ from moncli import types as col_types
 
 from ..models.base import BaseEricModel
 from ..services import monday
+from ..utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
 
@@ -47,6 +48,7 @@ class _BaseRepairPhaseLineItem(MondayModel):
 	phase_entity_connect = col_types.ItemLinkType(id='connect_boards', multiple_values=False)
 	minutes_from_phase_entity = col_types.NumberType(id='mirror1')
 	minutes_from_override = col_types.NumberType(id='numbers')
+	sort_order = col_types.NumberType(id='numbers5')
 
 
 class RepairPhaseLineItem(BaseEricModel):
@@ -112,5 +114,11 @@ class RepairPhaseModel(BaseEricModel):
 		if not self._phase_line_items:
 			subitems = self.model.item.get_subitems()
 			subitems = monday.get_items([s.id for s in subitems], column_values=True)
-			self._phase_line_items = [RepairPhaseLineItem(s.id, s) for s in subitems]
+			phase_lines = [RepairPhaseLineItem(s.id, s) for s in subitems]
+			for p in phase_lines:
+				if p.model.sort_order is None:
+					p.model.sort_order = 99
+					log.error(f"Repair Phase Line Item {p.id} has no sort order, defaulting to 99")
+					notify_admins_of_error(f"{str(self)} has no sort order, defaulting to 99")
+			self._phase_line_items = sorted(phase_lines, key=lambda x: x.model.sort_order)
 		return self._phase_line_items

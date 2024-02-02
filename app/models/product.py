@@ -31,7 +31,7 @@ class ProductModel(BaseEricCacheModel):
 		self._device_id = None
 
 	def __str__(self):
-		return f"Product({self.id})"
+		return f"ProductModel({self.id}): {self._name or 'Not Fetched'}"
 
 	@classmethod
 	def get_products_by_device_id(cls, device_id):

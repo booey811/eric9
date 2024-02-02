@@ -48,7 +48,7 @@ class BaseEricModel:
 			if len(items) != 1:
 				log.debug(f'Failure: Fetched {len(items)} items: {[item.id for item in items]}')
 				raise MondayError(f"{str(self)} fetched {len(items)} items")
-			log.debug("Fetch successful")
+			log.debug(f"Fetched {str(self)}")
 			self._moncli_item = items[0]
 		return self._moncli_item
 
@@ -75,7 +75,7 @@ class BaseEricModel:
 	@property
 	def name(self):
 		if not self._name:
-			self._name = self.model.name
+			self._name = self._model.name
 		return self._name
 
 

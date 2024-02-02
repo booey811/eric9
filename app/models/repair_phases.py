@@ -25,6 +25,9 @@ class RepairPhaseEntity(BaseEricModel):
 	def __init__(self, repair_phase_entity_id, moncli_item=None):
 		super().__init__(repair_phase_entity_id, moncli_item)
 
+	def __str__(self):
+		return f"PhaseEntity({self.id}): {self._name or 'Not Fetched'}"
+
 	@property
 	def required_minutes(self):
 		"""
@@ -38,6 +41,7 @@ class RepairPhaseEntity(BaseEricModel):
 		Return the main board phase label for this repair phase entity.
 		"""
 		return self.model.main_board_phase_label
+
 
 class _BaseRepairPhaseLineItem(MondayModel):
 	phase_entity_connect = col_types.ItemLinkType(id='connect_boards', multiple_values=False)
@@ -57,6 +61,10 @@ class RepairPhaseLineItem(BaseEricModel):
 		super().__init__(repair_phase_line_item_id, moncli_item)
 
 		self._phase_entity = None
+
+	def __str__(self):
+		return f"PhaseLine({self.id}): {self._name or 'Not Fetched'}"
+
 
 	@property
 	def phase_entity(self):
@@ -93,6 +101,9 @@ class RepairPhaseModel(BaseEricModel):
 
 		self._phase_line_items = None
 
+	def __str__(self):
+		return f"PhaseModel({self.id}): {self._name or 'Not Fetched'}"
+
 	@property
 	def phase_line_items(self) -> List[RepairPhaseLineItem]:
 		"""
@@ -103,6 +114,3 @@ class RepairPhaseModel(BaseEricModel):
 			subitems = monday.get_items([s.id for s in subitems], column_values=True)
 			self._phase_line_items = [RepairPhaseLineItem(s.id, s) for s in subitems]
 		return self._phase_line_items
-
-
-

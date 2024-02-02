@@ -20,7 +20,6 @@ class _BaseDeviceModel(MondayModel):
 
 
 class DeviceModel(BaseEricCacheModel):
-
 	MONCLI_MODEL = _BaseDeviceModel
 
 	@classmethod
@@ -40,7 +39,7 @@ class DeviceModel(BaseEricCacheModel):
 		self._device_type = None
 
 	def __str__(self):
-		return f"Device({self.id})"
+		return f"DeviceModel({self.id}): {self._name or 'Not Fetched'}"
 
 	def prepare_cache_data(self):
 		return {

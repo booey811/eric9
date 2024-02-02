@@ -39,6 +39,9 @@ class MainModel(BaseEricModel):
 	def __init__(self, main_item_id, moncli_item: moncli.en.Item = None):
 		super().__init__(main_item_id, moncli_item)
 
+	def __str__(self):
+		return f"MainModel({self.id}): {self._name or 'Not Fetched'}"
+
 	@property
 	def model(self) -> _BaseMainModel:
 		return super().model
@@ -61,9 +64,12 @@ class MainModel(BaseEricModel):
 	def get_next_phase(self):
 		# get_phase_model, then look at line items and match self.phase_status to line item mainboard_repair_status
 		phase_model = self.get_phase_model()
-		lines = set(phase_model.phase_line_items)
+		lines = phase_model.phase_line_items
+		log.debug(f"Got {len(lines)} phase lines:")
+		for line in lines:
+			log.debug(str(line))
 		for i, line in enumerate(lines):
-			print(line.name)
+			log.debug(str(line))
 			if line.phase_entity.main_board_phase_label == self.model.repair_phase:
 				# Check if there is a next item
 				if i + 1 < len(lines):

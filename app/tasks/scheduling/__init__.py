@@ -101,6 +101,25 @@ def clean_motion_tasks(user, repairs: list):
 		else:
 			raise RuntimeError('Illogical result')
 
+		if not task['scheduledEnd']:
+			log.debug(f"Task {task['id']} has no scheduledEnd, deleting")
+			while True:
+				try:
+					motion.delete_task(task['id'])
+					break
+				except MotionRateLimitError:
+					log.debug("Waiting 20 seconds for rate limit")
+					time.sleep(20)
+			try:
+				repair = [repair for repair in repairs if repair.model.motion_task_id == task['id']][0]
+				log.debug(f"Removing monday reference for Motion Task ID")
+				repair.model.motion_task_id = ""
+				repair.model.save()
+			except IndexError:
+				# no task in group with this ID, so we don't care
+				pass
+
+
 
 def add_monday_tasks_to_motion(user: users.User, repairs: list):
 	# add any tasks that are on monday, but not motion
@@ -175,8 +194,8 @@ def sync_monday_phase_deadlines(user, repairs: list):
 	"""
 
 	log.debug(f"Syncing Monday Deadlines to Motion: {repairs}")
-
-	schedule = MotionClient(user).list_tasks()['tasks']
+	motion_client = MotionClient(user)
+	schedule = motion_client.list_tasks()['tasks']
 	# now we actually schedule Monday
 	for repair in repairs:
 		try:
@@ -202,7 +221,11 @@ def sync_monday_phase_deadlines(user, repairs: list):
 			cs_deadline = repair.model.hard_deadline
 			if not cs_deadline:
 				raise MissingDeadlineInMonday(repair)
-			cs_deadline.replace(microsecond=0, second=0)
+			utc_cs_deadline = cs_deadline.astimezone(datetime.timezone.utc)
+			if utc_cs_deadline < datetime.datetime.now(datetime.timezone.utc):
+				raise DeadlineInPast(repair)
+
+			cs_deadline = cs_deadline.replace(microsecond=0, second=0)
 			log.debug(f"Monday Deadline: {cs_deadline.strftime('%c')}")
 
 			# check is proposed Motion deadline is after Client side deadline
@@ -213,12 +236,20 @@ def sync_monday_phase_deadlines(user, repairs: list):
 				repair.model.motion_scheduling_status = "Synced"
 
 		except MissingDeadlineInMonday:
-			log.debug(f"Missing Deadline in Monday: {repair.model.name}")
+			log.debug(f"Missing Deadline in Monday: {str(repair)}, removed from schedule")
 			repair.model.phase_deadline = None
+			repair.model.motion_task_id = ""
+			motion_client.delete_task(repair.model.motion_task_id)
 
 		except NotEnoughTime:
-			log.debug(f"Not Enough Time in schedule to complete {repair.model.name}")
+			log.debug(f"Not Enough Time in schedule to complete {str(repair)}")
 			repair.model.phase_deadline = None
+
+		except DeadlineInPast:
+			log.debug(f"Deadline in Past for {str(repair)}, removed from schedule")
+			repair.model.phase_deadline = None
+			repair.model.motion_task_id = ""
+			motion_client.delete_task(repair.model.motion_task_id)
 
 		repair.model.save()
 
@@ -231,7 +262,7 @@ class SchedulingError(EricError):
 		monday_item.model.save()
 
 	def __str__(self):
-		return f"Scheduling Error: {self.item.model.name}"
+		return f"Scheduling Error: {str(self.item)}"
 
 
 class MissingDeadlineInMonday(SchedulingError):
@@ -242,7 +273,7 @@ class MissingDeadlineInMonday(SchedulingError):
 		super().__init__(monday_item)
 
 	def __str__(self):
-		return f"No deadline on {self.item.model.name}"
+		return f"No deadline on {str(self.item)}"
 
 
 class NotEnoughTime(SchedulingError):
@@ -252,4 +283,14 @@ class NotEnoughTime(SchedulingError):
 		super().__init__(monday_item)
 
 	def __str__(self):
-		return f"Not Enough Time in schedule to complete {self.item.model.name}"
+		return f"Not Enough Time in schedule to complete {str(self.item)}"
+
+
+class DeadlineInPast(SchedulingError):
+	def __init__(self, monday_item: MainModel):
+		monday_item.model.motion_scheduling_status = "Deadline in Past"
+		monday_item.model.phase_deadline = None
+		super().__init__(monday_item)
+
+	def __str__(self):
+		return f"Deadline in Past for {str(self.item)}"

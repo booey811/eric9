@@ -50,6 +50,7 @@ class BaseEricModel:
 				raise MondayError(f"{str(self)} fetched {len(items)} items")
 			log.debug(f"Fetched {str(self)}")
 			self._moncli_item = items[0]
+			self._name = self._moncli_item.name
 		return self._moncli_item
 
 	@property
@@ -69,7 +70,6 @@ class BaseEricModel:
 			)
 		if not self._model:
 			self._model = self.MONCLI_MODEL(self.moncli_item)
-			self._name = self._model.name
 		return self._model
 
 	@property

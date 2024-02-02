@@ -28,6 +28,9 @@ class BaseEricModel:
 
 		self._model = None
 
+		if moncli_item is not None:
+			self._name = moncli_item.name
+
 	@property
 	def moncli_item(self) -> moncli.en.Item:
 		"""

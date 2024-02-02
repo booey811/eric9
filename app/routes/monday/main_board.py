@@ -58,6 +58,7 @@ def handle_tech_status_adjustment():
 			main.model.repair_phase = "Repaired"
 		else:
 			main.model.repair_phase = next_phase.phase_entity.main_board_phase_label
+			main.model.phase_status = "Not Started"
 
 		main.model.save()
 

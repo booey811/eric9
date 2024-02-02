@@ -36,7 +36,7 @@ def handle_tech_status_adjustment():
 	if new_label == 'Active':
 		# in the future, this will create a repair session record and begin timing
 		log.warning(f"Not Yet Developed")
-		notify_admins_of_error("Tech Status Adjustment: Active is not yet developed")
+		notify_admins_of_error("Tech Status Adjustment: Active is not yet developed. This will begin recording a session.")
 	else:
 		# in the future, this will end the repair session and record the time
 		log.warning(f"Not Yet Developed")

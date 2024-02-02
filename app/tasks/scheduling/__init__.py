@@ -210,11 +210,13 @@ def sync_monday_phase_deadlines(user, repairs: list):
 			try:
 				motion_deadline = parse(motion_task['scheduledEnd'])
 			except TypeError:
-				log.error(f"Received No Deadline from Motion Schedule for {repair.model.name}, deleting")
+				log.error(f"Received No Deadline from Motion Schedule for {str(repair)}, deleting")
+				log.debug(motion_task)
 				motion_client.delete_task(motion_task['id'])
-				repair.model.motion_scheduling_status = "Error"
+				repair.model.motion_scheduling_status = "No Scheduled End"
 				repair.model.motion_task_id = ""
 				repair.model.save()
+				notify_admins_of_error(f"Motion Task {motion_task['id']} has no scheduledEnd\n\n{motion_task}")
 				continue
 				# raise MotionError(f"Motion Task {motion_task['id']} has no scheduledEnd")
 			motion_deadline.replace(microsecond=0, second=0)

@@ -44,10 +44,10 @@ def handle_tech_status_adjustment():
 		)
 
 	main_id = data['pulseId']
+	main = MainModel(main_id)
 
 	if new_label == 'Complete':
 		log.debug(f"Phase completed, moving to next phase")
-		main = MainModel(main_id)
 		next_phase = main.get_next_phase()
 		if not next_phase:
 			# no more phases, repair has been completed
@@ -59,11 +59,11 @@ def handle_tech_status_adjustment():
 
 	elif new_label in repair_paused_status_labels:
 		log.warning(f"Repair Paused: {new_label}")
-		main = MainModel(main_id)
 		notify_admins_of_error(f"{str(main)} paused with status: {new_label}. Actions will neeed to be taken")
 
 	elif new_label == 'Not Started':
 		log.debug('Not Started: Do Nothing')
+		notify_admins_of_error(f"{str(main)} has been reset to Not Started. This is likely a system change.")
 
 	else:
 		raise EricError(f"Unknown Tech Status: {new_label}")

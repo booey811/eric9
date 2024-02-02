@@ -31,6 +31,8 @@ def handle_tech_status_adjustment():
 	new_label = data['value']['label']['text']
 	log.debug(f"Tech Status Adjustment: {new_label}")
 
+	log.debug('Dealing with session records....')
+
 	if new_label == 'Active':
 		# in the future, this will create a repair session record and begin timing
 		log.warning(f"Not Yet Developed")
@@ -42,6 +44,8 @@ def handle_tech_status_adjustment():
 			f"Tech Status Adjustment: {new_label} is not yet developed\n\nIn future, this will close the current "
 			f"session and record the time."
 		)
+
+	log.debug('Dealing with phases.....')
 
 	main_id = data['pulseId']
 	main = MainModel(main_id)
@@ -64,6 +68,10 @@ def handle_tech_status_adjustment():
 	elif new_label == 'Not Started':
 		log.debug('Not Started: Do Nothing')
 		notify_admins_of_error(f"{str(main)} has been reset to Not Started. This is likely a system change.")
+
+	elif new_label == 'Active':
+		log.warning("Not Yet Developed")
+		notify_admins_of_error("Tech Status Adjustment: Active. A technician has started repairing a phase")
 
 	else:
 		raise EricError(f"Unknown Tech Status: {new_label}")

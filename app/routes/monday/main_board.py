@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from ...services.monday import monday_challenge
 from ...utilities import notify_admins_of_error
+from ...tasks.monday.web_bookings import transfer_web_booking
 from ...models import MainModel
 from ...errors import EricError
 
@@ -76,5 +77,20 @@ def handle_tech_status_adjustment():
 
 	else:
 		raise EricError(f"Unknown Tech Status: {new_label}")
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route('/add-web-booking', methods=["POST"])
+@monday_challenge
+def handle_web_booking():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	web_booking_id = data['pulseId']
+	log.debug(f"Handling Web Booking: {web_booking_id}")
+
+	transfer_web_booking(web_booking_id)
 
 	return jsonify({'message': 'OK'}), 200

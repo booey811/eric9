@@ -3,6 +3,7 @@ import json
 
 from flask import Blueprint, request, jsonify
 
+from ...cache.rq import q_low
 from ...services.monday import monday_challenge
 from ...utilities import notify_admins_of_error
 from ...tasks.monday.web_bookings import transfer_web_booking
@@ -91,6 +92,9 @@ def handle_web_booking():
 	web_booking_id = data['pulseId']
 	log.debug(f"Handling Web Booking: {web_booking_id}")
 
-	transfer_web_booking(web_booking_id)
+	q_low.enqueue(
+		transfer_web_booking,
+		web_booking_id
+	)
 
 	return jsonify({'message': 'OK'}), 200

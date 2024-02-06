@@ -17,6 +17,8 @@ log = logging.getLogger('eric')
 class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
 	device_connect = column.ItemLinkType(id='link_to_devices6')
+	parts_connect = column.ItemLinkType(id='connect_boards8', multiple_values=True)
+
 	required_minutes = column.NumberType(id='numbers7')
 	phase_model = column.ItemLinkType(id='board_relation4', multiple_values=False)
 

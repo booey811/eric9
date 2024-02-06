@@ -82,12 +82,27 @@ def transfer_web_booking(web_booking_item_id):
 	main.service = service
 
 	prod_board = monday.client.get_board_by_id(2477699024)
-	search = prod_board.columns['text3']  # woo commerce product ID column
-	search_results = prod_board.get_items_by_multiple_column_values(
-		column=search,
-		column_values=[str(_['id']) for _ in repair_products],
-		get_column_values=True
-	)
+	search = prod_board.columns['text3']  # woo commerce ID column
+	missing_prods = []
+	try:
+		search_results = prod_board.get_items_by_multiple_column_values(
+			column=search,
+			column_values=[str(_['id']) for _ in repair_products],
+			get_column_values=True
+		)
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Get Items by Multiple Values: {e}")
+		search_results = []
+		for woo_prod in repair_products:
+			woo_id = woo_prod['id']
+			search = prod_board.get_column_value('text3')
+			search.value = search.text = str(woo_id)
+			single_result = prod_board.get_items_by_column_value(column_value=search)[0]
+			if single_result:
+				search_results.append(single_result)
+			else:
+				missing_prods.append(woo_prod)
+				notify_admins_of_error(f"Could Not Find {woo_id} in Eric")
 
 	if len(search_results) != len(repair_products):
 		notify_admins_of_error(
@@ -173,6 +188,9 @@ def transfer_web_booking(web_booking_item_id):
 	main = MainModel(main.id, main.item)
 	main.get_thread('notes').add_reply(booking_text)
 	main.print_stock_check()
+
+	if missing_prods:
+		main.get_thread('notes').add_reply(f"Could Not Find WooCommerce References in Products & Pricing\n\n{missing_prods}")
 
 	return main
 

@@ -164,6 +164,10 @@ def transfer_web_booking(web_booking_item_id):
 	main.address_street = web_booking.model.address_street
 	main.address_postcode = web_booking.model.address_postcode
 
+	main.client = 'End User'
+	main.main_status = 'Awaiting Confirmation'
+	main.notifications_status = 'ON'
+
 	main.save()
 
 	main = MainModel(main.id, main.item)

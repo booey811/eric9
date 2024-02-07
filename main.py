@@ -1,6 +1,5 @@
 import logging
 import os
-import random
 
 import app
 
@@ -18,7 +17,7 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.services.monday.api_obj import items, columns
+		from app.services.monday import items
 		item = items.MainItem(5799427883)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

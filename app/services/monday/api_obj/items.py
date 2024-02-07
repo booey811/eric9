@@ -39,11 +39,3 @@ class BaseItemType:
 			item_id=self.id,
 			column_values=self.staged_changes
 		)
-
-
-class MainItem(BaseItemType):
-	BOARD_ID = 349212843
-
-	text = TextValue('text69')
-	number = NumberValue('dup__of_quote_total')
-	status = StatusValue('status_161')

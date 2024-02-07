@@ -16,7 +16,7 @@ log = logging.getLogger('eric')
 
 class _BaseProductModel(MondayModel):
 	price = column.NumberType(id='numbers')
-	device_connect = column.ItemLinkType(id='link_to_devices6')
+	device_connect = column.ItemLinkType(id='link_to_devices6', multiple_values=False)
 	parts_connect = column.ItemLinkType(id='connect_boards8', multiple_values=True)
 
 	required_minutes = column.NumberType(id='numbers7')
@@ -59,9 +59,8 @@ class ProductModel(BaseEricCacheModel):
 			super().model
 		self._name = self._model.name
 		self._price = self._model.price
-		try:
-			self._device_id = self._model.device_connect[0]
-		except IndexError:
+		self._device_id = self._model.device_connect
+		if not self._device_id:
 			self._device_id = None
 		return self._model
 

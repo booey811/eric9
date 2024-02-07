@@ -169,7 +169,7 @@ def transfer_web_booking(web_booking_item_id):
 	main.phone = web_booking.model.phone
 	main.ticket_id = str(ticket.id)
 	main.ticket_url = {
-		'url': str(ticket.url),
+		'url': f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}",
 		'text': str(ticket.id)
 	}
 	main.description = "; ".join([f"{p.name}(£{p.price})" for p in products])
@@ -178,6 +178,7 @@ def transfer_web_booking(web_booking_item_id):
 	main.address_comment = web_booking.model.address_comment
 	main.address_street = web_booking.model.address_street
 	main.address_postcode = web_booking.model.address_postcode
+	main.booking_date = web_booking.model.booking_date
 
 	main.client = 'End User'
 	main.main_status = 'Awaiting Confirmation'

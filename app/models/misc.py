@@ -12,6 +12,7 @@ class _BaseWebBookingModel(MondayModel):
 	# order data
 	woo_commerce_order_id: str = col_type.TextType(id='order_id')
 	initial_notes = col_type.TextType(id='notes')
+	booking_date = col_type.DateType(id='booking_time', has_time=True)
 
 	# address data
 	point_of_collection = col_type.TextType(id='text9')

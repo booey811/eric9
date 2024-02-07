@@ -18,10 +18,7 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.services.monday.api_obj import items
-		i = items.MainModel(5799427883, {})
-		s = random.randint(1, 100)
-		print(s)
-		i.example_number = s
+		from app.services.monday.api_obj import items, columns
+		item = items.MainItem(5799427883)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

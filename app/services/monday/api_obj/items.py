@@ -1,67 +1,49 @@
-import logging
-
 from ..client import client
-from .columns import TextColumn, NumberColumn
-from .boards import cache as board_cache
+from .columns import ValueType, TextValue, NumberValue, StatusValue
 
-log = logging.getLogger('eric')
 
-class EricModel:
+class BaseItemType:
 	BOARD_ID = None
 
-	def __init__(self, item_id: str | int, item_data: dict):
+	def __init__(self, item_id, api_data: dict = None):
 		self.id = item_id
-		self._raw_data = item_data
 
-		self._staged_changes = {}
+		self.staged_changes = {}
 
-	def commit_changes(self):
-		log.debug(f"Committing changes to item {self.id}")
-		log.debug(f"Changes: {self._staged_changes}")
+		self._api_data = None
+		self._column_data = None
+		if api_data:
+			self.load_column_data(api_data)
+
+	def __setattr__(self, name, value):
+		# Check if the attribute being assigned is an instance of ValueType
+		if getattr(self, name, None) and isinstance(getattr(self, name), ValueType):
+			getattr(self, name).value = value
+			self.staged_changes.update(getattr(self, name).column_api_data())
+
+		# Call the parent class's __setattr__ method
+		super().__setattr__(name, value)
+
+	def load_item_data(self, api_data: dict):
+		self._api_data = api_data
+		self._column_data = api_data['column_values']
+		for att in dir(self):
+			instance_property = getattr(self, att)
+			if isinstance(instance_property, ValueType):
+				instance_property.value = self._column_data.get(instance_property.column_id)
+
+	def commit(self):
+		# commit changes to the API
 		return client.items.change_multiple_column_values(
 			board_id=self.BOARD_ID,
 			item_id=self.id,
-			column_values=self._staged_changes
+			column_values=self.staged_changes
 		)
 
-	# def add_column(self, column_class, column_id, initial_value=None):
-	# 	column_instance = column_class(column_id, initial_value)
-	#
-	# 	def getter(self):
-	# 		return column_instance
-	#
-	# 	def setter(self, value):
-	# 		column_instance.value = value
-	# 		self._staged_changes.update(column_instance.get_value_change_data())
-	#
-	# 	setattr(self.__class__, column_id, property(getter, setter))
 
-
-class MainModel(EricModel):
+class MainItem(BaseItemType):
 	BOARD_ID = 349212843
 
-	def __init__(self, item_id, item_data: dict = None):
-		super().__init__(item_id, item_data)
-
-		self._number_value = NumberColumn(column_id="dup__of_quote_total")
-		self._text_value = TextColumn(column_id="text69", value='')
-
-	@property
-	def number_value(self):
-		return self._number_value
-
-	@number_value.setter
-	def number_value(self, value):
-		assert isinstance(value, int)
-		self._number_value.value = value
-		self._staged_changes.update(self._number_value.get_value_change_data())
-
-	@property
-	def text_value(self):
-		return self._text_value
-
-	@text_value.setter
-	def text_value(self, value):
-		assert isinstance(value, str)
-		self._text_value.value = value
-		self._staged_changes.update(self._text_value.get_value_change_data())
+	text = TextValue('text69')
+	number = NumberValue('dup__of_quote_total')
+	status = StatusValue('status_161')

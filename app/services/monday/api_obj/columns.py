@@ -1,112 +1,76 @@
 import abc
 
-from ..client import client
-from .boards import cache as board_cache
 
-
-def number_value(column_id, value):
-	column_id = str(column_id)
-	try:
-		value = int(value)
-	except ValueError:
-		raise ValueError(f"Invalid value for number column: {value}")
-	return {
-		column_id: value
-	}
-
-
-# class ColumnValueHandler:
-# 	def __init__(self, board_id):
-# 		self.board_id = board_id
-# 		self.board_columns = self.get_board_columns()
-#
-# 	def get_board_columns(self):
-# 		# Fetch the board columns here
-# 		# This is a placeholder, replace with your actual implementation
-# 		return board_cache.get_board(self.board_id)['columns']
-#
-# 	def get_item_column_values(self, item_id):
-# 		# Fetch the item column values here
-# 		# This is a placeholder, replace with your actual implementation
-# 		return client.items.fetch_items_by_id([item_id])
-#
-# 	def match_and_instantiate(self, item_id):
-# 		item_column_values = self.get_item_column_values(item_id)
-# 		for item_column in item_column_values:
-# 			for board_column in self.board_columns:
-# 				if item_column['id'] == board_column['id']:
-# 					# Match found, now instantiate the correct class based on the type
-# 					column_type = board_column['type']
-# 					if column_type == 'type1':
-# 						return Type1Class(item_column)
-# 					elif column_type == 'type2':
-# 						return Type2Class(item_column)
-# 					# ... and so on for other types
-
-
-class BaseColumnValue(abc.ABC):
-
-	def __init__(self, column_id, value):
+class ValueType(abc.ABC):
+	def __init__(self, column_id):
 		self.column_id = column_id
-		self._value = value
+		self._value = None
 
 	@property
 	def value(self):
 		return self._value
 
 	@value.setter
-	@abc.abstractmethod
-	def value(self, value):
-		raise NotImplementedError
+	def value(self, new_value):
+		self._value = new_value
+
+	def __str__(self):
+		return str(self._value)
+
+	def __repr__(self):
+		return str(self._value)
 
 	@abc.abstractmethod
-	def get_value_change_data(self):
+	def column_api_data(self):
 		raise NotImplementedError
 
 
-class TextColumn(BaseColumnValue):
+class TextValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
 
-	def __init__(self, column_id, value=None):
-		super().__init__(column_id, value)
-		self.column_id = column_id
-		self.value = value
-
-	@BaseColumnValue.value.setter
-	def value(self, value):
-		if isinstance(value, str):
-			self._value = value
+	@ValueType.value.setter
+	def value(self, new_value):
+		if isinstance(new_value, str):  # or any other condition you want to check
+			self._value = new_value
 		else:
-			raise ValueError("Value must be a string")
+			raise ValueError("Invalid value")
 
-	def get_value_change_data(self):
-		column_id = str(self.column_id)
+	def column_api_data(self):
+		# prepare self.value for submission here
 		value = str(self.value)
-		return {column_id: value}
+		return {self.column_id: value}
 
 
-class NumberColumn(BaseColumnValue):
+class NumberValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
 
-	def __init__(self, column_id, value: int = None):
-		super().__init__(column_id, value)
-		self.column_id = column_id
-		self.value = value
-
-	@BaseColumnValue.value.setter
-	def value(self, value):
-		if isinstance(value, int):
-			self._value = value
-		elif value is None:
-			self._value = None
+	@ValueType.value.setter
+	def value(self, new_value):
+		if isinstance(new_value, int):  # or any other condition you want to check
+			self._value = new_value
 		else:
-			raise ValueError(f"Value must be an integer or None, not {type(value)}")
+			raise ValueError("Invalid value")
 
-	def get_value_change_data(self):
-		column_id = str(self.column_id)
-		value = self._value
-		return {column_id: value}
+	def column_api_data(self):
+		# prepare self.value for submission here
+		value = int(self.value)
+		return {self.column_id: value}
 
 
-class EricModel:
-	@property
-	def text_col(self):
-		return TextColumn('some_column_id', 'Hello')
+class StatusValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+	@ValueType.value.setter
+	def value(self, new_value):
+		if isinstance(new_value, str):  # or any other condition you want to check
+			self._value = new_value
+		else:
+			raise ValueError("Invalid value")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		value = str(self.value)
+		return {self.column_id: {"label": value}}

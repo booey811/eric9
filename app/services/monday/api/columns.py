@@ -312,7 +312,49 @@ class ConnectBoards(ValueType):
 		return self.value
 
 
+class MirroredDataValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+		raise MondayDataError("MirroredDataValue cannot be used yet")
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, new_value):
+		raise ValueError("Cannot set value for a mirrored column")
+
+	def column_api_data(self):
+		raise EditingNotAllowed(self.column_id)
+
+	def load_column_value(self, column_data: dict):
+		# this is probably incorrect, but we cannot get values from the API yet so will rewrite when we can
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = ""
+		else:
+			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
+
+
 class InvalidColumnData(MondayDataError):
 
 	def __init__(self, column_data: dict, key: str):
 		super().__init__(f"Invalid column data, no '{key}' value in data: {column_data}")
+
+
+class EditingNotAllowed(MondayDataError):
+
+	def __init__(self, column_id: str):
+		super().__init__(f"Editing not allowed for column {column_id}")

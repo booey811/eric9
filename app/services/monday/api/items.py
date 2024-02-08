@@ -1,4 +1,4 @@
-from .columns import ValueType
+from .columns import ValueType, EditingNotAllowed
 from .client import MondayAPIError, conn
 
 

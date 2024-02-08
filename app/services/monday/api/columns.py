@@ -433,6 +433,55 @@ class PeopleValue(ValueType):
 		return self.value
 
 
+class DropdownValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+		self.ids = []
+		self.text_labels = []
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, new_ids_list):
+		if isinstance(new_ids_list, (list, tuple)):
+			# make sure the ids are integers
+			try:
+				new_ids = [int(_) for _ in new_ids_list]
+			except ValueError:
+				raise ValueError(f"Invalid value (dropdowns can only bet set with ids, not labels): {new_ids_list}")
+			self._value = new_ids
+		else:
+			raise ValueError(f"Invalid value: {new_ids_list}")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		# desired format: {col_id: {ids: [id1, id2, id3]}}
+		item_ids = self.value
+		return {self.column_id: {"ids": item_ids}}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		value_data = column_data['value']
+		if value_data is None:
+			# connected boards column is empty
+			dd_ids = []
+		else:
+			try:
+				value_data = json.loads(value_data)
+			except json.JSONDecodeError:
+				raise InvalidColumnData(column_data, 'json.loads(value)')
+			try:
+				dd_ids = value_data.get('ids', [])
+			except Exception as e:
+				raise InvalidColumnData(column_data, 'value - linkedPulseIds')
+
+		self.value = dd_ids
+		return self.value
+
+
 class InvalidColumnData(MondayDataError):
 
 	def __init__(self, column_data: dict, key: str):

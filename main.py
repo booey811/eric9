@@ -21,5 +21,6 @@ if __name__ == '__main__':
 		item_data = monday.api.get_api_items([5799427883])
 		item = monday.items.MainItem(item_data[0]['id'], item_data[0])
 		test_prod_ids = [3331258333, 3607829981]
+		test_dd_ids = [276, 37]
 	else:
 		raise Exception(f"Invalid ENV: {env}")

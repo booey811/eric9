@@ -12,3 +12,4 @@ class MainItem(items.BaseItemType):
 	product_connect = columns.ConnectBoards('board_relation')
 	long_text = columns.LongTextValue("long_text5")
 	people = columns.PeopleValue('person')
+	dropdown = columns.DropdownValue("device0")

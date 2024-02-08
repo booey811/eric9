@@ -73,6 +73,10 @@ class MainModel(BaseEricModel):
 	def __init__(self, main_item_id, moncli_item: moncli.en.Item = None):
 		super().__init__(main_item_id, moncli_item)
 
+		# create updates threads
+		for thread_name in ['emails', 'notes', 'errors']:
+			self.get_thread(thread_name)
+
 	def __str__(self):
 		return f"MainModel({self.id}): {self._name or 'Not Fetched'}"
 
@@ -199,3 +203,13 @@ class MainModel(BaseEricModel):
 				raise e
 
 		return update
+
+	def add_update(self, thread_name, message):
+		thread = self.get_thread(thread_name)
+		try:
+			thread.add_reply(message)
+		except Exception as e:
+			notify_admins_of_error(f"Error adding update to {str(self)}: {e}")
+			message = message.replace('"', '').replace("/", '').replace('-', '')
+			thread.add_reply(message)
+		return message

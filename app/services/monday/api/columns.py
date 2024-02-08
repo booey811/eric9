@@ -36,6 +36,10 @@ class TextValue(ValueType):
 	def value(self):
 		return self._value
 
+	@value.getter
+	def value(self):
+		return self._value
+
 	@value.setter
 	def value(self, new_value):
 		if isinstance(new_value, str):  # or any other condition you want to check
@@ -198,6 +202,70 @@ class DateValue(ValueType):
 		log.debug("Loaded column value: %s", value)
 
 		self.value = value
+		return self.value
+
+
+class LinkURLValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+		self.url = None
+		self.text = None
+
+	@property
+	def value(self):
+		return [self.text, self.url]
+
+	@value.setter
+	def value(self, text_and_url: tuple | list):
+		if (
+			isinstance(text_and_url, (tuple, list))
+			and len(text_and_url) == 2
+		):
+			text, url = text_and_url
+			if not text:
+				text = None
+			if not url:
+				url = None
+			self.text = text
+			self.url = url
+		else:
+			raise ValueError("Invalid value")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		value = str(self.value)
+		if self.text:
+			text = self.text
+		else:
+			text = ""
+
+		if self.url:
+			url = self.url
+		else:
+			url = ""
+
+		return {self.column_id: {'text': text, 'url': url}}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			self.text = None
+			self.url = None
+		else:
+			value = str(value)
+			split_value = [str(_.strip()) for _ in value.split("-")]
+			if len(split_value) == 2:
+				self.text, self.url = split_value
+			else:
+				raise InvalidColumnData(column_data, 'text - url could not be split')
+
 		return self.value
 
 

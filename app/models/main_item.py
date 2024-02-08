@@ -74,7 +74,7 @@ class MainModel(BaseEricModel):
 		super().__init__(main_item_id, moncli_item)
 
 		# create updates threads
-		for thread_name in ['emails', 'notes', 'errors']:
+		for thread_name in ['emails', 'errors', 'notes']:
 			self.get_thread(thread_name)
 
 	def __str__(self):

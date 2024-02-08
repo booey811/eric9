@@ -348,6 +348,45 @@ class MirroredDataValue(ValueType):
 		return self.value
 
 
+class LongTextValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, new_value):
+		if isinstance(new_value, str):  # or any other condition you want to check
+			self._value = new_value
+		else:
+			raise ValueError("Invalid value")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		value = str(self.value)
+		return {self.column_id: value}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = ""
+		else:
+			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
+
+
 class InvalidColumnData(MondayDataError):
 
 	def __init__(self, column_data: dict, key: str):

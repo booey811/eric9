@@ -10,3 +10,4 @@ class MainItem(items.BaseItemType):
 	date = columns.DateValue('date6')
 	url_link = columns.LinkURLValue('link1')
 	product_connect = columns.ConnectBoards('board_relation')
+	long_text = columns.LongTextValue("long_text5")

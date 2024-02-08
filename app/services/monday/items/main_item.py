@@ -1,4 +1,4 @@
-from ..api_obj import items, columns
+from ..api import items, columns
 
 
 class MainItem(items.BaseItemType):

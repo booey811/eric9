@@ -17,7 +17,8 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.services.monday import items
-		item = items.MainItem(5799427883)
+		from app.services import monday
+		item_data = monday.api.get_api_items([5799427883])
+		item = monday.items.MainItem(item_data[0]['id'], item_data[0])
 	else:
 		raise Exception(f"Invalid ENV: {env}")

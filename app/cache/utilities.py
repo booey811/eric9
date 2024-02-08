@@ -9,7 +9,7 @@ log = logging.getLogger('eric')
 
 def build_product_cache():
 	log.info(f'Building product cache')
-	products_board = monday.client.get_board(2477699024)
+	products_board = monday.conn.get_board(2477699024)
 	all_simple_items = products_board.get_items()
 	log.info(f"Fetched {len(all_simple_items)} items (simple)")
 	block_size = 25
@@ -32,7 +32,7 @@ def build_product_cache():
 
 def build_device_cache():
 	log.info("Building Device Cache")
-	devices_board = monday.client.get_board(3923707691)  # Devices Board
+	devices_board = monday.conn.get_board(3923707691)  # Devices Board
 	all_simple_items = devices_board.get_items()
 	log.info(f"Fetched {len(all_simple_items)} items (simple)")
 	block_size = 25

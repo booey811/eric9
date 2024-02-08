@@ -13,14 +13,6 @@ class ValueType(abc.ABC):
 		self.column_id = column_id
 		self._value = None
 
-	@property
-	def value(self):
-		return self._value
-
-	@value.setter
-	def value(self, new_value):
-		raise NotImplementedError
-
 	def __str__(self):
 		return str(self._value)
 
@@ -40,7 +32,11 @@ class TextValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
 
-	@ValueType.value.setter
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
 	def value(self, new_value):
 		if isinstance(new_value, str):  # or any other condition you want to check
 			self._value = new_value
@@ -75,7 +71,11 @@ class NumberValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
 
-	@ValueType.value.setter
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
 	def value(self, new_value):
 		if isinstance(new_value, int):  # or any other condition you want to check
 			self._value = new_value
@@ -109,7 +109,12 @@ class StatusValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
 
-	@ValueType.value.setter
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
 	def value(self, new_value):
 		if isinstance(new_value, str):  # or any other condition you want to check
 			self._value = new_value
@@ -144,7 +149,11 @@ class DateValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
 
-	@ValueType.value.setter
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
 	def value(self, new_value: datetime):
 		# make sure it is a datetime in UTC
 		if isinstance(new_value, datetime):

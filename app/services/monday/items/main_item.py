@@ -11,3 +11,4 @@ class MainItem(items.BaseItemType):
 	url_link = columns.LinkURLValue('link1')
 	product_connect = columns.ConnectBoards('board_relation')
 	long_text = columns.LongTextValue("long_text5")
+	people = columns.PeopleValue('person')

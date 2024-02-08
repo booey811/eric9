@@ -42,7 +42,7 @@ class TextValue(ValueType):
 		if isinstance(new_value, str):  # or any other condition you want to check
 			self._value = new_value
 		else:
-			raise ValueError("Invalid value")
+			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
 
 	def column_api_data(self):
 		# prepare self.value for submission here
@@ -380,6 +380,52 @@ class LongTextValue(ValueType):
 			value = ""
 		else:
 			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
+
+
+class PeopleValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, new_value):
+		if isinstance(new_value, list):  # or any other condition you want to check
+			self._value = [int(_) for _ in new_value]
+		else:
+			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		people_ids = self.value
+		str_ids = ", ".join([str(_) for _ in people_ids])
+		return {self.column_id: str_ids}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		value_data = column_data['value']
+		if value_data is None:
+			# connected boards column is empty
+			people_ids = []
+		else:
+			try:
+				value_data = json.loads(value_data)
+			except json.JSONDecodeError:
+				raise InvalidColumnData(column_data, 'json.loads(value)')
+			try:
+				people_ids_raw = value_data.get('personsAndTeams', [])
+				people_ids = [int(_['id']) for _ in list(people_ids_raw)]
+			except Exception as e:
+				raise InvalidColumnData(column_data, 'value - personAndTeams')
+
+		value = people_ids
 
 		log.debug("Loaded column value: %s", value)
 

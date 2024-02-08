@@ -20,9 +20,9 @@ class BaseItemType:
 		if getattr(self, name, None) and isinstance(getattr(self, name), ValueType):
 			getattr(self, name).value = value
 			self.staged_changes.update(getattr(self, name).column_api_data())
-
-		# Call the parent class's __setattr__ method
-		super().__setattr__(name, value)
+		else:
+			# Call the parent class's __setattr__ method
+			super().__setattr__(name, value)
 
 	def load_api_data(self, api_data: dict):
 		self._api_data = api_data

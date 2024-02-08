@@ -1,1 +1,1 @@
-from . import quotes as slack_quotes
+# from . import quotes as slack_quotes

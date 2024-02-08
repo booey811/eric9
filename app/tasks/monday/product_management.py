@@ -9,13 +9,13 @@ log = logging.getLogger('eric')
 def check_devices_linked_to_products():
 	"""cycles through devices on the devices board, checking for missing Product Group IDs"""
 	log.debug('Updating Devices')
-	d_board = monday.client.get_boards(ids=[3923707691])[0]
+	d_board = monday.conn.get_boards(ids=[3923707691])[0]
 	log.debug("Got Devices")
 
 	_s = d_board.get_items(get_column_values=True)
 	devices = [DeviceModel(i.id, i) for i in _s]
 
-	p_board = monday.client.get_boards(ids=[2477699024])[0]
+	p_board = monday.conn.get_boards(ids=[2477699024])[0]
 
 	for d in devices:
 		d.connect_to_product_group()

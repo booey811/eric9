@@ -1,5 +1,7 @@
 import logging
 import abc
+from datetime import timezone, datetime
+from dateutil import parser as date_parser
 
 from .client import MondayDataError
 
@@ -17,7 +19,7 @@ class ValueType(abc.ABC):
 
 	@value.setter
 	def value(self, new_value):
-		self._value = new_value
+		raise NotImplementedError
 
 	def __str__(self):
 		return str(self._value)
@@ -131,6 +133,58 @@ class StatusValue(ValueType):
 			value = ""
 		else:
 			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
+
+
+class DateValue(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+	@ValueType.value.setter
+	def value(self, new_value: datetime):
+		# make sure it is a datetime in UTC
+		if isinstance(new_value, datetime):
+			new_value = new_value.astimezone(timezone.utc)
+			self._value = new_value
+
+		elif new_value is None:
+			# allow setting to None, column is cleared
+			self._value = None
+
+		else:
+			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
+
+		log.debug("Set date value: %s", new_value)
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		# desired string format: 'YYYY-MM-DD HH:MM:SS'
+		value = self.value or ""
+		assert isinstance(value, datetime)
+		if value:
+			value = value.strftime('%Y-%m-%d %H:%M:%S')
+		return {self.column_id: value}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = None
+		else:
+			try:
+				value = date_parser.parse(value)
+			except Exception as e:
+				raise ValueError(f"Error parsing date value: {value}")
+			assert (isinstance(value, datetime))
 
 		log.debug("Loaded column value: %s", value)
 

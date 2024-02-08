@@ -1,4 +1,9 @@
+import logging
 import abc
+
+from .client import MondayDataError
+
+log = logging.getLogger('eric')
 
 
 class ValueType(abc.ABC):
@@ -24,6 +29,10 @@ class ValueType(abc.ABC):
 	def column_api_data(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
+	def load_column_value(self, column_data: dict):
+		log.debug(f"Loading column value for {self.column_id}")
+
 
 class TextValue(ValueType):
 	def __init__(self, column_id: str):
@@ -40,6 +49,24 @@ class TextValue(ValueType):
 		# prepare self.value for submission here
 		value = str(self.value)
 		return {self.column_id: value}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = ""
+		else:
+			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
 
 
 class NumberValue(ValueType):
@@ -58,6 +85,23 @@ class NumberValue(ValueType):
 		value = int(self.value)
 		return {self.column_id: value}
 
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = 0
+		else:
+			value = int(value)
+
+		log.debug("Loaded column value: %s", value)
+		self.value = value
+		return self.value
+
 
 class StatusValue(ValueType):
 	def __init__(self, column_id: str):
@@ -74,3 +118,27 @@ class StatusValue(ValueType):
 		# prepare self.value for submission here
 		value = str(self.value)
 		return {self.column_id: {"label": value}}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		try:
+			value = column_data['text']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'text')
+
+		if value is None or value == "":
+			# api has fetched a None value, indicating an emtpy column
+			value = ""
+		else:
+			value = str(value)
+
+		log.debug("Loaded column value: %s", value)
+
+		self.value = value
+		return self.value
+
+
+class InvalidColumnData(MondayDataError):
+
+	def __init__(self, column_data: dict, key: str):
+		super().__init__(f"Invalid column data, no '{key}' value in data: {column_data}")

@@ -12,3 +12,7 @@ conn = monday.MondayClient(conf.MONDAY_KEYS["gabe"])
 
 class MondayAPIError(EricError):
 	pass
+
+
+class MondayDataError(EricError):
+	pass

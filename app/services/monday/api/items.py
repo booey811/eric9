@@ -36,6 +36,8 @@ class BaseItemType:
 				except IndexError:
 					raise ValueError(f"Column with ID {desired_column_id} not found in item data")
 
+				instance_property.load_column_value(column_data)
+
 		self.staged_changes = {}
 		return self
 

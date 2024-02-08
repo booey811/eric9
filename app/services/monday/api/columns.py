@@ -1,3 +1,4 @@
+import json
 import logging
 import abc
 from datetime import timezone, datetime
@@ -33,10 +34,6 @@ class TextValue(ValueType):
 		super().__init__(column_id)
 
 	@property
-	def value(self):
-		return self._value
-
-	@value.getter
 	def value(self):
 		return self._value
 
@@ -112,7 +109,6 @@ class NumberValue(ValueType):
 class StatusValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
-
 
 	@property
 	def value(self):
@@ -219,8 +215,8 @@ class LinkURLValue(ValueType):
 	@value.setter
 	def value(self, text_and_url: tuple | list):
 		if (
-			isinstance(text_and_url, (tuple, list))
-			and len(text_and_url) == 2
+				isinstance(text_and_url, (tuple, list))
+				and len(text_and_url) == 2
 		):
 			text, url = text_and_url
 			if not text:
@@ -266,6 +262,53 @@ class LinkURLValue(ValueType):
 			else:
 				raise InvalidColumnData(column_data, 'text - url could not be split')
 
+		return self.value
+
+
+class ConnectBoards(ValueType):
+	def __init__(self, column_id: str):
+		super().__init__(column_id)
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, new_ids_list):
+		if isinstance(new_ids_list, (list, tuple)):
+			# make sure the ids are integers
+			try:
+				new_ids = [int(_) for _ in new_ids_list]
+			except ValueError:
+				raise ValueError(f"Invalid value: {new_ids_list}")
+			self._value = new_ids
+		else:
+			raise ValueError(f"Invalid value: {new_ids_list}")
+
+	def column_api_data(self):
+		# prepare self.value for submission here
+		# desired format: {col_id: {item_ids: [id1, id2, id3]}}
+		item_ids = self.value
+		return {self.column_id: {"item_ids": item_ids}}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		value_data = column_data['value']
+		if value_data is None:
+			# connected boards column is empty
+			linked_ids = []
+		else:
+			try:
+				value_data = json.loads(value_data)
+			except json.JSONDecodeError:
+				raise InvalidColumnData(column_data, 'json.loads(value)')
+			try:
+				linked_ids_raw = value_data.get('linkedPulseIds', [])
+				linked_ids = [int(_['linkedPulseId']) for _ in list(linked_ids_raw)]
+			except Exception as e:
+				raise InvalidColumnData(column_data, 'value - linkedPulseIds')
+
+		self.value = linked_ids
 		return self.value
 
 

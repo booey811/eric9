@@ -9,3 +9,4 @@ class MainItem(items.BaseItemType):
 	status = columns.StatusValue('status_161')
 	date = columns.DateValue('date6')
 	url_link = columns.LinkURLValue('link1')
+	product_connect = columns.ConnectBoards('board_relation')

@@ -42,6 +42,7 @@ def create_app():
 	app.register_blueprint(scheduling.scheduling_bp)
 	app.register_blueprint(ai_routes.ai_bp)
 	app.register_blueprint(monday_routes.main_board.main_board_bp)
+	app.register_blueprint(monday_routes.typeform.typeform_bp)
 
 	return app
 

@@ -4,11 +4,10 @@ from dateutil.parser import parse
 import os
 import datetime
 from rq.job import Job
+from typing import List
 
 import config
 from ...services import monday
-from ...models import MainModel, ProductModel
-from ...models.repair_phases import RepairPhaseLineItem, RepairPhaseModel, RepairPhaseEntity
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users, notify_admins_of_error
 from ... import conf
@@ -50,14 +49,27 @@ def sync_repair_schedule(monday_group_id):
 
 		log.debug(f"Syncing for user: {user.name}")
 
-		tech_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
-		under_repair_group_repairs = [MainModel(_.id, _) for _ in monday.get_group_items(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
-		assigned_repair_group_repairs = [r for r in under_repair_group_repairs if str(r.model.technician.id) == str(user.monday_id)]
-		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.model.main_status not in statuses_to_ignore]
+		tech_group_ids = [_['id'] for _ in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+		repair_group_ids = [_['id'] for _ in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
+
+		tech_group_repairs = [
+			monday.items.MainItem(_['id'], _) for _ in
+			monday.api.get_api_items(tech_group_ids)
+		]
+		under_repair_group_repairs = [
+			monday.items.MainItem(_['id'], _) for _ in
+			monday.api.get_api_items(repair_group_ids)
+		]
+
+		assigned_repair_group_repairs = [
+			r for r in under_repair_group_repairs
+			if str(r.technician_id) == str(user.monday_id)
+		]
+		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.main_status not in statuses_to_ignore]
 
 		repairs = tech_group_repairs + status_valid_repairs
 
-		log.debug(f"Syncing for repairs: {[repair.model.name for repair in repairs]}")
+		log.debug(f"Syncing for repairs: {[repair.name for repair in repairs]}")
 
 		clean_motion_tasks(user, repairs)
 		add_monday_tasks_to_motion(user, repairs)
@@ -70,12 +82,12 @@ def sync_repair_schedule(monday_group_id):
 	return True
 
 
-def clean_motion_tasks(user, repairs: list):
+def clean_motion_tasks(user, repairs: List[monday.items.MainItem]):
 	# delete unassigned tasks in motion
-	log.debug(f"Cleaning Motion of unassigned tasks: {user.name}; repairs={[_.model.name for _ in repairs]}")
+	log.debug(f"Cleaning Motion of unassigned tasks: {user.name}; repairs={[_.name for _ in repairs]}")
 	motion = MotionClient(user)
 	schedule = motion.list_tasks()['tasks']
-	monday_task_ids = [repair.model.motion_task_id for repair in repairs]
+	monday_task_ids = [repair.motion_task_id for repair in repairs]
 	log.debug(f"Task IDs from Monday: {monday_task_ids}")
 	for task in schedule:
 		log.debug(f"Checking Motion Task {task['id']}")
@@ -91,10 +103,10 @@ def clean_motion_tasks(user, repairs: list):
 					log.debug("Waiting 20 seconds for rate limit")
 					time.sleep(20)
 			try:
-				repair = [repair for repair in repairs if repair.model.motion_task_id == task['id']][0]
+				repair = [repair for repair in repairs if repair.motion_task_id == task['id']][0]
 				log.debug(f"Removing monday reference for Motion Task ID")
-				repair.model.motion_task_id = ""
-				repair.model.save()
+				repair.motion_task_id = ""
+				repair.commit()
 			except IndexError:
 				# no task in group with this ID, so we don't care
 				pass
@@ -111,17 +123,16 @@ def clean_motion_tasks(user, repairs: list):
 					log.debug("Waiting 20 seconds for rate limit")
 					time.sleep(20)
 			try:
-				repair = [repair for repair in repairs if repair.model.motion_task_id == task['id']][0]
+				repair = [repair for repair in repairs if repair.motion_task_id == task['id']][0]
 				log.debug(f"Removing monday reference for Motion Task ID")
-				repair.model.motion_task_id = ""
-				repair.model.save()
+				repair.motion_task_id = ""
+				repair.commit()
 			except IndexError:
 				# no task in group with this ID, so we don't care
 				pass
 
 
-
-def add_monday_tasks_to_motion(user: users.User, repairs: list):
+def add_monday_tasks_to_motion(user: users.User, repairs: List[monday.items.MainItem]):
 	# add any tasks that are on monday, but not motion
 	log.debug("Adding Monday tasks to Motion")
 
@@ -129,8 +140,8 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 	schedule = motion.list_tasks()['tasks']
 	motion_task_ids = [t['id'] for t in schedule]
 	for repair in repairs:
-		log.debug(f'Checking {repair.model.name}({repair.id})')
-		monday_task_id = repair.model.motion_task_id
+		log.debug(f'Checking {repair.name}({repair.id})')
+		monday_task_id = repair.motion_task_id
 		log.debug(f'Motion Task ID: {monday_task_id}')
 		if monday_task_id in motion_task_ids:
 			log.debug(f"Task already plotted in Motion, skipping")
@@ -144,32 +155,29 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 		else:
 			raise RuntimeError("Impossible")
 		try:
-			if not repair.model.hard_deadline:
+			if not repair.hard_deadline:
 				raise MissingDeadlineInMonday(repair)
 			while True:
 				try:
-					if repair.model.products_connect:
+					if repair.products_connect.value:
+						product_data = monday.api.get_api_items(repair.products_connect.value)
+						products = [monday.items.ProductItem(p['id'], p) for p in product_data]
+						duration = max([p.required_minutes for p in products])
 
-						products = [ProductModel(p_id) for p_id in repair.model.products_connect]
-
-
-
-
-						duration = max([ProductModel(p_id).model.required_minutes for p_id in repair.model.products_connect])
 						log.debug(f"Creating task with products, maximum duration={duration}")
 						if not duration:
 							log.debug("No duration found, using default duration")
-							notify_admins_of_error(f"Repair {repair.model.name} has no duration, assuming 1 hour")
+							notify_admins_of_error(f"Repair {repair.name} has no duration, assuming 1 hour")
 							duration = 60
 					else:
 						log.debug("No Products assigned, using default duration")
-						notify_admins_of_error(f"Repair {repair.model.name} has no products, assuming 1 hour")
+						notify_admins_of_error(f"Repair {repair.name} has no products, assuming 1 hour")
 						duration = 60
 					log.debug("Creating task....")
 					task = motion.create_task(
-						name=repair.model.name,
-						deadline=repair.model.hard_deadline,
-						description=repair.model.requested_repairs,
+						name=repair.name,
+						deadline=repair.hard_deadline.value,
+						description=repair.description.value,
 						labels=['Repair'],
 						duration=duration
 					)
@@ -182,11 +190,11 @@ def add_monday_tasks_to_motion(user: users.User, repairs: list):
 			continue
 
 		log.debug(f"Updating Monday Motion Task ID: {task['id']}")
-		repair.model.motion_task_id = task['id']
-		repair.model.save()
+		repair.motion_task_id = task['id']
+		repair.commit()
 
 
-def sync_monday_phase_deadlines(user, repairs: list):
+def sync_monday_phase_deadlines(user, repairs: List[monday.items.MainItem]):
 	"""
 	gets motion tasks and syncs their scheduled deadlines with monday's phase deadlines
 	assumes that the tasks have been cleaned in both directions
@@ -199,13 +207,13 @@ def sync_monday_phase_deadlines(user, repairs: list):
 	# now we actually schedule Monday
 	for repair in repairs:
 		try:
-			log.debug(f"Syncing {repair} with Motion ID {repair.model.motion_task_id}")
+			log.debug(f"Syncing {repair} with Motion ID {repair.motion_task_id}")
 			# cycle through Monday repairs, raising errors for incorrect values
 			try:
-				motion_task = [t for t in schedule if t['id'] == repair.model.motion_task_id][0]
+				motion_task = [t for t in schedule if t['id'] == repair.motion_task_id][0]
 			except IndexError:
 				# this means we have Motion Task ID in Monday that does not exist in Motion, we should replace this value
-				log.debug(f"Cannot find Motion task with ID: {repair.model.motion_task_id}")
+				log.debug(f"Cannot find Motion task with ID: {repair.motion_task_id}")
 				continue
 			try:
 				motion_deadline = parse(motion_task['scheduledEnd'])
@@ -213,16 +221,16 @@ def sync_monday_phase_deadlines(user, repairs: list):
 				log.error(f"Received No Deadline from Motion Schedule for {str(repair)}, deleting")
 				log.debug(motion_task)
 				motion_client.delete_task(motion_task['id'])
-				repair.model.motion_scheduling_status = "No Scheduled End"
-				repair.model.motion_task_id = ""
-				repair.model.save()
+				repair.motion_scheduling_status = "No Scheduled End"
+				repair.motion_task_id = ""
+				repair.commit()
 				notify_admins_of_error(f"Motion Task {motion_task['id']} has no scheduledEnd\n\n{motion_task}")
 				continue
-				# raise MotionError(f"Motion Task {motion_task['id']} has no scheduledEnd")
+			# raise MotionError(f"Motion Task {motion_task['id']} has no scheduledEnd")
 			motion_deadline.replace(microsecond=0, second=0)
 			log.debug(f"Motion Deadline: {motion_deadline.strftime('%c')}")
 
-			cs_deadline = repair.model.hard_deadline
+			cs_deadline = repair.hard_deadline
 			if not cs_deadline:
 				raise MissingDeadlineInMonday(repair)
 			utc_cs_deadline = cs_deadline.astimezone(datetime.timezone.utc)
@@ -233,37 +241,37 @@ def sync_monday_phase_deadlines(user, repairs: list):
 			log.debug(f"Monday Deadline: {cs_deadline.strftime('%c')}")
 
 			# check is proposed Motion deadline is after Client side deadline
-			if motion_deadline > repair.model.hard_deadline:
+			if motion_deadline > repair.hard_deadline:
 				raise NotEnoughTime(repair)
 			else:
-				repair.model.phase_deadline = motion_deadline
-				repair.model.motion_scheduling_status = "Synced"
+				repair.phase_deadline = motion_deadline
+				repair.motion_scheduling_status = "Synced"
 
 		except MissingDeadlineInMonday:
 			log.debug(f"Missing Deadline in Monday: {str(repair)}, removed from schedule")
-			repair.model.phase_deadline = None
-			repair.model.motion_task_id = ""
-			motion_client.delete_task(repair.model.motion_task_id)
+			repair.phase_deadline = None
+			repair.motion_task_id = ""
+			motion_client.delete_task(repair.motion_task_id)
 
 		except NotEnoughTime:
 			log.debug(f"Not Enough Time in schedule to complete {str(repair)}")
-			repair.model.phase_deadline = None
+			repair.phase_deadline = None
 
 		except DeadlineInPast:
 			log.debug(f"Deadline in Past for {str(repair)}, removed from schedule")
-			repair.model.phase_deadline = None
-			repair.model.motion_task_id = ""
-			motion_client.delete_task(repair.model.motion_task_id)
+			repair.phase_deadline = None
+			repair.motion_task_id = ""
+			motion_client.delete_task(repair.motion_task_id)
 
-		repair.model.save()
+		repair.commit()
 
 
 class SchedulingError(EricError):
 
-	def __init__(self, monday_item: MainModel):
+	def __init__(self, monday_item: monday.items.MainItem):
 		self.item = monday_item
-		monday_item.model.phase_deadline = None
-		monday_item.model.save()
+		monday_item.phase_deadline = None
+		monday_item.commit()
 
 	def __str__(self):
 		return f"Scheduling Error: {str(self.item)}"
@@ -271,9 +279,9 @@ class SchedulingError(EricError):
 
 class MissingDeadlineInMonday(SchedulingError):
 
-	def __init__(self, monday_item: MainModel):
-		monday_item.model.motion_scheduling_status = "No Deadline"
-		monday_item.model.phase_deadline = None
+	def __init__(self, monday_item: monday.items.MainItem):
+		monday_item.motion_scheduling_status = "No Deadline"
+		monday_item.phase_deadline = None
 		super().__init__(monday_item)
 
 	def __str__(self):
@@ -281,9 +289,9 @@ class MissingDeadlineInMonday(SchedulingError):
 
 
 class NotEnoughTime(SchedulingError):
-	def __init__(self, monday_item: MainModel):
-		monday_item.model.motion_scheduling_status = "Not Enough Time"
-		monday_item.model.phase_deadline = None
+	def __init__(self, monday_item: monday.items.MainItem):
+		monday_item.motion_scheduling_status = "Not Enough Time"
+		monday_item.phase_deadline = None
 		super().__init__(monday_item)
 
 	def __str__(self):
@@ -291,9 +299,9 @@ class NotEnoughTime(SchedulingError):
 
 
 class DeadlineInPast(SchedulingError):
-	def __init__(self, monday_item: MainModel):
-		monday_item.model.motion_scheduling_status = "Deadline in Past"
-		monday_item.model.phase_deadline = None
+	def __init__(self, monday_item: monday.items.MainItem):
+		monday_item.motion_scheduling_status = "Deadline in Past"
+		monday_item.phase_deadline = None
 		super().__init__(monday_item)
 
 	def __str__(self):

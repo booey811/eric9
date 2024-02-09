@@ -9,7 +9,7 @@ from ...cache import rq
 typeform_bp = Blueprint('typeform', __name__, url_prefix='/monday/typeform')
 
 
-@typeform_bp.route('/fetch-response-data', methods=['GET'])
+@typeform_bp.route('/fetch-response-data', methods=['POST'])
 @monday.monday_challenge
 def fetch_response_data_from_typeform():
 	webhook = request.get_data()

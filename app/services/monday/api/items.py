@@ -7,6 +7,7 @@ class BaseItemType:
 
 	def __init__(self, item_id=None, api_data: dict = None):
 		self.id = item_id
+		self.name = None
 
 		self.staged_changes = {}
 
@@ -27,6 +28,7 @@ class BaseItemType:
 	def load_api_data(self, api_data: dict):
 		self._api_data = api_data
 		self._column_data = api_data['column_values']
+		self.name = api_data['name']
 		for att in dir(self):
 			instance_property = getattr(self, att)
 			if isinstance(instance_property, ValueType):

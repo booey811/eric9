@@ -38,11 +38,11 @@ def create_app():
 		return response
 
 	# Here, import and register blueprints
-	from .routes import scheduling, r_tests, ai_routes, slack, monday as monday_routes
-	app.register_blueprint(scheduling.scheduling_bp)
-	app.register_blueprint(r_tests.test_bp)
-	app.register_blueprint(ai_routes.ai_bp)
-	app.register_blueprint(monday_routes.main_board.main_board_bp)
+	# from .routes import scheduling, r_tests, ai_routes, slack, monday as monday_routes
+	# app.register_blueprint(scheduling.scheduling_bp)
+	# app.register_blueprint(r_tests.test_bp)
+	# app.register_blueprint(ai_routes.ai_bp)
+	# app.register_blueprint(monday_routes.main_board.main_board_bp)
 
 	return app
 

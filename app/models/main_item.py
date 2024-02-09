@@ -1,121 +1,83 @@
-import logging
-
-import moncli
-from moncli.models import MondayModel
-from moncli import types as col_type
-
-from .base import BaseEricModel
-from .product import ProductModel
-from .repair_phases import RepairPhaseModel
-from .part import PartModel
-from ..utilities import notify_admins_of_error
-from ..services import monday
-from ..errors import EricError
-
-log = logging.getLogger('eric')
-
-
-class _BaseMainModel(MondayModel):
-	# basic info
-	main_status = col_type.StatusType(id='status4')
-	service = col_type.StatusType(id='service')
-	client = col_type.StatusType(id='status')
-	repair_type = col_type.StatusType(id='status24')
-
-	# date info
-	booking_date = col_type.DateType(id='date6', has_time=True)
-
-	# user info
-	ticket_url = col_type.LinkType(id='link1')
-	ticket_id = col_type.TextType(id='text6')
-	notifications_status = col_type.StatusType(id='status_18')
-	email = col_type.TextType(id='text5')
-	phone = col_type.TextType(id='text00')
-
-	# address info
-	point_of_collection = col_type.TextType(id='text36')
-	address_comment = col_type.TextType(id='dup__of_passcode')
-	address_street = col_type.TextType(id='passcode')
-	address_postcode = col_type.TextType(id='text93')
-
-	# device/repair info
-	description = col_type.TextType(id='text368')
-	requested_repairs = col_type.TextType(id='text368')
-	products_connect = col_type.ItemLinkType(id='board_relation', multiple_values=True)
-	device_connect = col_type.ItemLinkType(id='board_relation5', multiple_values=False)
-
-	# payment info
-	pay_method = col_type.StatusType(id='payment_method')
-	pay_status = col_type.StatusType(id='payment_status')
-
-	# scheduling info
-	technician = col_type.PeopleType(id='person')
-	hard_deadline = col_type.DateType(id='date36')
-	phase_deadline = col_type.DateType(id='date65', has_time=True)
-
-	motion_task_id = col_type.TextType(id='text76')
-	motion_scheduling_status = col_type.StatusType(id='status_19')
-
-	# phase info
-	repair_phase = col_type.StatusType(id='status_177')
-	phase_status = col_type.StatusType(id='status_110')
-
-	# notes threads
-	notes_thread_id = col_type.TextType(id='text03')
-	error_thread_id = col_type.TextType(id='text34')
-	email_thread_id = col_type.TextType(id='text_1')
-
-
-class MainModel(BaseEricModel):
-	MONCLI_MODEL = _BaseMainModel
-	BOARD_ID = 349212843
-
-	def __init__(self, main_item_id, moncli_item: moncli.en.Item = None):
-		super().__init__(main_item_id, moncli_item)
-
-		# create updates threads
-		for thread_name in ['emails', 'errors', 'notes']:
-			self.get_thread(thread_name)
-
-	def __str__(self):
-		return f"MainModel({self.id}): {self._name or 'Not Fetched'}"
-
-	@property
-	def model(self) -> _BaseMainModel:
-		return super().model
-
-	def get_phase_model(self):
-		prods = [ProductModel(_) for _ in self.model.products_connect]
-		if not prods:
-			phase_model = RepairPhaseModel(5959544605)
-			log.warning(f"No products connected to {self.model.name}, using default phase model: {phase_model}")
-		else:
-			phase_models = [RepairPhaseModel(p.phase_model_id) for p in prods]
-			# get the phase model with the highest total time, calculated by individual line items having required minutes
-			for phase_mod in phase_models:
-				lines = phase_mod.phase_line_items
-				total = sum([line.required_minutes for line in lines])
-				phase_mod.total_time = total
-			phase_model = max(phase_models, key=lambda x: x.total_time)
-		return phase_model
-
-	def get_next_phase(self):
-		# get_phase_model, then look at line items and match self.phase_status to line item mainboard_repair_status
-		phase_model = self.get_phase_model()
-		lines = phase_model.phase_line_items
-		log.debug(f"Got {len(lines)} phase lines:")
-		for line in lines:
-			log.debug(str(line))
-		for i, line in enumerate(lines):
-			log.debug(str(line))
-			if line.phase_entity.main_board_phase_label == self.model.repair_phase:
-				# Check if there is a next item
-				if i + 1 < len(lines):
-					next_line = lines[i + 1]
-					return next_line
-				else:
-					# There is no next item, handle accordingly
-					return None
+# import logging
+#
+# import moncli
+# from moncli.models import MondayModel
+# from moncli import types as col_type
+#
+# from .base import BaseEricModel
+# from .product import ProductModel
+# from .repair_phases import RepairPhaseModel
+#
+# log = logging.getLogger('eric')
+#
+#
+# class _BaseMainModel(MondayModel):
+# 	# basic info
+# 	main_status = col_type.StatusType(id='status4')
+#
+# 	# device/repair info
+# 	description = col_type.TextType(id='text368')
+# 	requested_repairs = col_type.TextType(id='text368')
+# 	products_connect = col_type.ItemLinkType(id='board_relation', multiple_values=True)
+#
+# 	# scheduling info
+# 	technician = col_type.PeopleType(id='person')
+# 	hard_deadline = col_type.DateType(id='date36')
+# 	phase_deadline = col_type.DateType(id='date65', has_time=True)
+#
+# 	motion_task_id = col_type.TextType(id='text76')
+# 	motion_scheduling_status = col_type.StatusType(id='status_19')
+#
+# 	# phase info
+# 	repair_phase = col_type.StatusType(id='status_177')
+# 	phase_status = col_type.StatusType(id='status_110')
+#
+#
+# class MainModel(BaseEricModel):
+# 	MONCLI_MODEL = _BaseMainModel
+#
+# 	def __init__(self, main_item_id, moncli_item: moncli.en.Item = None):
+# 		super().__init__(main_item_id, moncli_item)
+#
+# 	def __str__(self):
+# 		return f"MainModel({self.id}): {self._name or 'Not Fetched'}"
+#
+# 	@property
+# 	def model(self) -> _BaseMainModel:
+# 		return super().model
+#
+# 	def get_phase_model(self):
+# 		prods = [ProductModel(_) for _ in self.model.products_connect]
+# 		if not prods:
+# 			phase_model = RepairPhaseModel(5959544605)
+# 			log.warning(f"No products connected to {self.model.name}, using default phase model: {phase_model}")
+# 		else:
+# 			phase_models = [RepairPhaseModel(p.phase_model_id) for p in prods]
+# 			# get the phase model with the highest total time, calculated by individual line items having required minutes
+# 			for phase_mod in phase_models:
+# 				lines = phase_mod.phase_line_items
+# 				total = sum([line.required_minutes for line in lines])
+# 				phase_mod.total_time = total
+# 			phase_model = max(phase_models, key=lambda x: x.total_time)
+# 		return phase_model
+#
+# 	def get_next_phase(self):
+# 		# get_phase_model, then look at line items and match self.phase_status to line item mainboard_repair_status
+# 		phase_model = self.get_phase_model()
+# 		lines = phase_model.phase_line_items
+# 		log.debug(f"Got {len(lines)} phase lines:")
+# 		for line in lines:
+# 			log.debug(str(line))
+# 		for i, line in enumerate(lines):
+# 			log.debug(str(line))
+# 			if line.phase_entity.main_board_phase_label == self.model.repair_phase:
+# 				# Check if there is a next item
+# 				if i + 1 < len(lines):
+# 					next_line = lines[i + 1]
+# 					return next_line
+# 				else:
+# 					# There is no next item, handle accordingly
+# 					return None
 
 	def get_thread(self, thread_name):
 		log.debug(f"{str(self)} getting thread: {thread_name}")

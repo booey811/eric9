@@ -1,6 +1,12 @@
 class EricError(Exception):
 	"""Base error for the application"""
 
+	def __init__(self, message, *args, **kwargs):
+		self.message = str(message)
+
+	def __str__(self, *args, **kwargs):
+		return self.message
+
 
 class DataError(EricError):
 

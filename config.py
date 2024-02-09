@@ -80,6 +80,7 @@ class Config(object):
 	# MONDAY KEYS
 	MONDAY_KEYS = {
 		"system": os.environ["MON_SYSTEM"],
+		"gabe": os.environ['MON_GABE'],  # for using the new API
 	}
 
 	# MOTION KEYS

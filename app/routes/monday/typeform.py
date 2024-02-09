@@ -15,7 +15,7 @@ def fetch_response_data_from_typeform():
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
-	rq.q_high(
+	rq.q_high.enqueue(
 		sync_typeform_response_with_monday,
 		data['pulseId']
 	)

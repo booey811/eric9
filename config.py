@@ -94,6 +94,8 @@ class Config(object):
 	# MOTION REFERENCES
 	TEAM_WORKSPACE_ID = "Xw5FG8E5tGNYByGOI5Ucx"
 
+	TYPEFORM_API_KEY = os.environ["TYPEFORM_API_KEY"]
+
 	def get_vars(self):
 		return (
 			f"CONFIG: {self.CONFIG}",

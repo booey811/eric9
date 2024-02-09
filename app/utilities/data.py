@@ -9,6 +9,6 @@ def get_board_column_info(board_id, to_console=True):
 
 	if to_console:
 		for key, value in column_info.items():
-			print(f"Column ID: {key}, Title: {value['title']}, Type: {value['type']}")
+			print(f"Title: {value['title']}, Type: {value['type']}, Column ID: {key}")
 
 	return column_info

@@ -42,8 +42,6 @@ class ValueType(abc.ABC):
 			raise MondayAPIError(f"Error searching for items with value {value} in column {self.column_id}: {r}")
 
 
-
-
 class TextValue(ValueType):
 	def __init__(self, column_id: str):
 		super().__init__(column_id)
@@ -119,6 +117,8 @@ class NumberValue(ValueType):
 		if value is None or value == "":
 			# api has fetched a None value, indicating an emtpy column
 			value = 0
+		elif isinstance(value, str):
+			value = int(float(value))
 		else:
 			value = int(value)
 
@@ -441,7 +441,7 @@ class PeopleValue(ValueType):
 		else:
 			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
 
-	def column_api_data(self, search: list | tuple =None):
+	def column_api_data(self, search: list | tuple = None):
 		# prepare self.value for submission here
 		if search:
 			people_ids = search

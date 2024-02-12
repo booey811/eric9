@@ -13,10 +13,22 @@ class MainItem(items.BaseItemType):
 
 	# basic info
 	main_status = columns.StatusValue("status4")
+	client = columns.StatusValue("status")
+	service = columns.StatusValue('service')
+	repair_type = columns.StatusValue('status24')
+	notifications_status = columns.StatusValue('status_18')
+
+	# contact info
+	ticket_url = columns.LinkURLValue("link1")
+	ticket_id = columns.TextValue("text6")
+	email = columns.TextValue("text5")
+	phone = columns.TextValue("text00")
 
 	# repair info
 	products_connect = columns.ConnectBoards("board_relation")
+	device_connect = columns.ConnectBoards("board_relation5")
 	description = columns.TextValue("text368")
+	imeisn = columns.TextValue("text4")
 
 	# tech info
 	technician_id = columns.PeopleValue("person")
@@ -26,6 +38,37 @@ class MainItem(items.BaseItemType):
 	motion_scheduling_status = columns.StatusValue("status_19")
 	hard_deadline = columns.DateValue("date36")
 	phase_deadline = columns.DateValue("date65")
+
+	# thread info
+	notes_thread_id = columns.TextValue("text37")
+	email_thread_id = columns.TextValue("text_1")
+	error_thread_id = columns.TextValue("text34")
+
+	# address info
+	address_postcode = columns.TextValue("text93")
+	address_street = columns.TextValue('passcode')
+	address_notes = columns.TextValue('dup__of_passcode')
+
+	def load_api_data(self, api_data: dict):
+		"""
+		Load the API data into the model
+		"""
+		super().load_api_data(api_data)
+
+		if self.id:
+			commit = False
+			for thread_name in ["EMAIL", "ERROR", "NOTES"]:
+				thread_val = getattr(self, f"{thread_name.lower()}_thread_id")
+				thread_id = thread_val.value
+				if not thread_id:
+					body = f"****** {thread_name} ******"
+					update = self.add_update(body)
+					thread_val.value = update['data']['create_update']['id']
+					self.staged_changes.update(thread_val.column_api_data())
+					commit = True
+			if commit:
+				self.commit()
+		return self
 
 	def get_stock_check_string(self):
 		"""
@@ -64,6 +107,18 @@ class MainItem(items.BaseItemType):
 			raise e
 
 		return update
+
+	@property
+	def device_id(self):
+		if self.device_connect and self.device_connect.value:
+			return self.device_connect.value[0]
+		else:
+			return None
+
+	@device_id.setter
+	def device_id(self, value):
+		assert isinstance(value, int)
+		self.device_connect = [value]
 
 
 class PropertyTestItem(items.BaseItemType):

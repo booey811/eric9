@@ -81,7 +81,7 @@ class BaseItemType:
 			return conn.updates.create_update(
 				item_id=self.id,
 				update_value=body,
-				thread_id=thread_id
+				thread_id=str(thread_id) if thread_id else None
 			)
 
 	def search_board_for_items(self, attribute, value):

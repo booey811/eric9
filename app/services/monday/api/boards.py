@@ -1,4 +1,5 @@
-from .client import conn, MondayAPIError
+from .client import conn
+from .exceptions import MondayAPIError
 
 
 class BoardCache:

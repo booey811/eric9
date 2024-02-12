@@ -4,7 +4,7 @@ import abc
 from datetime import timezone, datetime
 from dateutil import parser as date_parser
 
-from .client import MondayDataError
+from .exceptions import MondayDataError
 
 log = logging.getLogger('eric')
 

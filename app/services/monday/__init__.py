@@ -23,11 +23,3 @@ def monday_challenge(func):
 	return decorated_function
 
 
-class MondayError(EricError):
-
-	def __str__(self):
-		return f"Monday Error: {str(self.m)}"
-
-	def __init__(self, message):
-		self.m = message
-

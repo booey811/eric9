@@ -1,5 +1,6 @@
 from .columns import ValueType, EditingNotAllowed
-from .client import MondayAPIError, conn
+from .client import conn
+from .exceptions import MondayDataError, MondayAPIError
 
 
 class BaseItemType:
@@ -46,7 +47,9 @@ class BaseItemType:
 	def commit(self, name=None):
 		# commit changes to the API
 		if not self.id and not name:
-			raise ReferenceError("Item ID (of an existing item) or name param must be provided")
+			raise IncompleteItemError(self, "Item ID (of an existing item) or name param must be provided")
+		elif not self.id and name:
+			self.create(name)
 		try:
 			return conn.items.change_multiple_column_values(
 				board_id=self.BOARD_ID,
@@ -55,3 +58,39 @@ class BaseItemType:
 			)
 		except Exception as e:
 			raise MondayAPIError(f"Error calling monday API: {e}")
+
+	def create(self, name):
+		# create a new item in the API
+		try:
+			new_item = conn.items.create_item(
+				board_id=self.BOARD_ID,
+				group_id="",
+				item_name=name,
+				column_values=self.staged_changes
+			)
+			self.id = new_item['data']['create_item']['id']
+			return self
+		except Exception as e:
+			raise MondayAPIError(f"Error calling monday API: {e}")
+
+	def add_update(self, body, thread_id=None):
+
+		if self.id is None:
+			raise IncompleteItemError(self, "Item ID not set (not created)")
+		else:
+			return conn.updates.create_update(
+				item_id=self.id,
+				update_value=body,
+				thread_id=thread_id
+			)
+
+
+class IncompleteItemError(MondayDataError):
+	"""Error raised when item attributes that have not been fetched or created are accessed"""
+
+	def __init__(self, item, error_message):
+		self.item = item
+		self.error_message = error_message
+
+	def __str__(self):
+		return f"IncompleteItemError({str(self.item)}): {self.error_message}"

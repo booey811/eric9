@@ -1,7 +1,7 @@
 from . import client
 from .items import BaseItemType
 from .boards import cache as boards
-from .client import MondayAPIError
+from .exceptions import MondayAPIError
 
 
 def get_api_items(item_ids):

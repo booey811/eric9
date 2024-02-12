@@ -4,7 +4,8 @@ import abc
 from datetime import timezone, datetime
 from dateutil import parser as date_parser
 
-from .exceptions import MondayDataError
+from .client import conn as monday_connection
+from .exceptions import MondayDataError, MondayAPIError
 
 log = logging.getLogger('eric')
 
@@ -21,12 +22,26 @@ class ValueType(abc.ABC):
 		return str(self._value)
 
 	@abc.abstractmethod
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		raise NotImplementedError
 
 	@abc.abstractmethod
 	def load_column_value(self, column_data: dict):
 		log.debug(f"Loading column value for {self.column_id}")
+
+	def search_for_board_items(self, board_id, value):
+		# search for items on the board with the given value
+		# return the item data
+		col_data = self.column_api_data(value)
+		r = monday_connection.items.fetch_items_by_column_value(board_id, self.column_id, col_data[self.column_id])
+		if r.get('data'):
+			# success
+			items = r['data']['items_page_by_column_values']['items']
+			return items
+		else:
+			raise MondayAPIError(f"Error searching for items with value {value} in column {self.column_id}: {r}")
+
+
 
 
 class TextValue(ValueType):
@@ -44,9 +59,12 @@ class TextValue(ValueType):
 		else:
 			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
-		value = str(self.value)
+		if search:
+			value = str(search)
+		else:
+			value = str(self.value)
 		return {self.column_id: value}
 
 	def load_column_value(self, column_data: dict):
@@ -83,9 +101,12 @@ class NumberValue(ValueType):
 		else:
 			raise ValueError("Invalid value")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
-		value = int(self.value)
+		if search:
+			value = int(search)
+		else:
+			value = int(self.value)
 		return {self.column_id: value}
 
 	def load_column_value(self, column_data: dict):
@@ -121,9 +142,12 @@ class StatusValue(ValueType):
 		else:
 			raise ValueError("Invalid value")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
-		value = str(self.value)
+		if search:
+			value = str(search)
+		else:
+			value = str(self.value)
 		return {self.column_id: {"label": value}}
 
 	def load_column_value(self, column_data: dict):
@@ -169,10 +193,13 @@ class DateValue(ValueType):
 
 		log.debug("Set date value: %s", new_value)
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
 		# desired string format: 'YYYY-MM-DD HH:MM:SS'
-		value = self.value or ""
+		if search:
+			value = search
+		else:
+			value = self.value or ""
 		assert isinstance(value, datetime)
 		if value:
 			value = value.strftime('%Y-%m-%d %H:%M:%S')
@@ -228,19 +255,25 @@ class LinkURLValue(ValueType):
 		else:
 			raise ValueError("Invalid value")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
+		"""
+		create a value to save or searcg the api
+		:param search: if search is provided, it will be used instead of self.value
+			format of search = [text, url]
+		"""
 		# prepare self.value for submission here
-		value = str(self.value)
-		if self.text:
-			text = self.text
+		if search:
+			text, url = search
 		else:
-			text = ""
+			if self.text:
+				text = self.text
+			else:
+				text = ""
 
-		if self.url:
-			url = self.url
-		else:
-			url = ""
-
+			if self.url:
+				url = self.url
+			else:
+				url = ""
 		return {self.column_id: {'text': text, 'url': url}}
 
 	def load_column_value(self, column_data: dict):
@@ -285,10 +318,13 @@ class ConnectBoards(ValueType):
 		else:
 			raise ValueError(f"Invalid value: {new_ids_list}")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
 		# desired format: {col_id: {item_ids: [id1, id2, id3]}}
-		item_ids = self.value
+		if search:
+			item_ids = search
+		else:
+			item_ids = self.value
 		return {self.column_id: {"item_ids": item_ids}}
 
 	def load_column_value(self, column_data: dict):
@@ -325,7 +361,7 @@ class MirroredDataValue(ValueType):
 	def value(self, new_value):
 		raise ValueError("Cannot set value for a mirrored column")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		raise EditingNotAllowed(self.column_id)
 
 	def load_column_value(self, column_data: dict):
@@ -363,9 +399,12 @@ class LongTextValue(ValueType):
 		else:
 			raise ValueError("Invalid value")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
-		value = str(self.value)
+		if search:
+			value = str(search)
+		else:
+			value = str(self.value)
 		return {self.column_id: value}
 
 	def load_column_value(self, column_data: dict):
@@ -402,9 +441,12 @@ class PeopleValue(ValueType):
 		else:
 			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
 
-	def column_api_data(self):
+	def column_api_data(self, search: list | tuple =None):
 		# prepare self.value for submission here
-		people_ids = self.value
+		if search:
+			people_ids = search
+		else:
+			people_ids = self.value
 		str_ids = ", ".join([str(_) for _ in people_ids])
 		return {self.column_id: str_ids}
 
@@ -456,10 +498,13 @@ class DropdownValue(ValueType):
 		else:
 			raise ValueError(f"Invalid value: {new_ids_list}")
 
-	def column_api_data(self):
+	def column_api_data(self, search=None):
 		# prepare self.value for submission here
 		# desired format: {col_id: {ids: [id1, id2, id3]}}
-		item_ids = self.value
+		if search:
+			item_ids = search
+		else:
+			item_ids = self.value
 		return {self.column_id: {"ids": item_ids}}
 
 	def load_column_value(self, column_data: dict):

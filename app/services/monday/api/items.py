@@ -84,6 +84,16 @@ class BaseItemType:
 				thread_id=thread_id
 			)
 
+	def search_board_for_items(self, attribute, value):
+
+		att = getattr(self, attribute)
+		if not att:
+			raise AttributeError(f"{attribute} is not a valid attribute of {self.__class__.__name__}")
+
+		assert isinstance(att, ValueType), f"{attribute} cannot be used to search for items"
+
+		return att.search_for_board_items(self.BOARD_ID, value)
+
 
 class IncompleteItemError(MondayDataError):
 	"""Error raised when item attributes that have not been fetched or created are accessed"""

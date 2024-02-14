@@ -11,43 +11,46 @@ log = logging.getLogger('eric')
 class MainItem(items.BaseItemType):
 	BOARD_ID = 349212843
 
-	# basic info
-	main_status = columns.StatusValue("status4")
-	client = columns.StatusValue("status")
-	service = columns.StatusValue('service')
-	repair_type = columns.StatusValue('status24')
-	notifications_status = columns.StatusValue('status_18')
+	def __init__(self, item_id=None, api_data: dict | None =None):
+		# basic info
+		self.main_status = columns.StatusValue("status4")
+		self.client = columns.StatusValue("status")
+		self.service = columns.StatusValue('service')
+		self.repair_type = columns.StatusValue('status24')
+		self.notifications_status = columns.StatusValue('status_18')
 
-	# contact info
-	ticket_url = columns.LinkURLValue("link1")
-	ticket_id = columns.TextValue("text6")
-	email = columns.TextValue("text5")
-	phone = columns.TextValue("text00")
+		# contact info
+		self.ticket_url = columns.LinkURLValue("link1")
+		self.ticket_id = columns.TextValue("text6")
+		self.email = columns.TextValue("text5")
+		self.phone = columns.TextValue("text00")
 
-	# repair info
-	products_connect = columns.ConnectBoards("board_relation")
-	device_connect = columns.ConnectBoards("board_relation5")
-	description = columns.TextValue("text368")
-	imeisn = columns.TextValue("text4")
+		# repair info
+		self.products_connect = columns.ConnectBoards("board_relation")
+		self.device_connect = columns.ConnectBoards("board_relation5")
+		self.description = columns.TextValue("text368")
+		self.imeisn = columns.TextValue("text4")
 
-	# tech info
-	technician_id = columns.PeopleValue("person")
+		# tech info
+		self.technician_id = columns.PeopleValue("person")
 
-	# scheduling info
-	motion_task_id = columns.TextValue("text76")
-	motion_scheduling_status = columns.StatusValue("status_19")
-	hard_deadline = columns.DateValue("date36")
-	phase_deadline = columns.DateValue("date65")
+		# scheduling info
+		self.motion_task_id = columns.TextValue("text76")
+		self.motion_scheduling_status = columns.StatusValue("status_19")
+		self.hard_deadline = columns.DateValue("date36")
+		self.phase_deadline = columns.DateValue("date65")
 
-	# thread info
-	notes_thread_id = columns.TextValue("text37")
-	email_thread_id = columns.TextValue("text_1")
-	error_thread_id = columns.TextValue("text34")
+		# thread info
+		self.notes_thread_id = columns.TextValue("text37")
+		self.email_thread_id = columns.TextValue("text_1")
+		self.error_thread_id = columns.TextValue("text34")
 
-	# address info
-	address_postcode = columns.TextValue("text93")
-	address_street = columns.TextValue('passcode')
-	address_notes = columns.TextValue('dup__of_passcode')
+		# address info
+		self.address_postcode = columns.TextValue("text93")
+		self.address_street = columns.TextValue('passcode')
+		self.address_notes = columns.TextValue('dup__of_passcode')
+
+		super().__init__(item_id, api_data)
 
 	def load_api_data(self, api_data: dict):
 		"""
@@ -59,11 +62,11 @@ class MainItem(items.BaseItemType):
 			commit = False
 			for thread_name in ["EMAIL", "ERROR", "NOTES"]:
 				thread_val = getattr(self, f"{thread_name.lower()}_thread_id")
-				thread_id = thread_val.value
+				thread_id = thread_val
 				if not thread_id:
 					body = f"****** {thread_name} ******"
 					update = self.add_update(body)
-					thread_val.value = update['data']['create_update']['id']
+					thread_val = update['data']['create_update']['id']
 					self.staged_changes.update(thread_val.column_api_data())
 					commit = True
 			if commit:

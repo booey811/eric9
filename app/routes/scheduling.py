@@ -130,7 +130,7 @@ def handle_client_side_deadline_adjustment():
 				if main.products_connect.value:
 					prod_data = monday.api.get_api_items(main.products_connect.value)
 					duration = max(
-						[items.ProductItem(p['id'], p).required_minutes for p in prod_data]
+						[items.ProductItem(p['id'], p).required_minutes.value for p in prod_data]
 					)
 				else:
 					duration = 60

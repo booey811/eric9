@@ -141,7 +141,7 @@ def add_monday_tasks_to_motion(user: users.User, repairs: List[monday.items.Main
 	motion_task_ids = [t['id'] for t in schedule]
 	for repair in repairs:
 		log.debug(f'Checking {repair.name}({repair.id})')
-		monday_task_id = repair.motion_task_id
+		monday_task_id = repair.motion_task_id.value
 		log.debug(f'Motion Task ID: {monday_task_id}')
 		if monday_task_id in motion_task_ids:
 			log.debug(f"Task already plotted in Motion, skipping")
@@ -155,14 +155,14 @@ def add_monday_tasks_to_motion(user: users.User, repairs: List[monday.items.Main
 		else:
 			raise RuntimeError("Impossible")
 		try:
-			if not repair.hard_deadline:
+			if not repair.hard_deadline.value:
 				raise MissingDeadlineInMonday(repair)
 			while True:
 				try:
 					if repair.products_connect.value:
 						product_data = monday.api.get_api_items(repair.products_connect.value)
 						products = [monday.items.ProductItem(p['id'], p) for p in product_data]
-						duration = max([p.required_minutes for p in products])
+						duration = max([p.required_minutes.value for p in products])
 
 						log.debug(f"Creating task with products, maximum duration={duration}")
 						if not duration:

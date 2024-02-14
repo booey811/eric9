@@ -5,6 +5,7 @@ import os
 import datetime
 from rq.job import Job
 from typing import List
+from pprint import pprint as p
 
 import config
 from ...services import monday
@@ -49,25 +50,23 @@ def sync_repair_schedule(monday_group_id):
 
 		log.debug(f"Syncing for user: {user.name}")
 
-		tech_group_ids = [_['id'] for _ in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
-		repair_group_ids = [_['id'] for _ in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
+		tech_group_ids = [api_data['id'] for api_data in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+		repair_group_ids = [api_data['id'] for api_data in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
 
-		tech_group_repairs = [
-			monday.items.MainItem(_['id'], _) for _ in
-			monday.api.get_api_items(tech_group_ids)
-		]
-		under_repair_group_repairs = [
-			monday.items.MainItem(_['id'], _) for _ in
-			monday.api.get_api_items(repair_group_ids)
+		tech_group_data = monday.api.get_api_items(tech_group_ids)
+		tech_group_items = [monday.items.MainItem(data['id'], data) for data in tech_group_data]
+
+		under_repair_data = monday.api.get_api_items(repair_group_ids)
+		under_repair_group_items = [monday.items.MainItem(data['id'], data) for data in under_repair_data]
+
+		assigned_repair_group_item = [
+			r for r in under_repair_group_items
+			if str(r.technician_id.value) == str(user.monday_id)
 		]
 
-		assigned_repair_group_repairs = [
-			r for r in under_repair_group_repairs
-			if str(r.technician_id) == str(user.monday_id)
-		]
-		status_valid_repairs = [r for r in assigned_repair_group_repairs if r.main_status not in statuses_to_ignore]
+		status_valid_under_repair_items = [r for r in assigned_repair_group_item if r.main_status not in statuses_to_ignore]
 
-		repairs = tech_group_repairs + status_valid_repairs
+		repairs = tech_group_items + status_valid_under_repair_items
 
 		log.debug(f"Syncing for repairs: {[repair.name for repair in repairs]}")
 
@@ -87,7 +86,7 @@ def clean_motion_tasks(user, repairs: List[monday.items.MainItem]):
 	log.debug(f"Cleaning Motion of unassigned tasks: {user.name}; repairs={[_.name for _ in repairs]}")
 	motion = MotionClient(user)
 	schedule = motion.list_tasks()['tasks']
-	monday_task_ids = [repair.motion_task_id for repair in repairs]
+	monday_task_ids = [repair.motion_task_id.value for repair in repairs]
 	log.debug(f"Task IDs from Monday: {monday_task_ids}")
 	for task in schedule:
 		log.debug(f"Checking Motion Task {task['id']}")
@@ -103,7 +102,7 @@ def clean_motion_tasks(user, repairs: List[monday.items.MainItem]):
 					log.debug("Waiting 20 seconds for rate limit")
 					time.sleep(20)
 			try:
-				repair = [repair for repair in repairs if repair.motion_task_id == task['id']][0]
+				repair = [repair for repair in repairs if repair.motion_task_id.value == task['id']][0]
 				log.debug(f"Removing monday reference for Motion Task ID")
 				repair.motion_task_id = ""
 				repair.commit()
@@ -123,7 +122,7 @@ def clean_motion_tasks(user, repairs: List[monday.items.MainItem]):
 					log.debug("Waiting 20 seconds for rate limit")
 					time.sleep(20)
 			try:
-				repair = [repair for repair in repairs if repair.motion_task_id == task['id']][0]
+				repair = [repair for repair in repairs if repair.motion_task_id.value == task['id']][0]
 				log.debug(f"Removing monday reference for Motion Task ID")
 				repair.motion_task_id = ""
 				repair.commit()
@@ -202,18 +201,19 @@ def sync_monday_phase_deadlines(user, repairs: List[monday.items.MainItem]):
 	"""
 
 	log.debug(f"Syncing Monday Deadlines to Motion: {repairs}")
+
 	motion_client = MotionClient(user)
 	schedule = motion_client.list_tasks()['tasks']
 	# now we actually schedule Monday
 	for repair in repairs:
 		try:
-			log.debug(f"Syncing {repair} with Motion ID {repair.motion_task_id}")
+			log.debug(f"Syncing {repair} with Motion ID {repair.motion_task_id.value}")
 			# cycle through Monday repairs, raising errors for incorrect values
 			try:
-				motion_task = [t for t in schedule if t['id'] == repair.motion_task_id][0]
+				motion_task = [t for t in schedule if t['id'] == repair.motion_task_id.value][0]
 			except IndexError:
 				# this means we have Motion Task ID in Monday that does not exist in Motion, we should replace this value
-				log.debug(f"Cannot find Motion task with ID: {repair.motion_task_id}")
+				log.debug(f"Cannot find Motion task with ID: {repair.motion_task_id.value}")
 				continue
 			try:
 				motion_deadline = parse(motion_task['scheduledEnd'])
@@ -227,21 +227,21 @@ def sync_monday_phase_deadlines(user, repairs: List[monday.items.MainItem]):
 				notify_admins_of_error(f"Motion Task {motion_task['id']} has no scheduledEnd\n\n{motion_task}")
 				continue
 			# raise MotionError(f"Motion Task {motion_task['id']} has no scheduledEnd")
-			motion_deadline.replace(microsecond=0, second=0)
+			motion_deadline = motion_deadline.replace(microsecond=0, second=0).astimezone(datetime.timezone.utc)
 			log.debug(f"Motion Deadline: {motion_deadline.strftime('%c')}")
 
-			cs_deadline = repair.hard_deadline
+			cs_deadline = repair.hard_deadline.value
 			if not cs_deadline:
 				raise MissingDeadlineInMonday(repair)
-			utc_cs_deadline = cs_deadline.astimezone(datetime.timezone.utc)
-			if utc_cs_deadline < datetime.datetime.now(datetime.timezone.utc):
+			cs_deadline = cs_deadline.replace()
+			cs_deadline = cs_deadline.replace(microsecond=0, second=0).astimezone(datetime.timezone.utc)
+			if cs_deadline < datetime.datetime.now(datetime.timezone.utc):
 				raise DeadlineInPast(repair)
 
-			cs_deadline = cs_deadline.replace(microsecond=0, second=0)
 			log.debug(f"Monday Deadline: {cs_deadline.strftime('%c')}")
 
 			# check is proposed Motion deadline is after Client side deadline
-			if motion_deadline > repair.hard_deadline:
+			if motion_deadline > cs_deadline:
 				raise NotEnoughTime(repair)
 			else:
 				repair.phase_deadline = motion_deadline

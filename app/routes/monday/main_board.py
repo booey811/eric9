@@ -1,18 +1,19 @@
-# import logging
-# import json
-#
-# from flask import Blueprint, request, jsonify
-#
-# from ...services.monday import monday_challenge
-# from ...utilities import notify_admins_of_error
-# from ...models import MainModel
-# from ...errors import EricError
-#
-# log = logging.getLogger('eric')
-#
-# main_board_bp = Blueprint('main_board', __name__, url_prefix="/main-board")
-#
-#
+import logging
+import json
+
+from flask import Blueprint, request, jsonify
+
+from ...services.monday import monday_challenge, items
+from ...services import monday
+from ...utilities import notify_admins_of_error
+from ...errors import EricError
+from ...cache.rq import q_low
+from ...tasks.monday import web_bookings
+
+log = logging.getLogger('eric')
+
+main_board_bp = Blueprint('main_board', __name__, url_prefix="/main-board")
+
 # @main_board_bp.route("/tech-status", methods=["POST"])
 # @monday_challenge
 # def handle_tech_status_adjustment():
@@ -48,7 +49,7 @@
 # 	log.debug('Dealing with phases.....')
 #
 # 	main_id = data['pulseId']
-# 	main = MainModel(main_id)
+# 	main = items.MainItem(main_id, monday.api.get_api_items([main_id])[0])
 #
 # 	if new_label == 'Complete':
 # 		log.debug(f"Phase completed, moving to next phase")
@@ -91,7 +92,7 @@ def handle_web_booking():
 	log.debug(f"Handling Web Booking: {web_booking_id}")
 
 	q_low.enqueue(
-		transfer_web_booking,
+		web_bookings.transfer_web_booking,
 		web_booking_id
 	)
 

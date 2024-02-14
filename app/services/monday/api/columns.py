@@ -196,12 +196,16 @@ class DateValue(ValueType):
 	def column_api_data(self, search=None):
 		# prepare self.value for submission here
 		# desired string format: 'YYYY-MM-DD HH:MM:SS'
+
 		if search:
 			value = search
 		else:
-			value = self.value or ""
-		assert isinstance(value, datetime)
-		if value:
+			value = self.value
+
+		if not value:
+			value = ''
+		else:
+			assert isinstance(value, datetime)
 			value = value.strftime('%Y-%m-%d %H:%M:%S')
 		return {self.column_id: value}
 

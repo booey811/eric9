@@ -1,6 +1,10 @@
+import logging
+
 from .columns import ValueType, EditingNotAllowed
 from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
+
+log = logging.getLogger('eric')
 
 
 class BaseItemType:
@@ -28,6 +32,8 @@ class BaseItemType:
 
 	def load_api_data(self, api_data: dict):
 		self._api_data = api_data
+		if api_data['id'] != str(self.id):
+			raise ValueError(f"Item ID {self.id} does not match ID in API data: {api_data['id']}")
 		self._column_data = api_data['column_values']
 		self.name = api_data['name']
 		for att in dir(self):

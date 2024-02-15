@@ -31,6 +31,10 @@ class MainItem(items.BaseItemType):
 		self.description = columns.TextValue("text368")
 		self.imeisn = columns.TextValue("text4")
 
+		# payment info
+		self.payment_status = columns.StatusValue("payment_status")
+		self.payment_method = columns.StatusValue("payment_method")
+
 		# tech info
 		self.technician_id = columns.PeopleValue("person")
 

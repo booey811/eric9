@@ -1,5 +1,6 @@
 from ..api.items import BaseItemType
 from ..api import columns
+from ... import typeform
 
 
 class WebBookingItem(BaseItemType):
@@ -26,7 +27,6 @@ class WebBookingItem(BaseItemType):
 	address_notes = columns.TextValue('company_flat')
 	address_street = columns.TextValue('street_name_number')
 	point_of_collection = columns.TextValue('text9')
-from ....services import typeform
 
 
 class TypeFormWalkInResponseItem(BaseItemType):

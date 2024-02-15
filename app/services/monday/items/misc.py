@@ -39,6 +39,7 @@ class TypeFormWalkInResponseItem(BaseItemType):
 	device_type = columns.StatusValue('device_category')
 	device = columns.TextValue('device6')
 	repair_notes = columns.TextValue('text5')
+	push_to_slack = columns.StatusValue('status6')
 
 	def sync_typeform_data(self):
 
@@ -81,5 +82,6 @@ class TypeFormWalkInResponseItem(BaseItemType):
 			except KeyError:
 				continue
 
+		self.push_to_slack = 'Do Now!'
 		self.commit()
 		return self

@@ -49,7 +49,7 @@ def handle_repair_group_change():
 		user = users.User(repair_group_id=old_group_id)
 		motion = MotionClient(user)
 		motion.delete_task(main.motion_task_id.value)
-		main.motion_task_id = None
+		main.motion_task_id = ""
 		main.motion_scheduling_status = "Not In Repair Schedule"
 		scheduling.schedule_update(old_group_id)
 
@@ -111,7 +111,7 @@ def handle_client_side_deadline_adjustment():
 		if not main.hard_deadline.value:
 			log.debug(f"{main.name} missing deadline, deleting task")
 			motion.delete_task(main.motion_task_id.value)
-			main.motion_task_id = None
+			main.motion_task_id = ""
 			main.motion_scheduling_status = "No Deadline"
 			main.commit()
 			scheduling.schedule_update(group_id)

@@ -41,6 +41,7 @@ def create_app():
 	from .routes import scheduling, slack, monday as monday_routes, ai as ai_routes
 	app.register_blueprint(scheduling.scheduling_bp)
 	app.register_blueprint(ai_routes.ai_bp)
+	app.register_blueprint(monday_routes.main_board.main_board_bp)
 
 	return app
 

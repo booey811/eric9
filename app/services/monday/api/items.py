@@ -9,6 +9,7 @@ from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
 from ....cache import get_redis_connection, CacheMiss
 from .client import get_api_items
+from ....utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
 
@@ -16,7 +17,7 @@ log = logging.getLogger('eric')
 class BaseItemType:
 	BOARD_ID = None
 
-	def __init__(self, item_id=None, api_data: dict = None):
+	def __init__(self, item_id=None, api_data: dict = None, search=False):
 		self.id = item_id
 		self.name = None
 
@@ -24,8 +25,8 @@ class BaseItemType:
 
 		self._api_data = None
 		self._column_data = None
-
-		self.load_data(api_data)
+		if not search:
+			self.load_data(api_data)
 
 	def __setattr__(self, name, value):
 		# Check if the attribute being assigned is an instance of ValueType
@@ -42,8 +43,6 @@ class BaseItemType:
 			self.load_from_api(api_data)
 		elif not api_data and self.id:
 			self.load_from_api()
-		else:
-			raise MondayDataError("Cannot Load Data: No API data or item ID provided")
 
 	def load_from_api(self, api_data=None):
 		# load the item data from the API
@@ -134,8 +133,8 @@ class BaseItemType:
 
 class BaseCacheableItem(BaseItemType):
 
-	def __init__(self, item_id=None, api_data: dict = None, cache_data: dict = None):
-		super().__init__(item_id, api_data)
+	def __init__(self, item_id=None, api_data: dict = None, search=False):
+		super().__init__(item_id, api_data, search)
 
 	def load_data(self, api_data=None):
 		# load the item data from the cache
@@ -145,6 +144,7 @@ class BaseCacheableItem(BaseItemType):
 			else:
 				self.load_from_cache()
 		except CacheMiss:
+			notify_admins_of_error(f"Cache miss for {str(self)} {self.id}")
 			self.load_from_api()
 
 	@abc.abstractmethod

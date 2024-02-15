@@ -1,8 +1,12 @@
 import logging
+import abc
+import json
 
 from .columns import ValueType, EditingNotAllowed
 from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
+from ....cache import get_redis_connection, CacheMiss
+from .client import get_api_items
 
 log = logging.getLogger('eric')
 
@@ -18,8 +22,8 @@ class BaseItemType:
 
 		self._api_data = None
 		self._column_data = None
-		if api_data:
-			self.load_api_data(api_data)
+
+		self.load_data(api_data)
 
 	def __setattr__(self, name, value):
 		# Check if the attribute being assigned is an instance of ValueType
@@ -30,41 +34,37 @@ class BaseItemType:
 			# Call the parent class's __setattr__ method
 			super().__setattr__(name, value)
 
+	def load_data(self, api_data=None):
+		# load the item data from the API
+		if api_data:
+			self.load_from_api(api_data)
+		elif not api_data and self.id:
+			self.load_from_api()
+		else:
+			raise MondayDataError("Cannot Load Data: No API data or item ID provided")
+
 	def load_from_api(self, api_data=None):
 		# load the item data from the API
 		log.debug(f"Loading item data for {self.__class__.__name__} {self.id}")
-		if not api_data:
-			api_data = conn.items.fetch_items_by_id([self.id])[0]
-		else:
-			assert 'id' in api_data
-			assert 'column_values' in api_data
-			assert 'name' in api_data
+		if not api_data and self.id:
+			log.debug("No Data provided, fetching...")
+			api_data = get_api_items([self.id])[0]
+		elif not api_data and not self.id:
+			raise IncompleteItemError(self, "Item ID not set (not created)")
 
+		if str(self.id) != str(api_data['id']):
+			raise MondayDataError(f"Item ID {self.id} does not match ID in API data: {api_data['id']}")
 
+		assert 'id' in api_data
+		assert 'column_values' in api_data
+		assert 'name' in api_data
 
-
-
-
-
-
-
-		else:
-			if not self.id:
-				raise IncompleteItemError(self, "Item ID not set (not created)")
-			try:
-				item_data = conn.items.get_item(self.id)
-				return self.load_api_data(item_data['data']['items'][0])
-			except Exception as e:
-				raise MondayAPIError(f"Error calling monday API: {e}")
-
-
-
-	def load_api_data(self, api_data: dict):
 		self._api_data = api_data
-		if api_data['id'] != str(self.id):
-			raise ValueError(f"Item ID {self.id} does not match ID in API data: {api_data['id']}")
 		self._column_data = api_data['column_values']
+
+		self.id = api_data['id']
 		self.name = api_data['name']
+
 		for att in dir(self):
 			instance_property = getattr(self, att)
 			if isinstance(instance_property, ValueType):
@@ -128,6 +128,46 @@ class BaseItemType:
 		assert isinstance(att, ValueType), f"{attribute} cannot be used to search for items"
 
 		return att.search_for_board_items(self.BOARD_ID, value)
+
+
+class BaseCacheableItem(BaseItemType):
+
+	def __init__(self, item_id=None, api_data: dict = None, cache_data: dict = None):
+		super().__init__(item_id, api_data)
+
+	def load_data(self, api_data=None):
+		# load the item data from the cache
+		try:
+			self.load_from_cache()
+		except CacheMiss:
+			self.load_from_api()
+			self.save_to_cache()
+
+	@abc.abstractmethod
+	def cache_key(self):
+		# load the item data from the cache
+		raise NotImplementedError
+
+	def fetch_cache_data(self):
+		cache_data = get_redis_connection().get(self.cache_key())
+		if not cache_data:
+			raise CacheMiss(self.cache_key(), cache_data)
+		cache_data = cache_data.decode('utf-8')
+		cache_data = json.loads(cache_data)
+		return cache_data
+
+	@abc.abstractmethod
+	def prepare_cache_data(self):
+		raise NotImplementedError
+
+	def save_to_cache(self):
+		cache_data = self.prepare_cache_data()
+		get_redis_connection().set(self.cache_key(), json.dumps(cache_data))
+		return cache_data
+
+	@abc.abstractmethod
+	def load_from_cache(self):
+		raise NotImplementedError
 
 
 class IncompleteItemError(MondayDataError):

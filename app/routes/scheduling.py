@@ -34,7 +34,7 @@ def handle_repair_group_change():
 		log.debug(f"MainItem({main_id}) moved from non repair group to non repair group, do nothing")
 		return jsonify({'message': 'Not a repair group'}), 200
 
-	item = monday.api.get_api_items([main_id])[0]
+	item = monday.api.client.get_api_items([main_id])[0]
 	main = items.MainItem(item['id'], item)
 
 	if old_group_id in repair_group_ids and main.motion_task_id.value:
@@ -60,7 +60,7 @@ def handle_repair_group_change():
 		motion = MotionClient(user)
 		try:
 			if main.products_connect.value:
-				prod_data = monday.api.get_api_items(main.products_connect.value)
+				prod_data = monday.api.client.get_api_items(main.products_connect.value)
 				products = [items.ProductItem(p['id'], p) for p in prod_data]
 				duration = max([p.required_minutes for p in products]) or 60
 			else:
@@ -104,7 +104,7 @@ def handle_client_side_deadline_adjustment():
 
 	user = users.User(repair_group_id=group_id)
 	motion = MotionClient(user)
-	item = monday.api.get_api_items([data['pulseId']])[0]
+	item = monday.api.client.get_api_items([data['pulseId']])[0]
 	main = items.MainItem(item['id'], item)
 
 	if main.motion_task_id.value:
@@ -128,7 +128,7 @@ def handle_client_side_deadline_adjustment():
 			except MotionError:
 				log.debug(f"Motion Task({main.motion_task_id}) not found, creating instead")
 				if main.products_connect.value:
-					prod_data = monday.api.get_api_items(main.products_connect.value)
+					prod_data = monday.api.client.get_api_items(main.products_connect.value)
 					duration = max(
 						[items.ProductItem(p['id'], p).required_minutes.value for p in prod_data]
 					)

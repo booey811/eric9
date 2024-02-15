@@ -7,7 +7,6 @@ from rq.job import Job
 from typing import List
 from pprint import pprint as p
 
-import config
 from ...services import monday
 from ...services.motion import MotionClient, MotionRateLimitError, MotionError
 from ...utilities import users, notify_admins_of_error
@@ -50,13 +49,13 @@ def sync_repair_schedule(monday_group_id):
 
 		log.debug(f"Syncing for user: {user.name}")
 
-		tech_group_ids = [api_data['id'] for api_data in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
-		repair_group_ids = [api_data['id'] for api_data in monday.api.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
+		tech_group_ids = [api_data['id'] for api_data in monday.api.client.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, monday_group_id)]
+		repair_group_ids = [api_data['id'] for api_data in monday.api.client.get_api_items_by_group(conf.MONDAY_MAIN_BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)]
 
-		tech_group_data = monday.api.get_api_items(tech_group_ids)
+		tech_group_data = monday.api.client.get_api_items(tech_group_ids)
 		tech_group_items = [monday.items.MainItem(data['id'], data) for data in tech_group_data]
 
-		under_repair_data = monday.api.get_api_items(repair_group_ids)
+		under_repair_data = monday.api.client.get_api_items(repair_group_ids)
 		under_repair_group_items = [monday.items.MainItem(data['id'], data) for data in under_repair_data]
 
 		assigned_repair_group_item = [
@@ -159,7 +158,7 @@ def add_monday_tasks_to_motion(user: users.User, repairs: List[monday.items.Main
 			while True:
 				try:
 					if repair.products_connect.value:
-						product_data = monday.api.get_api_items(repair.products_connect.value)
+						product_data = monday.api.client.get_api_items(repair.products_connect.value)
 						products = [monday.items.ProductItem(p['id'], p) for p in product_data]
 						duration = max([p.required_minutes.value for p in products])
 

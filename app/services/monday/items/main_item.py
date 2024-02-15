@@ -1,6 +1,7 @@
 import logging
 
-from ..api import items, columns, get_api_items
+from ..api import items, columns
+from ..api.client import get_api_items
 from .product import ProductItem
 from .part import PartItem
 from ....utilities import notify_admins_of_error
@@ -11,7 +12,7 @@ log = logging.getLogger('eric')
 class MainItem(items.BaseItemType):
 	BOARD_ID = 349212843
 
-	def __init__(self, item_id=None, api_data: dict | None =None):
+	def __init__(self, item_id=None, api_data: dict | None = None):
 		# basic info
 		self.main_status = columns.StatusValue("status4")
 		self.client = columns.StatusValue("status")
@@ -56,12 +57,14 @@ class MainItem(items.BaseItemType):
 
 		super().__init__(item_id, api_data)
 
-	def load_api_data(self, api_data: dict):
+	def load_from_api(self, api_data=None):
 		"""
 		Load the API data into the model
 		"""
-		super().load_api_data(api_data)
+		super().load_from_api(api_data)
+		self._check_update_threads()
 
+	def _check_update_threads(self):
 		if self.id:
 			commit = False
 			for thread_name in ["EMAIL", "ERROR", "NOTES"]:

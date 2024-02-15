@@ -3,15 +3,17 @@ import logging
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import Ticket, Comment
 
+import app.services.monday.api.client
 from ...services import monday, woocommerce, zendesk
 from ...errors import EricError
 from ...utilities import notify_admins_of_error
+from ...services.monday.api.client import get_api_items
 
 log = logging.getLogger('eric')
 
 
 def transfer_web_booking(web_booking_item_id):
-	item = monday.api.get_api_items([web_booking_item_id])[0]
+	item = get_api_items([web_booking_item_id])[0]
 	web_booking = monday.items.misc.WebBookingItem(item['id'], item)
 	main = monday.items.MainItem(None)
 
@@ -111,7 +113,7 @@ def transfer_web_booking(web_booking_item_id):
 	device_id = device_ids[0] if device_ids else None
 	if device_id:
 		d_id = device_id
-		device_data = monday.api.get_api_items([d_id])[0]
+		device_data = app.services.monday.api.client.get_api_items([d_id])[0]
 		device = monday.items.DeviceItem(device_data['id'], device_data)
 		email_subject = f"Your {device.name} Repair"
 	else:
@@ -178,7 +180,7 @@ def transfer_web_booking(web_booking_item_id):
 	main.notifications_status = 'ON'
 
 	main.create(web_booking.name)
-	main_data = monday.api.get_api_items([main.id])[0]
+	main_data = app.services.monday.api.client.get_api_items([main.id])[0]
 	main = monday.items.MainItem(main_data['id'], main_data)
 
 	main.add_update(main.get_stock_check_string(), main.notes_thread_id.value)

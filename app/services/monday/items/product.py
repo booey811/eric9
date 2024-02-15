@@ -23,6 +23,8 @@ class ProductItem(BaseCacheableItem):
 		self.price.value = int(cache_data['price'])
 		self.required_minutes.value = int(cache_data['required_minutes'])
 		self.name = cache_data['name']
+		self.device_id = cache_data['device_id']
+		self.id = cache_data['id']
 		return cache_data
 
 	def prepare_cache_data(self):
@@ -30,7 +32,8 @@ class ProductItem(BaseCacheableItem):
 			"price": self.price.value,
 			"required_minutes": self.required_minutes.value,
 			"name": self.name,
-			"device_id": self.device_id
+			"device_id": self.device_id,
+			"id": self.id
 		}
 
 		if not data['device_id']:
@@ -48,4 +51,4 @@ class ProductItem(BaseCacheableItem):
 
 	@device_id.setter
 	def device_id(self, value):
-		self.device_connect = [int(value)]
+		self.device_connect.value = [int(value)]

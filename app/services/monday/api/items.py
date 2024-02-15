@@ -30,6 +30,35 @@ class BaseItemType:
 			# Call the parent class's __setattr__ method
 			super().__setattr__(name, value)
 
+	def load_from_api(self, api_data=None):
+		# load the item data from the API
+		log.debug(f"Loading item data for {self.__class__.__name__} {self.id}")
+		if not api_data:
+			api_data = conn.items.fetch_items_by_id([self.id])[0]
+		else:
+			assert 'id' in api_data
+			assert 'column_values' in api_data
+			assert 'name' in api_data
+
+
+
+
+
+
+
+
+
+		else:
+			if not self.id:
+				raise IncompleteItemError(self, "Item ID not set (not created)")
+			try:
+				item_data = conn.items.get_item(self.id)
+				return self.load_api_data(item_data['data']['items'][0])
+			except Exception as e:
+				raise MondayAPIError(f"Error calling monday API: {e}")
+
+
+
 	def load_api_data(self, api_data: dict):
 		self._api_data = api_data
 		if api_data['id'] != str(self.id):

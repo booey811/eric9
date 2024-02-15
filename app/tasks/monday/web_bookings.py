@@ -170,6 +170,8 @@ def transfer_web_booking(web_booking_item_id):
 	main.address_street = web_booking.address_street.value
 	main.address_postcode = web_booking.address_postcode.value
 	main.booking_date = web_booking.booking_date.value
+	main.payment_status = web_booking.pay_status.value
+	main.payment_method = web_booking.pay_method.value
 
 	main.client = 'End User'
 	main.main_status = 'Awaiting Confirmation'

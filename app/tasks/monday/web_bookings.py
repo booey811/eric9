@@ -15,7 +15,7 @@ log = logging.getLogger('eric')
 def transfer_web_booking(web_booking_item_id):
 	item = get_api_items([web_booking_item_id])[0]
 	web_booking = monday.items.misc.WebBookingItem(item['id'], item)
-	main = monday.items.MainItem(None)
+	main = monday.items.MainItem()
 
 	# extract Woo Commerce order data
 	woo_order_data = woocommerce.woo.get(f"orders/{web_booking.woo_commerce_order_id.value}")
@@ -79,14 +79,15 @@ def transfer_web_booking(web_booking_item_id):
 
 	main.service = service
 
-	search_prod = monday.items.ProductItem(None)
-
 	search_results = []
 
 	try:
 		for _ in repair_products:
 			try:
-				result = search_prod.search_board_for_items('woo_commerce_product_id', str(_['id']))[0]
+				result = monday.items.ProductItem(search=True).search_board_for_items(
+					'woo_commerce_product_id',
+					str(_['id'])
+				)[0]
 				search_results.append(monday.items.ProductItem(result['id'], result))
 			except IndexError:
 				log.error(f"{web_booking} could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")

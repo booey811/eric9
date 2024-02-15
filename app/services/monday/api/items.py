@@ -2,6 +2,8 @@ import logging
 import abc
 import json
 
+import redis.utils
+
 from .columns import ValueType, EditingNotAllowed
 from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
@@ -138,10 +140,12 @@ class BaseCacheableItem(BaseItemType):
 	def load_data(self, api_data=None):
 		# load the item data from the cache
 		try:
-			self.load_from_cache()
+			if api_data:
+				self.load_from_api(api_data)
+			else:
+				self.load_from_cache()
 		except CacheMiss:
 			self.load_from_api()
-			self.save_to_cache()
 
 	@abc.abstractmethod
 	def cache_key(self):
@@ -160,9 +164,12 @@ class BaseCacheableItem(BaseItemType):
 	def prepare_cache_data(self):
 		raise NotImplementedError
 
-	def save_to_cache(self):
+	def save_to_cache(self, pipe: redis.utils.pipeline = None):
 		cache_data = self.prepare_cache_data()
-		get_redis_connection().set(self.cache_key(), json.dumps(cache_data))
+		if pipe:
+			pipe.set(self.cache_key(), json.dumps(cache_data))
+		else:
+			get_redis_connection().set(self.cache_key(), json.dumps(cache_data))
 		return cache_data
 
 	@abc.abstractmethod

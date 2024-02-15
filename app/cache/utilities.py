@@ -2,51 +2,63 @@ import logging
 
 from . import get_redis_connection
 from ..services import monday
-from ..models import ProductModel, DeviceModel
 
 log = logging.getLogger('eric')
 
 
 def build_product_cache():
-	log.info(f'Building product cache')
-	products_board = monday.conn.get_board(2477699024)
-	all_simple_items = products_board.get_items()
-	log.info(f"Fetched {len(all_simple_items)} items (simple)")
-	block_size = 25
-	pipe = get_redis_connection().pipeline()
-	# Cycle through the long list
-	for i in range(0, len(all_simple_items), block_size):
-		# Create a block (slice) for this iteration
-		log.debug(f"Fetching block {i // block_size + 1} of {len(all_simple_items) // block_size + 1}")
-		block = all_simple_items[i:i + block_size]
-		items = monday.get_items([_.id for _ in block], column_values=True)
-		log.info(f"Fetched {len(items)} items fully")
-		for item in items:
-			p = ProductModel(item.id, item)
-			log.debug(str(p))
-			p.model
+
+	def cache_item_set(item_set):
+		for i in item_set:
+			p = monday.items.ProductItem(i['id'], i)
 			p.save_to_cache(pipe)
+
+	log.info("Building product cache")
+	pipe = get_redis_connection().pipeline()
+
+	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+		monday.items.ProductItem.BOARD_ID
+	)['data']['boards'][0]['items_page']
+	cursor = query_results['cursor']
+	log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+	cache_item_set(query_results['items'])
+	while cursor:
+		query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+			monday.items.ProductItem.BOARD_ID,
+			cursor=cursor
+		)['data']['boards'][0]['items_page']
+		cursor = query_results['cursor']
+		log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+		cache_item_set(query_results['items'])
+		if not cursor:
+			break
 	pipe.execute()
-	log.info(f"Product cache built")
 
 
 def build_device_cache():
-	log.info("Building Device Cache")
-	devices_board = monday.conn.get_board(3923707691)  # Devices Board
-	all_simple_items = devices_board.get_items()
-	log.info(f"Fetched {len(all_simple_items)} items (simple)")
-	block_size = 25
-	pipe = get_redis_connection().pipeline()
-	# Cycle through the long list
-	for i in range(0, len(all_simple_items), block_size):
-		# Create a block (slice) for this iteration
-		log.debug(f"Fetching block {i // block_size + 1} of {len(all_simple_items) // block_size + 1}")
-		block = all_simple_items[i:i + block_size]
-		items = monday.get_items([_.id for _ in block], column_values=True)
-		log.info(f"Fetched {len(items)} items fully")
-		for item in items:
-			d = DeviceModel(item.id, item)
-			model = d.model
-			log.debug(str(d))
+	def cache_item_set(item_set):
+		for i in item_set:
+			d = monday.items.DeviceItem(i['id'], i)
 			d.save_to_cache(pipe)
+
+
+	log.info("Building Device Cache")
+	pipe = get_redis_connection().pipeline()
+
+	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+		monday.items.DeviceItem.BOARD_ID
+	)['data']['boards'][0]['items_page']
+	cursor = query_results['cursor']
+	log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+	cache_item_set(query_results['items'])
+	while True:
+		query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+			monday.items.DeviceItem.BOARD_ID,
+			cursor=cursor
+		)['data']['boards'][0]['items_page']
+		cursor = query_results['cursor']
+		log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+		cache_item_set(query_results['items'])
+		if not cursor:
+			break
 	pipe.execute()

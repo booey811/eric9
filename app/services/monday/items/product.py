@@ -37,7 +37,7 @@ class ProductItem(BaseCacheableItem):
 		}
 
 		if not data['device_id']:
-			raise MondayDataError(f"Device ID not set for product {self.id}")
+			notify_admins_of_error(f"Device ID not set for product {self.id}")
 
 		return data
 

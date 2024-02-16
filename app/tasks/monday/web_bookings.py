@@ -181,9 +181,8 @@ def transfer_web_booking(web_booking_item_id):
 	main.notifications_status = 'ON'
 
 	main.create(web_booking.name)
-	main_data = app.services.monday.api.client.get_api_items([main.id])[0]
-	main = monday.items.MainItem(main_data['id'], main_data)
 
+	main.add_update(booking_text, main.notes_thread_id.value)
 	main.add_update(main.get_stock_check_string(), main.notes_thread_id.value)
 
 	return main

@@ -10,16 +10,11 @@ load_dotenv()
 
 
 def get_config(env=None):
-	import logging
 	if not env:
 		env = os.environ["ENV"]
-	logging.getLogger('eric').info(f"CONFIG ENV: {env}")
 	conf = ENV_CONFIG_DICT.get(env)
 	if not conf:
 		raise Exception(f"Invalid config: {env}")
-
-	logging.getLogger('eric').info(f"CONFIG: {conf.CONFIG}")
-
 	return conf
 
 
@@ -63,6 +58,7 @@ class Config(object):
 	OPEN_AI_ASSISTANTS = {
 		"enquiry": "asst_RLYPxU9Qdkpj4btu0bLQbJ1s",
 		"translator": "asst_PNMO7wrcHrAM1ViORqJ7oev1",
+		"blog_writer": "asst_0rjt5WqfAUw2NLqroLgZdxZo"
 	}
 
 	SLACK_BOT = os.environ["SLACK_BOT"]  # icorrect workspace

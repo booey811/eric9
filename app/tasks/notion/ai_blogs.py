@@ -196,6 +196,14 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 					}
 				}]
 			},
+			"Open AI Model": {
+				"rich_text": [{
+					"type": "text",
+					"text": {
+						"content": str(run.model)
+					}
+				}]
+			},
 		}
 	)
 	notion_client.pages.update(

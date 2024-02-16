@@ -33,7 +33,7 @@ def check_run(thread_id, run_id, success_endpoint=''):
 	try:
 		if run.status == 'completed':
 			# post to success endpoint
-			data = run.metadata or {}
+			data = {}
 			log.debug(f'Run complete, preparing data for endpoint: {data.get("success_endpoint")}')
 			log.debug(f"Metadata: {run.metadata}")
 			data['thread_id'] = thread_id

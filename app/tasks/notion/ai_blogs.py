@@ -170,8 +170,8 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 		for m in cost_dict:
 			if run.model.lower() in m:
 				costs = cost_dict[m]
-				in_cost = costs['in']/1000 * run.usage.prompt_tokens
-				out_cost = costs['out']/1000 * run.usage.completion_tokens
+				in_cost = costs['in'] / 1000 * run.usage.prompt_tokens
+				out_cost = costs['out'] / 1000 * run.usage.completion_tokens
 				total_cost = in_cost + out_cost
 	except Exception as e:
 		notify_admins_of_error(
@@ -187,7 +187,15 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 			},
 			"Cost": {
 				"number": total_cost
-			}
+			},
+			"Instructions Used": {
+				"rich_text": [{
+					"type": "text",
+					"text": {
+						"content": str(run.instructions)
+					}
+				}]
+			},
 		}
 	)
 	notion_client.pages.update(

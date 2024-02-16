@@ -41,6 +41,8 @@ def check_run(thread_id, run_id, success_endpoint=''):
 			for d in data:
 				log.debug(f"{d}: {data[d]}")
 
+			data['metadata'] = run.metadata
+
 			requests.post(success_endpoint, json=data)
 
 		elif run.status in ('in_progress', 'queued'):

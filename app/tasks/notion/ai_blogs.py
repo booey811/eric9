@@ -12,7 +12,7 @@ BLOG_ARTICLES_DB_ID = "e76b2be2475147509e15e22037a0ccab"
 
 
 def submit_voice_summary_for_blog_writing():
-	SUCCESS_ENDPOINT = "INVALIDENDPOINTFORNOW"
+	SUCCESS_ENDPOINT = "https://eric9-c2d6de2066d6.herokuapp.com/ai-blogs/process-ai-blog-content"
 
 	db_query = notion_client.databases.query(
 		database_id=VOICE_TEXT_DB_ID,
@@ -91,8 +91,9 @@ def submit_voice_summary_for_blog_writing():
 			rq.q_ai_results.enqueue(
 				ai_utils.check_run,
 				kwargs={
-					"thread_id": run['thread_id'],
-					"success_endpoint": SUCCESS_ENDPOINT
+					"thread_id": run.thread_id,
+					"run_id": run.id,
+					"success_endpoint": SUCCESS_ENDPOINT,
 				}
 			)
 

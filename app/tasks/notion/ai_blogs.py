@@ -4,6 +4,7 @@ import config
 from ...services.notion import notion_client, notion_utils
 from ...services.openai import utils as ai_utils
 from ...cache import rq
+from ...utilities import notify_admins_of_error
 
 conf = config.get_config()
 
@@ -100,14 +101,12 @@ def submit_voice_summary_for_blog_writing():
 	return processed
 
 
-def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_page_id):
+def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_content_page_id):
 	# append child blocks of paragraphs to page
 	messages = ai_utils.list_messages(thread_id, limit=20)
 
 	# get the content from the run
 	content = messages.data[0].content[0].text.value
-
-	chunked_content = content.split(" ")
 
 	children = [
 		{
@@ -152,6 +151,34 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 		block_id=blog_content_page_id,
 		children=children
 	)
+
+	chunked_content = content.split(" ")
+
+	run = ai_utils.fetch_run(thread_id, run_id)
+	cost_dict = {
+		"gpt-4": {
+			"in": 0.03,
+			"out": 0.06
+		},
+		"gpt-3": {
+			"in": 0.0005,
+			"out": 0.0015
+		}
+	}
+	total_cost = 0
+	try:
+		for m in cost_dict:
+			if run.model.lower() in m:
+				costs = cost_dict[m]
+				in_cost = costs['in']/1000 * run.usage.prompt_tokens
+				out_cost = costs['out']/1000 * run.usage.completion_tokens
+				total_cost = in_cost + out_cost
+	except Exception as e:
+		notify_admins_of_error(
+			f"Error calculating cost for AI blog composition: {e}"
+		)
+		total_cost = 0
+
 	notion_client.pages.update(
 		page_id=blog_content_page_id,
 		properties={
@@ -167,6 +194,9 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 				"status": {
 					"name": "Done"
 				}
+			},
+			"Cost": {
+				"number": total_cost
 			}
 		}
 	)

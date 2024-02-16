@@ -184,6 +184,9 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 		properties={
 			"Number of Words": {
 				"number": len(chunked_content)
+			},
+			"Cost": {
+				"number": total_cost
 			}
 		}
 	)
@@ -194,9 +197,6 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 				"status": {
 					"name": "Done"
 				}
-			},
-			"Cost": {
-				"number": total_cost
 			}
 		}
 	)

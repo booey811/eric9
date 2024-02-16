@@ -124,7 +124,7 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 				"object": "block",
 				"type": "heading_2",
 				"heading_2": {
-					"rich_text": [{"type": "text", "text": {"content": line[2:].strip().replace("#", "")}}]
+					"rich_text": [{"type": "text", "text": {"content": line[2:].replace("#", "").strip()}}]
 				}
 			})
 		elif line.startswith("#"):
@@ -133,7 +133,7 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 				"object": "block",
 				"type": "heading_1",
 				"heading_1": {
-					"rich_text": [{"type": "text", "text": {"content": line[1:].strip().replace("#", "")}}]
+					"rich_text": [{"type": "text", "text": {"content": line[1:].replace("#", "").strip()}}]
 				}
 			})
 		else:
@@ -142,7 +142,7 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 				"object": "block",
 				"type": "paragraph",
 				"paragraph": {
-					"rich_text": [{"type": "text", "text": {"content": line.strip().replace("#", "")}}]
+					"rich_text": [{"type": "text", "text": {"content": line.replace("#", "").strip()}}]
 				}
 			})
 

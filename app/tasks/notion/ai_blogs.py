@@ -107,6 +107,8 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 	# get the content from the run
 	content = messages.data[0].content[0].text.value
 
+	chunked_content = content.split(" ")
+
 	children = [
 		{
 			"object": "block",
@@ -149,6 +151,14 @@ def process_blog_writing_results(thread_id, voice_note_page_id, blog_content_pag
 	notion_client.blocks.children.append(
 		block_id=blog_content_page_id,
 		children=children
+	)
+	notion_client.pages.update(
+		page_id=blog_content_page_id,
+		properties={
+			"Number of Words": {
+				"number": len(chunked_content)
+			}
+		}
 	)
 	notion_client.pages.update(
 		page_id=voice_note_page_id,

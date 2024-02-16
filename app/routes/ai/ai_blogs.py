@@ -25,7 +25,7 @@ def process_ai_blog_content():
 	rq.q_high.enqueue(
 		ai_blogs.process_blog_writing_results,
 		kwargs={
-			"thread_id": json_data['metadata']['thread_id'],
+			"thread_id": json_data['thread_id'],
 			"voice_note_page_id": json_data['metadata']['voice_note_page_id'],
 			"ai_blog_page_id": json_data['metadata']['ai_blog_page_id']
 		}

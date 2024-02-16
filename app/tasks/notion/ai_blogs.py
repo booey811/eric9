@@ -168,7 +168,7 @@ def process_blog_writing_results(thread_id, run_id, voice_note_page_id, blog_con
 	total_cost = 0
 	try:
 		for m in cost_dict:
-			if run.model.lower() in m:
+			if m in run.model.lower():
 				costs = cost_dict[m]
 				in_cost = costs['in'] / 1000 * run.usage.prompt_tokens
 				out_cost = costs['out'] / 1000 * run.usage.completion_tokens

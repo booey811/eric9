@@ -27,7 +27,7 @@ def process_ai_blog_content():
 		kwargs={
 			"thread_id": json_data['thread_id'],
 			"voice_note_page_id": json_data['metadata']['voice_note_page_id'],
-			"ai_blog_page_id": json_data['metadata']['ai_blog_page_id']
+			"ai_blog_page_id": json_data['metadata']['blog_content_page_id']
 		}
 	)
 

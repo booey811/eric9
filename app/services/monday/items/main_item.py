@@ -19,6 +19,7 @@ class MainItem(items.BaseItemType):
 		self.service = columns.StatusValue('service')
 		self.repair_type = columns.StatusValue('status24')
 		self.notifications_status = columns.StatusValue('status_18')
+		self.booking_date = columns.DateValue("date6")
 
 		# contact info
 		self.ticket_url = columns.LinkURLValue("link1")
@@ -56,24 +57,30 @@ class MainItem(items.BaseItemType):
 		self.address_notes = columns.TextValue('dup__of_passcode')
 
 		super().__init__(item_id, api_data)
+		self._check_update_threads()
 
 	def load_from_api(self, api_data=None):
 		"""
 		Load the API data into the model
 		"""
 		super().load_from_api(api_data)
-		self._check_update_threads()
+
+	def create(self, name, reload=True):
+		super().create(name)
+		if reload:
+			self.load_from_api()
+			self._check_update_threads()
 
 	def _check_update_threads(self):
 		if self.id:
 			commit = False
 			for thread_name in ["EMAIL", "ERROR", "NOTES"]:
 				thread_val = getattr(self, f"{thread_name.lower()}_thread_id")
-				thread_id = thread_val
+				thread_id = thread_val.value
 				if not thread_id:
 					body = f"****** {thread_name} ******"
 					update = self.add_update(body)
-					thread_val = update['data']['create_update']['id']
+					thread_val.value = update['data']['create_update']['id']
 					self.staged_changes.update(thread_val.column_api_data())
 					commit = True
 			if commit:

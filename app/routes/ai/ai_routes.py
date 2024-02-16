@@ -59,11 +59,11 @@ def process_ai_translation():
 
 	message = ai.utils.list_messages(data['thread_id'], limit=1).data[0].content[0].text.value
 
-	main = items.MainItem(data['main_id'], monday.api.client.get_api_items([data['main_id']])[0])
+	main = items.MainItem(data['metadata']['main_id'], monday.api.client.get_api_items([data['metadata']['main_id']])[0])
 
 	main.add_update(
 		body=f"!- Beta:Notes Updates -!\n\n{message}",
-		thread_id=data['notes_thread']
+		thread_id=data['metadata']['notes_thread']
 	)
 
 	return jsonify({'message': 'AI Translation Message Added to Monday Thread'}), 200

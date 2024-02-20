@@ -7,7 +7,7 @@ from .... import notify_admins_of_error
 class ProductItem(BaseCacheableItem):
 	BOARD_ID = 2477699024
 
-	def __init__(self, item_id=None, api_data: dict | None = None):
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.device_connect = columns.ConnectBoards("link_to_devices6")
 		self.parts_connect = columns.ConnectBoards("connect_boards8")
 
@@ -18,7 +18,7 @@ class ProductItem(BaseCacheableItem):
 
 		self.product_type = columns.StatusValue("status3")
 
-		super().__init__(item_id, api_data)
+		super().__init__(item_id, api_data, search)
 
 	@classmethod
 	def fetch_all(cls, index_items=False):

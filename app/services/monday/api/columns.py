@@ -5,6 +5,7 @@ from datetime import timezone, datetime
 from dateutil import parser as date_parser
 
 from .client import conn as monday_connection
+from .boards import cache as board_cache
 from .exceptions import MondayDataError, MondayAPIError
 
 log = logging.getLogger('eric')
@@ -167,6 +168,21 @@ class StatusValue(ValueType):
 
 		self.value = value
 		return self.value
+
+	def get_label_conversion_dict(self, board_id):
+		board = board_cache.get_board(board_id)
+		try:
+			column = [col for col in board['columns'] if str(col['id']) == str(self.column_id)][0]
+		except IndexError:
+			raise MondayDataError(f"Column {self.column_id} not found in board {str(board)}")
+
+		formatted_dict = {}
+		label_dict = json.loads(column['settings_str'])['labels']
+		for key, value in label_dict.items():
+			formatted_dict[str(value)] = str(key)
+			formatted_dict[str(key)] = str(value)
+
+		return formatted_dict
 
 
 class DateValue(ValueType):

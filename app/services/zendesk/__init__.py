@@ -1,2 +1,2 @@
-from . import helpers
+from . import helpers, custom_fields
 from .client import client

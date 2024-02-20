@@ -85,3 +85,15 @@ class TypeFormWalkInResponseItem(BaseItemType):
 		self.push_to_slack = 'Do Now!'
 		self.commit()
 		return self
+
+
+class NotificationMappingItem(BaseItemType):
+
+	BOARD_ID = 3428830196
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.macro_search_term = columns.TextValue('text8')
+		self.macro_id = columns.TextValue("text")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)

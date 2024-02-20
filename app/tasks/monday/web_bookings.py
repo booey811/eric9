@@ -8,6 +8,7 @@ from ...services import monday, woocommerce, zendesk
 from ...errors import EricError
 from ...utilities import notify_admins_of_error
 from ...services.monday.api.client import get_api_items
+from ...tasks.sync_platform import sync_to_zendesk
 
 log = logging.getLogger('eric')
 
@@ -167,7 +168,6 @@ def transfer_web_booking(web_booking_item_id):
 			public=False
 		),
 		requester_id=user.id,
-		tags=determine_ticket_tags()
 	)
 
 	ticket = zendesk.client.tickets.create(ticket).ticket
@@ -197,6 +197,8 @@ def transfer_web_booking(web_booking_item_id):
 
 	main.add_update(booking_text, main.notes_thread_id.value)
 	main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
+
+	sync_to_zendesk(main.id, ticket.id)
 
 	return main
 

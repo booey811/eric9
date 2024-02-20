@@ -55,10 +55,11 @@ def send_macro(main_item_id):
 			return False
 		else:
 			notifier_item = items.misc.NotificationMappingItem(results[0]['id'], results[0])
-			notification_tag = notifier_item.name.replace(" ", "_").lower()
+			notification_tag = notifier_item.name.replace(" ", "_").lower() + "_sent"
 
 			if notification_tag in ticket.tags:
-				body = f"Macro Requested: {macro_search_term}, but has already been sent"
+				body = (f"Macro Requested: {macro_search_term}, but has already been sent. To re-send this "
+						f"notification, please remove the tag '{notification_tag}' from the ticket")
 				comment = Comment(
 					public=False,
 					body=body
@@ -69,8 +70,8 @@ def send_macro(main_item_id):
 
 			macro_id = notifier_item.macro_id.value
 			macro_effect = zendesk.client.tickets.show_macro_effect(ticket, macro_id)
+			macro_effect.ticket.tags.extend([notification_tag])
 			ticket = zendesk.client.tickets.update(macro_effect.ticket).ticket
-			ticket.tags.extend([notification_tag])
 			return ticket
 
 	except Exception as e:
@@ -80,9 +81,3 @@ def send_macro(main_item_id):
 		zendesk.client.tickets.update(ticket)
 		notify_admins_of_error(message)
 		raise e
-
-
-
-
-
-

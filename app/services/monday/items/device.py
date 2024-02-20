@@ -6,6 +6,11 @@ class DeviceItem(BaseCacheableItem):
 
 	BOARD_ID = 3923707691
 
+	def __init__(self, item_id=None, api_data: dict | None = None):
+		self.device_type = columns.StatusValue('status9')
+
+		super().__init__(item_id, api_data)
+
 	def cache_key(self):
 		return f"device:{self.id}"
 

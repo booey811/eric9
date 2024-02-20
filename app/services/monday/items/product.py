@@ -7,13 +7,28 @@ from .... import notify_admins_of_error
 class ProductItem(BaseCacheableItem):
 	BOARD_ID = 2477699024
 
-	device_connect = columns.ConnectBoards("link_to_devices6")
-	parts_connect = columns.ConnectBoards("connect_boards8")
+	def __init__(self, item_id=None, api_data: dict | None = None):
+		self.device_connect = columns.ConnectBoards("link_to_devices6")
+		self.parts_connect = columns.ConnectBoards("connect_boards8")
 
-	price = columns.NumberValue("numbers")
+		self.price = columns.NumberValue("numbers")
 
-	required_minutes = columns.NumberValue("numbers7")
-	woo_commerce_product_id = columns.TextValue("text3")
+		self.required_minutes = columns.NumberValue("numbers7")
+		self.woo_commerce_product_id = columns.TextValue("text3")
+
+		self.product_type = columns.StatusValue("status3")
+
+		super().__init__(item_id, api_data)
+
+	@classmethod
+	def fetch_all(cls, index_items=False):
+		results = super().fetch_all()
+		filtered = []
+		for item in results:
+			if not index_items and item.product_type.value == 'Index':
+				continue
+			filtered.append(item)
+		return filtered
 
 	def cache_key(self):
 		return f"product:{self.id}"

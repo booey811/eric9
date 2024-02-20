@@ -59,12 +59,6 @@ class MainItem(items.BaseItemType):
 		super().__init__(item_id, api_data)
 		self._check_update_threads()
 
-	def load_from_api(self, api_data=None):
-		"""
-		Load the API data into the model
-		"""
-		super().load_from_api(api_data)
-
 	def create(self, name, reload=True):
 		super().create(name)
 		if reload:

@@ -87,7 +87,7 @@ class MainItem(items.BaseItemType):
 				self.commit()
 		return self
 
-	def get_stock_check_string(self):
+	def get_stock_check_string(self, product_ids: list[int | str] | None = None):
 		"""
 		Checks stock for all products connected to this main item, and return a string description of them
 		"""
@@ -96,7 +96,10 @@ class MainItem(items.BaseItemType):
 		update = '=== STOCK CHECK ===\n'
 		try:
 			in_stock = True
-			product_data = get_api_items(self.products_connect.value)
+			if product_ids:
+				product_data = get_api_items(product_ids)
+			else:
+				product_data = get_api_items(self.products_connect.value)
 			prods = [ProductItem(p['id'], p) for p in product_data]
 			for prod in prods:
 				update += prod.name.upper() + '\n'

@@ -84,10 +84,11 @@ def transfer_web_booking(web_booking_item_id):
 	try:
 		for _ in repair_products:
 			try:
-				result = monday.items.ProductItem(search=True).search_board_for_items(
+				results = monday.items.ProductItem(search=True).search_board_for_items(
 					'woo_commerce_product_id',
 					str(_['id'])
-				)[0]
+				)
+				result = results[0]
 				search_results.append(monday.items.ProductItem(result['id'], result))
 			except IndexError:
 				log.error(f"{web_booking} could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")
@@ -146,6 +147,18 @@ def transfer_web_booking(web_booking_item_id):
 
 	booking_text = f"Website Notes:\n" + web_booking.booking_notes.value
 
+	def determine_ticket_tags():
+
+		tag_results = [
+			"web_booking",
+			f"device__{device_id}",
+		]
+
+		for prod in products:
+			tag_results.append("product__" + str(prod.id))
+
+		return tag_results
+
 	ticket = Ticket(
 		subject=email_subject,
 		description=email_subject,
@@ -154,7 +167,7 @@ def transfer_web_booking(web_booking_item_id):
 			public=False
 		),
 		requester_id=user.id,
-		tags=['web_booking']
+		tags=determine_ticket_tags()
 	)
 
 	ticket = zendesk.client.tickets.create(ticket).ticket
@@ -183,7 +196,7 @@ def transfer_web_booking(web_booking_item_id):
 	main.create(web_booking.name)
 
 	main.add_update(booking_text, main.notes_thread_id.value)
-	main.add_update(main.get_stock_check_string(), main.notes_thread_id.value)
+	main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
 
 	return main
 

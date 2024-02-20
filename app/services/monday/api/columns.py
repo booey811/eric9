@@ -184,6 +184,24 @@ class StatusValue(ValueType):
 
 		return formatted_dict
 
+	def get_label_id(self, board_id, label):
+		# get the id of the label with the given name
+		label_dict = self.get_label_conversion_dict(board_id)
+		try:
+			label_id = label_dict[label]
+		except KeyError:
+			raise MondayDataError(f"Label {label} not found in column {self.column_id} on board {board_id}")
+		return label_id
+
+	def get_label_text(self, board_id, label_id):
+		# get the text of the label with the given id
+		label_dict = self.get_label_conversion_dict(board_id)
+		try:
+			label_text = label_dict[str(label_id)]
+		except KeyError:
+			raise MondayDataError(f"Label id {label_id} not found in column {self.column_id} on board {board_id}")
+		return label_text
+
 
 class DateValue(ValueType):
 	def __init__(self, column_id: str):

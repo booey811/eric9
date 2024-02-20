@@ -15,9 +15,6 @@ class ProductItem(BaseCacheableItem):
 	required_minutes = columns.NumberValue("numbers7")
 	woo_commerce_product_id = columns.TextValue("text3")
 
-	def __str__(self):
-		return f"Product({self.id}): {self.name or 'No Name'}"
-
 	def cache_key(self):
 		return f"product:{self.id}"
 

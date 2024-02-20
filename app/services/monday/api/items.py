@@ -8,7 +8,7 @@ from .columns import ValueType, EditingNotAllowed
 from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
 from ....cache import get_redis_connection, CacheMiss
-from .client import get_api_items
+from .client import get_api_items, conn
 from ....utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
@@ -16,6 +16,24 @@ log = logging.getLogger('eric')
 
 class BaseItemType:
 	BOARD_ID = None
+
+	@classmethod
+	def fetch_all(cls):
+		log.debug(f"Fetching all items for {cls.__name__}")
+		query_results = conn.boards.fetch_items_by_board_id(cls.BOARD_ID)['data']['boards'][0]['items_page']
+		cursor = query_results['cursor']
+		items = [cls(item['id'], item) for item in query_results['items']]
+		while cursor:
+			query_results = conn.boards.fetch_items_by_board_id(
+				cls.BOARD_ID,
+				cursor=cursor
+			)['data']['boards'][0]['items_page']
+			cursor = query_results['cursor']
+			items += [cls(item['id'], item) for item in query_results['items']]
+			log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+			if not cursor:
+				break
+		return items
 
 	def __init__(self, item_id=None, api_data: dict = None, search=False):
 		self.id = item_id
@@ -27,6 +45,12 @@ class BaseItemType:
 		self._column_data = None
 		if not search:
 			self.load_data(api_data)
+
+	def __str__(self):
+		if self.name:
+			return f"{self.__class__.__name__}({self.id}): {self.name}"
+		else:
+			return f"{self.__class__.__name__}({self.id})"
 
 	def __setattr__(self, name, value):
 		# Check if the attribute being assigned is an instance of ValueType

@@ -32,6 +32,7 @@ class MainItem(items.BaseItemType):
 		self.device_connect = columns.ConnectBoards("board_relation5")
 		self.description = columns.TextValue("text368")
 		self.imeisn = columns.TextValue("text4")
+		self.passcode = columns.TextValue('text8')
 
 		# payment info
 		self.payment_status = columns.StatusValue("payment_status")

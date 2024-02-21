@@ -144,4 +144,30 @@ def handle_main_status_adjustment():
 		data['pulseId']
 	)
 
+	under_repair_statuses = [
+		"Under Repair",
+		"Diagnostics",
+	]
+
+	new_label = data['value']['label']['text']
+
+	if new_label in under_repair_statuses:
+		q_high.enqueue(
+			sessions.begin_new_session,
+			kwargs={
+				'main_id': data['pulseId'],
+				'timestamp': datetime.datetime.now().strftime("%c"),
+				'monday_user_id': data['userId']
+			}
+		)
+	else:
+		q_low.enqueue(
+			sessions.end_session,
+			kwargs={
+				'main_id': data['pulseId'],
+				'timestamp': datetime.datetime.now().strftime("%c"),
+				'ending_status': new_label
+			}
+		)
+
 	return jsonify({'message': 'OK'}), 200

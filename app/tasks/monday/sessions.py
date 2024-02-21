@@ -43,11 +43,12 @@ def end_session(main_id, timestamp, ending_status, post_update: str = ''):
 	)
 
 
-def update_session(session_id, session_status='', end_time: datetime.datetime = None, ending_status='Unknown', post_update: str = ''):
+def update_session(session_id, session_status='', end_time: str = None, ending_status='Unknown', post_update: str = ''):
 	"""
 	updates a session with the given parameters, allowing an update to be posted if required
 	"""
 	session = monday.items.misc.RepairSessionItem(session_id)
+	end_time = parser.parse(end_time)
 	try:
 		if session_status:
 			session.session_status = session_status

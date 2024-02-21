@@ -12,9 +12,6 @@ def send_macro(main_item_id):
 	except Exception as e:
 		raise e
 
-	# if main_item.notifications_status.value != 'ON':
-	# 	return False
-
 	try:
 		ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
 	except Exception as e:
@@ -55,6 +52,16 @@ def send_macro(main_item_id):
 			return False
 		else:
 			notifier_item = items.misc.NotificationMappingItem(results[0]['id'], results[0])
+			if main_item.notifications_status.value != 'ON':
+				body = f"Macro Requested: {macro_search_term}, but notifications are OFF for this item"
+				comment = Comment(
+					public=False,
+					body=body
+				)
+				ticket.comment = comment
+				zendesk.client.tickets.update(ticket)
+				return False
+
 			notification_tag = notifier_item.name.replace(" ", "_").lower() + "_sent"
 
 			if notification_tag in ticket.tags:

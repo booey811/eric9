@@ -1,3 +1,4 @@
+import datetime
 import logging
 import json
 
@@ -8,7 +9,7 @@ from ...services import monday
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...cache.rq import q_low, q_high
-from ...tasks.monday import web_bookings
+from ...tasks.monday import web_bookings, sessions
 from ...tasks import notifications
 
 log = logging.getLogger('eric')
@@ -37,16 +38,26 @@ def handle_tech_status_adjustment():
 	log.debug('Dealing with session records....')
 
 	if new_label == 'Active':
-		# in the future, this will create a repair session record and begin timing
-		log.warning(f"Not Yet Developed")
-		notify_admins_of_error(
-			"Tech Status Adjustment: Active is not yet developed. This will begin recording a session.")
+		# start new session
+
+		q_high.enqueue(
+			sessions.begin_new_session,
+			kwargs={
+				'main_id': data['pulseId'],
+				'timestamp': datetime.datetime.now().strftime("%c"),
+				'monday_user_id': data['userId']
+			}
+		)
+
 	else:
-		# in the future, this will end the repair session and record the time
-		log.warning(f"Not Yet Developed")
-		notify_admins_of_error(
-			f"Tech Status Adjustment: {new_label} is not yet developed\n\nIn future, this will close the current "
-			f"session and record the time."
+		# end current and any other active sessions
+		q_low.enqueue(
+			sessions.end_session,
+			kwargs={
+				'main_id': data['pulseId'],
+				'timestamp': datetime.datetime.now().strftime("%c"),
+				'ending_status': new_label
+			}
 		)
 
 	log.debug('Dealing with phases.....')

@@ -99,6 +99,9 @@ class Config(object):
 	TYPEFORM_API_KEY = os.environ["TYPEFORM_API_KEY"]
 
 	PUBLIC_HOLIDAYS = get_public_holidays()
+	ICORRECT_HOLIDAYS = [
+
+	]  # list of lists, all objects are dates that signify start and end times
 
 	def get_vars(self):
 		return (

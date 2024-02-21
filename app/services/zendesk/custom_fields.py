@@ -29,9 +29,9 @@ def sync_product_field_options():
 		if device_id:
 			device_data = api.get_api_items([product.device_id])[0]
 			device = items.DeviceItem(device_data['id'], device_data)
-			option_name = f"{device.device_type.value}::{device.name}::{product.name} (£{product.price.value})"
+			option_name = f"{device.device_type.value}::{device.name}::{product.name}: £{product.price.value}"
 		else:
-			option_name = f"Device::Other Device::{product.name} (£{product.price.value})"
+			option_name = f"Device::Other Device::{product.name}: £{product.price.value}"
 
 		zendesk_tag = f"product__{product.id}"
 		log.debug(f"Creating option: {option_name} | {zendesk_tag}")

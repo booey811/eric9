@@ -1,5 +1,11 @@
+import logging
+
 from ..api.items import BaseItemType
 from ..api import columns, exceptions, get_api_items, monday_connection
+from ..api import exceptions
+
+
+log = logging.getLogger('eric')
 
 
 class RepairPhaseModel(BaseItemType):
@@ -15,9 +21,16 @@ class RepairPhaseModel(BaseItemType):
 	@property
 	def phase_lines(self):
 		if not self._phase_lines:
+			log.debug(f"Fetching phase lines for phase model ({self})")
 			subitem_data = monday_connection.items.fetch_subitems(self.id)
-			lines = [RepairPhaseLine(_['id'], _) for _ in subitem_data['data']['items'][0]['subitems']]
-			self._phase_lines = lines.sort(key=lambda x: x.phase_model_index.value)
+			log.debug(subitem_data)
+			if subitem_data['data']['items'][0]['subitems'] is not None and len(subitem_data['data']['items'][0]['subitems']) > 0:
+				log.debug(f"Fetching phase lines for {self}")
+				lines = [RepairPhaseLine(_['id'], _) for _ in subitem_data['data']['items'][0]['subitems']].sort(key=lambda x: x.phase_model_index.value)
+				log.debug(f"Got {lines}")
+				self._phase_lines = lines
+			else:
+				raise exceptions.MondayDataError(f"Repair Phase Model ({self}) has no phase lines.")
 		return self._phase_lines
 
 	def get_total_minutes_required(self):

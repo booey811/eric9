@@ -97,3 +97,26 @@ class NotificationMappingItem(BaseItemType):
 		self.macro_id = columns.TextValue("text")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class RepairSessionItem(BaseItemType):
+
+	BOARD_ID = 5997573759
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.main_board_id = columns.TextValue('text')
+		self.start_time = columns.DateValue("date")
+		self.end_time = columns.DateValue("date2")
+		self.session_status = columns.StatusValue("status0")
+		self.device_id = columns.TextValue("text8")
+
+		self.phase_label = columns.TextValue("text7")
+		self.ending_status = columns.TextValue("text5")
+
+		self.technician = columns.PeopleValue("people")
+
+		self.gcal_event_id = columns.TextValue("text0")
+		self.gcal_plot_status = columns.StatusValue("status3")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)

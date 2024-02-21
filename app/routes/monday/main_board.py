@@ -7,8 +7,9 @@ from ...services.monday import monday_challenge, items
 from ...services import monday
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
-from ...cache.rq import q_low
+from ...cache.rq import q_low, q_high
 from ...tasks.monday import web_bookings
+from ...tasks import notifications
 
 log = logging.getLogger('eric')
 
@@ -94,6 +95,21 @@ def handle_web_booking():
 	q_low.enqueue(
 		web_bookings.transfer_web_booking,
 		web_booking_id
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route('/main-status-change', methods=["POST"])
+@monday_challenge
+def handle_main_status_adjustment():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_high.enqueue(
+		notifications.notify_zendesk.send_macro,
+		data['pulseId']
 	)
 
 	return jsonify({'message': 'OK'}), 200

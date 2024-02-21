@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import Ticket, Comment
@@ -9,11 +10,106 @@ from ...errors import EricError
 from ...utilities import notify_admins_of_error
 from ...services.monday.api.client import get_api_items
 from ...tasks.sync_platform import sync_to_zendesk
+import config
+
+conf = config.get_config()
 
 log = logging.getLogger('eric')
 
 
 def transfer_web_booking(web_booking_item_id):
+	def check_booking_date(booking_date: datetime.datetime, zen_ticket):
+		"""checks booking date to see if it is a day we are open. First check will be weekend, the another check will
+		occur that checks if the date is within a public holiday (hard coded)"""
+
+		class CannotAllowBooking(EricError):
+			def __init__(self, reason, z_ticket: Ticket):
+				self._reason = reason
+				self.ticket = z_ticket
+				if reason == 'weekend':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/15599429837073
+					self.macro_id = "15599429837073"
+				elif reason == 'bank_holiday':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/15599487893009
+					self.macro_id = "15599487893009"
+				elif reason == 'same_day_mail_in':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/12326605824017
+					self.macro_id = "12326605824017"
+				elif reason == 'booking_is_tomorrow':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/17136218174481
+					self.macro_id = "17136218174481"
+				elif reason == 'collection_in_afternoon':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/17137297912593
+					self.macro_id = '17137297912593'
+				elif reason == 'icorrect_holiday':
+					# https://icorrect.zendesk.com/admin/workspaces/agent-workspace/macros/21046931205137
+					self.macro_id = '21046931205137'
+				else:
+					raise ValueError(
+						f"CannotAllowBooking must be used with 'collection_in_afternoon', 'booking_is_tomorrow', 'bank_holiday' or 'weekend', not {reason}")
+
+				self._send_macro()
+
+			def __str__(self):
+				return f"Cannot Proceed with Booking: {self._reason}"
+
+			def _send_macro(self):
+				r = zendesk.client.tickets.show_macro_effect(self.ticket, self.macro_id)
+				zendesk.client.tickets.update(r.ticket)
+
+		# ensure dt is a date
+		try:
+			date = booking_date.date()
+		except AttributeError:
+			date = booking_date
+
+		# check for weekend
+		if date.isoweekday() > 5:  # 4 == Friday, 5 == Saturday, 6 == Sunday
+			# we are not open on selected date as it's a weekend, raise error
+			raise CannotAllowBooking('weekend', zen_ticket)
+		else:
+			# continue to next check
+			pass
+
+		# check for public holiday
+		for holiday in conf.PUBLIC_HOLIDAYS:
+			if holiday == date:
+				# date is a public holiday, raise error
+				raise CannotAllowBooking('bank_holiday', zen_ticket)
+			else:
+				# date is not a public holiday, proceed as normal
+				pass
+
+		# check for icorrect holiday closure
+		for holiday in conf.ICORRECT_HOLIDAYS:
+			if holiday == date:
+				# date is a date that we are closed for
+				raise CannotAllowBooking('icorrect_holiday', zen_ticket)
+			else:
+				# proceed as normal
+				pass
+
+		# mail-in checks
+		if 'mail' in main.service.value.lower():
+
+			# check for same-day RM booking
+			today = datetime.datetime.today().date()
+			if today == booking_date:
+				raise CannotAllowBooking('same_day_mail_in', zen_ticket)
+
+			# check for post-8pm booking for the following day
+			now = datetime.datetime.now()
+			cutoff = 19
+			date_diff = date - now.date()
+			if now.hour > cutoff and date_diff.days == 1:  # after 8pm, booking date is tomorrow
+				raise CannotAllowBooking('booking_is_tomorrow', zen_ticket)
+
+			# check whether collection is booked for the afternoon
+			if booking_date.hour > 13:  # booking date is after 1pm
+				raise CannotAllowBooking('collection_in_afternoon', zen_ticket)
+
+		return True
+
 	item = get_api_items([web_booking_item_id])[0]
 	web_booking = monday.items.misc.WebBookingItem(item['id'], item)
 	main = monday.items.MainItem()
@@ -199,6 +295,8 @@ def transfer_web_booking(web_booking_item_id):
 	main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
 
 	sync_to_zendesk(main.id, ticket.id)
+
+	check_booking_date(web_booking.booking_date.value, ticket)
 
 	return main
 

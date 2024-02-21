@@ -2,6 +2,7 @@ from ..api.items import BaseItemType, BaseCacheableItem
 from ..api import columns
 from ..api.exceptions import MondayDataError
 from .... import notify_admins_of_error
+from .repair_phases import RepairPhaseLine
 
 
 class ProductItem(BaseCacheableItem):
@@ -10,6 +11,7 @@ class ProductItem(BaseCacheableItem):
 	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.device_connect = columns.ConnectBoards("link_to_devices6")
 		self.parts_connect = columns.ConnectBoards("connect_boards8")
+		self.phase_model_connect = columns.ConnectBoards("board_relation4")
 
 		self.price = columns.NumberValue("numbers")
 
@@ -67,3 +69,11 @@ class ProductItem(BaseCacheableItem):
 	@device_id.setter
 	def device_id(self, value):
 		self.device_connect.value = [int(value)]
+
+	def get_phase_model(self):
+		if not self.phase_model_connect.value:
+			# use default phase model
+			pm = RepairPhaseLine(6106627585)
+		else:
+			pm = RepairPhaseLine(self.phase_model_connect.value[0])
+		return pm.load_from_api()

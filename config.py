@@ -1,6 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import holidays
 
 from dotenv import load_dotenv
 
@@ -24,7 +25,6 @@ def configure_logging(config_name):
 	logger.propagate = False  # To prevent double logging
 
 	if not logger.handlers:
-
 		# Create handlers
 		c_handler = logging.StreamHandler()
 
@@ -45,6 +45,12 @@ def configure_logging(config_name):
 	return logger
 
 
+def get_public_holidays():
+	"""utilises holidays library to provide a list of public holiday dates in UK, currently only for 2023"""
+	hols = holidays.country_holidays(country='GB', subdiv='England', years=2023)
+	return hols
+
+
 class Config(object):
 	"""Base config, uses staging database server."""
 	CONFIG = "BASE"
@@ -63,7 +69,7 @@ class Config(object):
 
 	SLACK_BOT = os.environ["SLACK_BOT"]  # icorrect workspace
 	SLACK_APP = os.environ['SLACK_APP']  # icorrect workspace
-	SLACK_SIGNING_SECRET = os.environ["SLACK_SECRET"] # icorrect workspace
+	SLACK_SIGNING_SECRET = os.environ["SLACK_SECRET"]  # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
 
@@ -91,6 +97,8 @@ class Config(object):
 	TEAM_WORKSPACE_ID = "Xw5FG8E5tGNYByGOI5Ucx"
 
 	TYPEFORM_API_KEY = os.environ["TYPEFORM_API_KEY"]
+
+	PUBLIC_HOLIDAYS = get_public_holidays()
 
 	def get_vars(self):
 		return (
@@ -122,7 +130,7 @@ class DevelopmentConfig(Config):
 
 	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
 	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
-	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET") # dev workspace
+	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET")  # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 
@@ -136,7 +144,7 @@ class TestingConfig(Config):
 
 	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
 	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
-	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET") # dev workspace
+	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET")  # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 

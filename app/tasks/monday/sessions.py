@@ -29,7 +29,21 @@ def begin_new_session(main_id: str | int, timestamp: str, monday_user_id):
 	return new
 
 
-def update_session(session_id, session_status='', end_time='', ending_status='Unknown', post_update: str = ''):
+def end_session(main_id, timestamp, ending_status, post_update: str = ''):
+
+	active_session = get_active_session(main_id)
+	timestamp = parser.parse(timestamp)
+
+	return update_session(
+		session_id=active_session.id,
+		session_status="Complete",
+		end_time=timestamp,
+		ending_status=ending_status,
+		post_update=post_update
+	)
+
+
+def update_session(session_id, session_status='', end_time: datetime.datetime = None, ending_status='Unknown', post_update: str = ''):
 	"""
 	updates a session with the given parameters, allowing an update to be posted if required
 	"""

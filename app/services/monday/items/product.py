@@ -2,7 +2,7 @@ from ..api.items import BaseItemType, BaseCacheableItem
 from ..api import columns
 from ..api.exceptions import MondayDataError
 from .... import notify_admins_of_error
-from .repair_phases import RepairPhaseLine
+from .repair_phases import RepairPhaseModel
 
 
 class ProductItem(BaseCacheableItem):
@@ -73,7 +73,7 @@ class ProductItem(BaseCacheableItem):
 	def get_phase_model(self):
 		if not self.phase_model_connect.value:
 			# use default phase model
-			pm = RepairPhaseLine(6106627585)
+			pm = RepairPhaseModel(6106627585)
 		else:
-			pm = RepairPhaseLine(self.phase_model_connect.value[0])
+			pm = RepairPhaseModel(self.phase_model_connect.value[0])
 		return pm.load_from_api()

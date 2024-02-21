@@ -37,7 +37,7 @@ class RepairPhaseModel(BaseItemType):
 	def get_total_minutes_required(self):
 		total = 0
 		for line in self.phase_lines:
-			total += line.required_minutes.value
+			total += line.required_minutes
 		return total
 
 
@@ -66,7 +66,7 @@ class RepairPhaseLine(BaseItemType):
 			else:
 				phase_item = self.get_phase_entity_item()
 				if phase_item:
-					self._required_minutes = phase_item.required_minutes
+					self._required_minutes = phase_item.required_minutes.value
 				else:
 					self._required_minutes = 30
 		return self._required_minutes

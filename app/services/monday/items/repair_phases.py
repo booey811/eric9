@@ -26,7 +26,8 @@ class RepairPhaseModel(BaseItemType):
 			log.debug(subitem_data)
 			if subitem_data['data']['items'][0]['subitems'] is not None and len(subitem_data['data']['items'][0]['subitems']) > 0:
 				log.debug(f"Fetching phase lines for {self}")
-				lines = [RepairPhaseLine(_['id'], _) for _ in subitem_data['data']['items'][0]['subitems']].sort(key=lambda x: x.phase_model_index.value)
+				lines = ([RepairPhaseLine(_['id'], _) for _ in subitem_data['data']['items'][0]['subitems']])
+				lines.sort(key=lambda x: x.phase_model_index.value)
 				log.debug(f"Got {lines}")
 				self._phase_lines = lines
 			else:
@@ -36,7 +37,7 @@ class RepairPhaseModel(BaseItemType):
 	def get_total_minutes_required(self):
 		total = 0
 		for line in self.phase_lines:
-			total += line.required_minutes
+			total += line.required_minutes.value
 		return total
 
 

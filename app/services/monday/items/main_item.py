@@ -4,6 +4,7 @@ from ..api import items, columns
 from ..api.client import get_api_items
 from .product import ProductItem
 from .part import PartItem
+from . import repair_phases
 from ....utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
@@ -46,6 +47,9 @@ class MainItem(items.BaseItemType):
 		self.motion_scheduling_status = columns.StatusValue("status_19")
 		self.hard_deadline = columns.DateValue("date36")
 		self.phase_deadline = columns.DateValue("date65")
+
+		self.repair_phase = columns.StatusValue("status_177")
+		self.phase_status = columns.StatusValue("status_110")
 
 		# thread info
 		self.notes_thread_id = columns.TextValue("text37")
@@ -134,6 +138,17 @@ class MainItem(items.BaseItemType):
 	def device_id(self, value):
 		assert isinstance(value, int)
 		self.device_connect = [value]
+
+	def get_phase_model(self) -> repair_phases.RepairPhaseModel:
+		"""collects all products related to this main item and returns the longest available phase model"""
+		if not self.products_connect.value:
+			# no products connected, use default phase model
+			return repair_phases.RepairPhaseModel(6106627585)
+		else:
+			product_data = get_api_items(self.products_connect.value)
+			prods = [ProductItem(p['id'], p) for p in product_data]
+			phase_models = [p.get_phase_model() for p in prods]
+			return max(phase_models, key=lambda x: x.get_total_minutes_required())
 
 
 class PropertyTestItem(items.BaseItemType):

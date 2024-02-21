@@ -68,7 +68,7 @@ def handle_tech_status_adjustment():
 				# Check if there is a next item
 				if i + 1 < len(lines):
 					next_line = lines[i + 1]
-					return next_line
+					return next_line.get_phase_entity_item()
 				else:
 					# There is no next item, handle accordingly
 					return None
@@ -83,7 +83,7 @@ def handle_tech_status_adjustment():
 			main.repair_phase = next_phase.main_board_phase_label.value
 			main.phase_status = "Not Started"
 
-		main.model.save()
+		main.commit()
 
 	elif new_label in repair_paused_status_labels:
 		log.warning(f"Repair Paused: {new_label}")

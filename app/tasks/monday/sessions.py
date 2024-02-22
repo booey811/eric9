@@ -2,7 +2,7 @@ import logging
 from dateutil import parser
 import datetime
 
-from ...services import monday
+from ...services import monday, gcal
 from ...utilities import users, notify_admins_of_error
 from ...cache.rq import q_low
 
@@ -30,7 +30,6 @@ def begin_new_session(main_id: str | int, timestamp: str, monday_user_id):
 
 
 def end_session(main_id, timestamp: str, ending_status, post_update: str = ''):
-
 	active_session = get_active_session(main_id)
 
 	if isinstance(timestamp, datetime.datetime):
@@ -108,3 +107,85 @@ def get_active_session(main_id: str | int):
 		log.debug(f"No Active Session Found for {main}")
 
 	return active_session
+
+
+def map_session_to_gcal(session_item_id):
+	session = monday.items.misc.RepairSessionItem(session_item_id)
+	try:
+		user = users.User(monday_id=session.technician.value[0])
+	except IndexError:
+		notify_admins_of_error(f"Session {session} has no technician, cannot plot to gcal")
+		session.gcal_plot_status = "No Technician"
+		session.commit()
+		return False
+
+	sessions_cal_id = user.gcal_sessions_id
+	start = session.start_time.value
+	end = session.end_time.value
+
+	if not end:
+		notify_admins_of_error(f"Session {session} has no end time, cannot plot to gcal")
+		session.gcal_plot_status = "No End Time"
+		session.commit()
+		return False
+
+	if not start:
+		notify_admins_of_error(f"Session {session} has no start time, cannot plot to gcal")
+		session.gcal_plot_status = "No Start Time"
+		session.commit()
+		return False
+
+	if session.gcal_event_id.value:
+		# session is already mapped to a gcal event, edit the event
+		try:
+			event = [
+				e for e in gcal.helpers.get_events_list(cal_id=sessions_cal_id) if
+				e['id'] == session.gcal_event_id.value
+			][0]
+			return gcal.helpers.edit_event(
+				cal_id=sessions_cal_id,
+				event_obj=event,
+				new_start=start,
+				new_end=end
+			)
+
+		except IndexError:
+			notify_admins_of_error(
+				f"Session {session} has a gcal event id ({session.gcal_event_id.value}), but no event found in gcal")
+			# event not found, create a new one (call a deletion just in case)
+			session.gcal_event_id = ''
+			try:
+				gcal.helpers.delete_event(sessions_cal_id, session.gcal_event_id.value)
+			except Exception as e:
+				notify_admins_of_error(f"Error deleting event: {str(e)}")
+
+	main_item = monday.items.MainItem(session.main_board_id.value)
+	try:
+		device = monday.items.DeviceItem(main_item.device_id.value)
+		device_name = device.name
+	except Exception as e:
+		notify_admins_of_error(f"Could not get device: {str(e)}")
+		device_name = 'Unknown Device'
+
+	event_name = f"{main_item.name} ({device_name})"
+	description = ''
+	for prod in main_item.products:
+		description += f"{prod.name}\n"
+
+	event = gcal.helpers.add_to_gcal(
+		event_name=event_name,
+		calendar_id=sessions_cal_id,
+		start_time=start,
+		end_time=end,
+		description=description,
+		properties={
+			'session_id': session.id
+		}
+	)
+
+	session.gcal_event_id = event['id']
+	session.gcal_plot_status = 'Complete'
+
+	session.commit()
+
+	return event

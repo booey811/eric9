@@ -50,7 +50,7 @@ class DeviceAndProductView:
 				block_title="Device",
 				element=external_select,
 				block_id="device_select",
-				initial_option=blocks.objects.generate_option(str(self.device.name), str(self.device.id))
+				initial_option=[self.device.name, self.device.id]
 			)
 		else:
 			device_block = blocks.add.input_block(

@@ -61,6 +61,10 @@ class MainItem(items.BaseItemType):
 		self.address_street = columns.TextValue('passcode')
 		self.address_notes = columns.TextValue('dup__of_passcode')
 
+
+		# properties
+		self._products = None
+
 		super().__init__(item_id, api_data)
 		self._check_update_threads()
 
@@ -138,6 +142,17 @@ class MainItem(items.BaseItemType):
 	def device_id(self, value):
 		assert isinstance(value, int)
 		self.device_connect = [value]
+
+	@property
+	def products(self):
+		if self._products is None:
+			if self.products_connect.value:
+				product_data = get_api_items(self.products_connect.value)
+				self._products = [ProductItem(p['id'], p) for p in product_data]
+			else:
+				self._products = []
+		return self._products
+
 
 	def get_phase_model(self) -> repair_phases.RepairPhaseModel:
 		"""collects all products related to this main item and returns the longest available phase model"""

@@ -29,10 +29,12 @@ def begin_new_session(main_id: str | int, timestamp: str, monday_user_id):
 	return new
 
 
-def end_session(main_id, timestamp, ending_status, post_update: str = ''):
+def end_session(main_id, timestamp: str, ending_status, post_update: str = ''):
 
 	active_session = get_active_session(main_id)
-	timestamp = parser.parse(timestamp)
+
+	if isinstance(timestamp, datetime.datetime):
+		timestamp = timestamp.strftime("%c")
 
 	return update_session(
 		session_id=active_session.id,

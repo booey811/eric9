@@ -1,7 +1,7 @@
 from ..api.items import BaseItemType, BaseCacheableItem
 from ..api import columns
 from ..api.exceptions import MondayDataError
-from .... import notify_admins_of_error
+from ....utilities import notify_admins_of_error
 from .repair_phases import RepairPhaseModel
 
 

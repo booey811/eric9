@@ -7,21 +7,29 @@ from ..monday import items
 
 class DeviceAndProductView:
 
-	def __init__(self, device_id: str | int = 4028854241, product_ids: str | int = []):
-		self._device_id = str(device_id)
-		self._product_ids = product_ids
-
+	def __init__(self, meta: dict = None):
+		if meta is None:
+			meta = {}
+		self.meta = meta
 		self.blocks = []
+
+		self._device_id = meta.get("device_id")
+		self._product_ids = meta.get("product_ids")
 
 		self._device = None
 		self._products = None
 
+	def get_meta(self):
+		return {
+			"device_id": self._device_id,
+			"product_ids": self._product_ids
+		}
+
 	@property
 	def device(self):
 		if not self._device:
-			if not self._device_id:
-				raise exceptions.SlackDataError("No Device ID Provided, should be impossible")
-			self._device = items.DeviceItem(self._device_id)
+			if self._device_id:
+				self._device = items.DeviceItem(self._device_id)
 		return self._device
 
 	@device.setter
@@ -32,8 +40,9 @@ class DeviceAndProductView:
 	def products(self):
 		if not self._products:
 			if not self._product_ids:
-				raise exceptions.SlackDataError("No Product IDs Provided, should be impossible")
-			self._products = [items.ProductItem(pid) for pid in self._product_ids]
+				self._products = []
+			else:
+				self._products = items.ProductItem.get(self._product_ids)
 		return self._products
 
 	def create_device_and_product_blocks(self):
@@ -50,23 +59,31 @@ class DeviceAndProductView:
 				block_title="Device",
 				element=external_select,
 				block_id="device_select",
-				initial_option=[self.device.name, self.device.id]
+				initial_option=[self.device.name, self.device.id],
+				dispatch_action=True,
+				action_id="device_select"
 			)
 		else:
 			device_block = blocks.add.input_block(
 				block_title="Device",
 				element=external_select,
-				block_id="device_select"
+				block_id="device_select",
+				hint='Select a device to explore the entity!',
+				dispatch_action=True,
+				action_id="device_select"
 			)
 
 		results.append(device_block)
 
-		p(results)
+		# if self.device:
+		#
+		# 	product_blocks = []
+		#
+		# 	all_products = items.ProductItem.fetch_all()
+		# 	products = [_.name for _ in all_products if str(_.device_id) == str(self.device.id)]
+		#
+		# 	for product in products:
+		# 		product_blocks.append(blocks.add.rich_text_block([blocks.add.rich_text_elements([product])]))
+		#
+		# p(results)
 		return results
-
-
-
-
-
-
-

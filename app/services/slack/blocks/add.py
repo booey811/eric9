@@ -1,7 +1,7 @@
 from . import elements
 
 
-def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[]):
+def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[], action_id=''):
 	basic = {
 		"type": "input",
 		"element": element,
@@ -22,6 +22,10 @@ def input_block(block_title, element, dispatch_action=False, block_id="", hint="
 			"text": hint,
 			"emoji": True
 		}
+	if dispatch_action and not action_id:
+		raise ValueError("dispatch_action requires an action_id")
+	elif dispatch_action:
+		basic['element']['action_id'] = action_id
 	return basic
 
 
@@ -39,3 +43,13 @@ def section_block(block_title, accessory, block_id="", dispatch_action=False, hi
 		"hint": hint,
 		"optional": optional
 	}
+
+
+def rich_text_block(list_of_elements, block_id=''):
+	basic = {
+		"type": "rich_text",
+		"block_id": block_id,
+		"elements": list_of_elements
+	}
+
+	return basic

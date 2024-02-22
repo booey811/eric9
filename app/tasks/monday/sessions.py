@@ -32,6 +32,10 @@ def begin_new_session(main_id: str | int, timestamp: str, monday_user_id):
 def end_session(main_id, timestamp: str, ending_status, post_update: str = ''):
 	active_session = get_active_session(main_id)
 
+	if not active_session:
+		notify_admins_of_error(f"No active session found for {main_id}, cannot end session")
+		return False
+
 	if isinstance(timestamp, datetime.datetime):
 		timestamp = timestamp.strftime("%c")
 

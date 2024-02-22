@@ -7,10 +7,7 @@ def text_object(content):
 
 def generate_option(text, value):
 	return {
-		"text": {
-			"type": "plain_text",
-			"text": str(text)
-		},
+		"text": text,
 		"value": str(value)
 	}
 
@@ -33,7 +30,14 @@ def generate_option_groups(options_dict):
 		}
 
 		for text_value_pair in options_dict[group_title]:
-			inner['options'].append(generate_option(text_value_pair[0], text_value_pair[1]))
+			option = {
+				"text": {
+					"type": "plain_text",
+					"text": text_value_pair[0]
+				},
+				"value": text_value_pair[1]
+			}
+			inner["options"].append(option)
 
 		final.append(inner)
 	return final

@@ -1,7 +1,7 @@
 from . import elements
 
 
-def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=None):
+def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[]):
 	basic = {
 		"type": "input",
 		"element": element,
@@ -12,11 +12,16 @@ def input_block(block_title, element, dispatch_action=False, block_id="", hint="
 		},
 		"dispatch_action": dispatch_action,
 		"block_id": block_id,
-		"hint": hint,
 		"optional": optional
 	}
 	if initial_option:
-		basic['element']['initial_option'] = initial_option
+		basic['element']['initial_option'] = {"text": {'type': 'plain_text', 'text': initial_option[0]}, "value": initial_option[1]}
+	if hint:
+		basic['hint'] = {
+			"type": "plain_text",
+			"text": hint,
+			"emoji": True
+		}
 	return basic
 
 

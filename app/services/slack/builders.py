@@ -1,5 +1,6 @@
 import logging
 from pprint import pprint as p
+from typing import List
 
 from . import blocks, exceptions
 from ..monday import items
@@ -37,7 +38,7 @@ class DeviceAndProductView:
 		self._device_id = str(device_id)
 
 	@property
-	def products(self):
+	def products(self) -> List[items.ProductItem]:
 		if not self._products:
 			if not self._product_ids:
 				self._products = []
@@ -75,15 +76,13 @@ class DeviceAndProductView:
 
 		results.append(device_block)
 
-		# if self.device:
-		#
-		# 	product_blocks = []
-		#
-		# 	all_products = items.ProductItem.fetch_all()
-		# 	products = [_.name for _ in all_products if str(_.device_id) == str(self.device.id)]
-		#
-		# 	for product in products:
-		# 		product_blocks.append(blocks.add.rich_text_block([blocks.add.rich_text_elements([product])]))
-		#
-		# p(results)
+		if self.device:
+			results.append(blocks.add.simple_text_display("*Related Products*"))
+			device_products = [_ for _ in items.ProductItem.fetch_all() if str(_.device_id) == str(self.device.id)]
+			for product in device_products:
+				results.append(blocks.add.simple_text_display(f"{product.name} £{product.price}"))
+
+			# add product block
+
+		p(results)
 		return results

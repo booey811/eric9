@@ -1,4 +1,5 @@
 import logging
+from pprint import pprint as p
 
 from ...services.slack import slack_app, builders
 
@@ -15,7 +16,7 @@ def run_test_function(ack, body, client):
 		"Test Modal",
 	)
 	modal['blocks'] = builder.create_device_and_product_blocks()
-	log.debug(modal)
+	p(modal)
 	client.views_open(
 		trigger_id=body["trigger_id"],
 		view=modal

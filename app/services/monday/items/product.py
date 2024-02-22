@@ -32,7 +32,7 @@ class ProductItem(BaseCacheableItem):
 
 	@classmethod
 	def fetch_all(cls, index_items=False):
-		results = super().fetch_all()
+		results = super().fetch_all("product:")
 		filtered = []
 		for item in results:
 			if not index_items and item.product_type.value == 'Index':

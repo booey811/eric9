@@ -1,44 +1,12 @@
-def generate_option(text, value):
+
+
+def external_select_element(action_id, placeholder, min_query_length=3):
 	return {
-		"text": {
+		"action_id": str(action_id),
+		"type": "external_select",
+		"placeholder": {
 			"type": "plain_text",
-			"text": str(text)
-		},
-		"value": str(value)
-	}
-
-
-def generate_option_groups(options_dict):
-	"""
-	:param options_dict: dictionary containing a group title key with list of lists (text-value pairs) values to use
-	:type options_dict: dict
-	:return: dictionary of option groups with options
-	:rtype: dict
-	"""
-	final = []
-	for group_title in options_dict:
-		inner = {
-			"label": {
-				"type": "plain_text",
-				"text": str(group_title)
-			},
-			"options": []
-		}
-
-		for text_value_pair in options_dict[group_title]:
-			inner['options'].append(generate_option(text_value_pair[0], text_value_pair[1]))
-
-		final.append(inner)
-	return final
-
-
-def text_element(content):
-	return {
-		"type": "rich_text_section",
-		"elements": [
-			{
-				"type": "text",
-				"text": content
-			}
-		]
+			"text": placeholder
+		  },
+		"min_query_length": min_query_length
 	}

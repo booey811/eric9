@@ -1,5 +1,5 @@
 from ..api.items import BaseItemType, BaseCacheableItem
-from ..api import columns, monday_connection
+from ..api import columns, get_api_items, monday_connection
 from ..api.exceptions import MondayDataError
 from ....utilities import notify_admins_of_error
 from .repair_phases import RepairPhaseModel
@@ -40,17 +40,35 @@ class ProductItem(BaseCacheableItem):
 			filtered.append(item)
 		return filtered
 
+	@classmethod
+	def get(cls, product_ids):
+		results = []
+		failed = []
+		try:
+			for _ in product_ids:
+				try:
+					results.append(cls(_).load_from_cache())
+				except Exception as e:
+					notify_admins_of_error(f"Error fetching product{_} from cache: {str(e)}")
+					failed.append(_)
+			if failed:
+				prod_data = get_api_items(failed)
+				results.append([cls(_).load_from_api(prod_data[_]) for _ in prod_data])
+		except Exception as e:
+			notify_admins_of_error(f"Error fetching products {product_ids}: {str(e)}")
+
 	def cache_key(self):
 		return f"product:{self.id}"
 
-	def load_from_cache(self):
-		cache_data = self.fetch_cache_data()
+	def load_from_cache(self, cache_data=None):
+		if cache_data is None:
+			cache_data = self.fetch_cache_data()
 		self.price.value = int(cache_data['price'])
 		self.required_minutes.value = int(cache_data['required_minutes'])
 		self.name = cache_data['name']
 		self.device_id = cache_data['device_id']
 		self.id = cache_data['id']
-		return cache_data
+		return self
 
 	def prepare_cache_data(self):
 		data = {

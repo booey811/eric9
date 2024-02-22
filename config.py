@@ -91,6 +91,7 @@ class Config(object):
 		"dev": os.environ["MOTION_DEV"],
 		"safan": os.environ['MOTION_SAFAN'],
 		'andres': os.environ['MOTION_GABE'],
+		"ferrari": os.environ['MOTION_GABE'],
 	}
 
 	# MOTION REFERENCES

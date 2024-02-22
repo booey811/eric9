@@ -29,20 +29,18 @@ def input_block(block_title, element, dispatch_action=False, block_id="", hint="
 	return basic
 
 
-def section_block(block_title, accessory, block_id="", dispatch_action=False, hint="", optional=False):
-	return {
-		"type": "input",
-		"accessory": accessory,
-		"label": {
-			"type": "plain_text",
-			"text": block_title,
-			"emoji": True
+def simple_text_display(text, block_id=''):
+	basic = {
+		"type": "section",
+		"text": {
+			"type": "mrkdwn",
+			"text": text
 		},
-		"dispatch_action": dispatch_action,
-		"block_id": block_id,
-		"hint": hint,
-		"optional": optional
+		"block_id": block_id
 	}
+
+	return basic
+
 
 
 def rich_text_block(list_of_elements, block_id=''):

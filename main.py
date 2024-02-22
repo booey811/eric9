@@ -17,6 +17,15 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		pass
+		from app.utilities import users
+		from app.services import gcal
+		from app.services import monday, slack
+		from app import tasks
+		gabe = users.User('gabe')
+
+		# r = slack.builders.DeviceAndProductView().create_device_and_product_blocks()
+		from app.cache.utilities import build_product_cache, build_device_cache
+		build_product_cache()
+
 	else:
 		raise Exception(f"Invalid ENV: {env}")

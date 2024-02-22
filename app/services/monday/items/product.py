@@ -20,6 +20,8 @@ class ProductItem(BaseCacheableItem):
 
 		self.product_type = columns.StatusValue("status3")
 
+		self._device_id = None
+
 		self.profit_model_gen_text = columns.TextValue("text74")
 
 		super().__init__(item_id, api_data, search)
@@ -66,7 +68,7 @@ class ProductItem(BaseCacheableItem):
 		self.price.value = int(cache_data['price'])
 		self.required_minutes.value = int(cache_data['required_minutes'])
 		self.name = cache_data['name']
-		self.device_id = cache_data['device_id']
+		self._device_id = cache_data['device_id']
 		self.id = cache_data['id']
 		return self
 
@@ -86,15 +88,12 @@ class ProductItem(BaseCacheableItem):
 
 	@property
 	def device_id(self):
-		if self.device_connect.value:
-			return self.device_connect.value[0]
-		else:
-			notify_admins_of_error(f"{str(self)} has no device connection")
-			return None
-
-	@device_id.setter
-	def device_id(self, value):
-		self.device_connect.value = [int(value)]
+		if not self._device_id:
+			if self.device_connect.value:
+				self._device_id = self.device_connect.value[0]
+			else:
+				notify_admins_of_error(f"{str(self)} has no device connection")
+		return self._device_id
 
 	def get_phase_model(self):
 		if not self.phase_model_connect.value:

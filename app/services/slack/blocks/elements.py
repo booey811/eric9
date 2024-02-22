@@ -37,3 +37,10 @@ def rich_text_elements(list_of_content):
 	}
 
 	return [basic]
+
+
+def text_element(content):
+	return {
+		"type": "mrkdwn",
+		"text": str(content)
+	}

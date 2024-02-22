@@ -135,9 +135,12 @@ def handle_web_booking():
 @main_board_bp.route('/main-status-change', methods=["POST"])
 @monday_challenge
 def handle_main_status_adjustment():
+	log.debug('Handling Main Board Main Status Change')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
+
+	log.debug(data)
 
 	q_high.enqueue(
 		notifications.notify_zendesk.send_macro,

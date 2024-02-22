@@ -1,7 +1,8 @@
 from typeform import Typeform
 
-from ... import conf
+import config
 
+conf = config.get_config()
 
 class TypeformClient:
 	def __init__(self, api_key):

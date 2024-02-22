@@ -18,7 +18,7 @@ class BaseItemType:
 	BOARD_ID = None
 
 	@classmethod
-	def fetch_all(cls):
+	def fetch_all(cls, *args):
 		log.debug(f"Fetching all items for {cls.__name__}")
 		query_results = conn.boards.fetch_items_by_board_id(cls.BOARD_ID)['data']['boards'][0]['items_page']
 		cursor = query_results['cursor']
@@ -35,7 +35,7 @@ class BaseItemType:
 				break
 		return items
 
-	def __init__(self, item_id=None, api_data: dict = None, search=False):
+	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 		self.id = item_id
 		self.name = None
 
@@ -44,7 +44,7 @@ class BaseItemType:
 		self._api_data = None
 		self._column_data = None
 		if not search:
-			self.load_data(api_data)
+			self.load_data(api_data, cache_data)
 
 	def __str__(self):
 		if self.name:
@@ -61,7 +61,7 @@ class BaseItemType:
 			# Call the parent class's __setattr__ method
 			super().__setattr__(name, value)
 
-	def load_data(self, api_data=None):
+	def load_data(self, api_data=None, *args):
 		# load the item data from the API
 		if api_data:
 			self.load_from_api(api_data)
@@ -157,15 +157,34 @@ class BaseItemType:
 
 class BaseCacheableItem(BaseItemType):
 
-	def __init__(self, item_id=None, api_data: dict = None, search=False):
+	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 		super().__init__(item_id, api_data, search)
 
-	def load_data(self, api_data=None):
+	@classmethod
+	def fetch_all(cls, key_prefix):
+		try:
+			# get keys for devices
+			results = get_redis_connection().scan_iter(f"{key_prefix}*")
+			device_keys = [key for key in results]
+			# now fetch all those keys from the cache
+			cache_data = get_redis_connection().mget(device_keys)
+			cache_data = [json.loads(_.decode('utf-8')) for _ in cache_data]
+			# now convert to device objects
+			devices = [cls().load_from_cache(_) for _ in cache_data]
+			return devices
+
+		except Exception as e:
+			notify_admins_of_error(f"Error fetching cached devices: {str(e)}")
+			return super().fetch_all()
+
+	def load_data(self, api_data=None, cache_data=None):
 		# load the item data from the cache
 		try:
 			if api_data:
 				self.load_from_api(api_data)
-			else:
+			elif cache_data:
+				self.load_from_cache(cache_data)
+			elif not api_data and not cache_data and self.id:
 				self.load_from_cache()
 		except CacheMiss:
 			notify_admins_of_error(f"Cache miss for {str(self)} {self.id}")
@@ -197,7 +216,7 @@ class BaseCacheableItem(BaseItemType):
 		return cache_data
 
 	@abc.abstractmethod
-	def load_from_cache(self):
+	def load_from_cache(self, cache_data=None):
 		raise NotImplementedError
 
 

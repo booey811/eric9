@@ -40,7 +40,7 @@ USER_DATA = [
 		"name": "ferrari",
 		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
 		"slack_id": "U06JERUU5RA",  # ferrari
-		"monday_id": "4251271",  # ferrari
+		"monday_id": "55780786",  # ferrari
 		"repair_group_id": "new_group34603",  # ferrari's group
 		"gcal_sessions_id": "c_c1522dbbb23a4d3f64454d7d9bba44510b4e21eb78b298ddd6059bd254750671@group.calendar.google.com"
 	},

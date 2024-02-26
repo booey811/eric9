@@ -161,7 +161,9 @@ class BaseCacheableItem(BaseItemType):
 		super().__init__(item_id, api_data, search)
 
 	@classmethod
-	def fetch_all(cls, key_prefix):
+	def fetch_all(cls, key_prefix, force_api=False):
+		if force_api:
+			return super().fetch_all()
 		try:
 			# get keys for devices
 			results = get_redis_connection().scan_iter(f"{key_prefix}*")

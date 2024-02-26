@@ -64,6 +64,16 @@ class DeviceAndProductView:
 				dispatch_action=True,
 				action_id="device_select"
 			)
+			results.append(device_block)
+			explanation = (
+				'Device Items describe all of the devices that we offer repairs for. Connected to each '
+				'device is a list of products, or repairs, that we offer for that device. Other pieces of '
+				'data are also connected to Devices, such as specifications for the pre-checks that should '
+				'be completed when accepting a specific device in')
+
+			text = blocks.objects.text_object(explanation)
+			results.append(blocks.add.simple_context_block([text]))
+
 		else:
 			device_block = blocks.add.input_block(
 				block_title="Device",
@@ -73,16 +83,25 @@ class DeviceAndProductView:
 				dispatch_action=True,
 				action_id="device_select"
 			)
+			results.append(device_block)
 
-		results.append(device_block)
+
 
 		if self.device:
 			results.append(blocks.add.simple_text_display("*Related Products*"))
 			device_products = [_ for _ in items.ProductItem.fetch_all() if str(_.device_id) == str(self.device.id)]
 			for product in device_products:
-				results.append(blocks.add.simple_text_display(f"{product.name} £{product.price}"))
-
-			# add product block
+				overflow_data = [
+					[":gear:  View Parts", f"view_parts_{product.id}"],
+					[":pound:  Adjust Price", f"adjust_price_{product.id}"],
+				]
+				overflow_options = [blocks.objects.plain_text_object(_[0], _[1]) for _ in overflow_data]
+				overflow_block = blocks.elements.overflow_accessory(f"product_{product.id}", overflow_options)
+				product_block = blocks.add.section_block(
+					title=f"{product.name}: *£{product.price}*",
+					accessory=overflow_block
+				)
+				results.append(product_block)
 
 		p(results)
 		return results

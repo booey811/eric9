@@ -60,6 +60,7 @@ class ProductItem(BaseCacheableItem):
 				results.append([cls(_).load_from_api(prod_data[_]) for _ in prod_data])
 		except Exception as e:
 			notify_admins_of_error(f"Error fetching products {product_ids}: {str(e)}")
+		return results
 
 	def cache_key(self):
 		return f"product:{self.id}"

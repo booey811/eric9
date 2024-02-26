@@ -13,7 +13,7 @@ log = logging.getLogger('eric')
 class MainItem(items.BaseItemType):
 	BOARD_ID = 349212843
 
-	def __init__(self, item_id=None, api_data: dict | None = None):
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		# basic info
 		self.main_status = columns.StatusValue("status4")
 		self.client = columns.StatusValue("status")
@@ -65,7 +65,7 @@ class MainItem(items.BaseItemType):
 		# properties
 		self._products = None
 
-		super().__init__(item_id, api_data)
+		super().__init__(item_id, api_data, search)
 		self._check_update_threads()
 
 	def create(self, name, reload=True):

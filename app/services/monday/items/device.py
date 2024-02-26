@@ -41,7 +41,7 @@ class DeviceItem(BaseCacheableItem):
 			"name": self.name,
 			"id": self.id,
 			"device_type": self.device_type.value,
-			"product_ids": [str(_.id) for _ in self.products]
+			"product_ids": [str(_) for _ in self.products_connect.value]
 		}
 
 	def load_from_cache(self, cache_data=None):

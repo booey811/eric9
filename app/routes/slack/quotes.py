@@ -4,6 +4,7 @@ import json
 import re
 
 from ...services.slack import slack_app, builders, blocks
+from .exceptions import SlackRoutingError
 
 log = logging.getLogger('eric')
 
@@ -29,12 +30,19 @@ def run_test_function(ack, body, client):
 	return True
 
 
+@slack_app.action('device_info')
 @slack_app.action(re.compile("^device_info__.*$"))
 def show_device_info(ack, body, client):
 	log.debug("device_info ran")
 	log.debug(body)
 	action_id = body['actions'][0]['action_id']
-	device_id = action_id.split('__')[1]
+	if action_id == 'device_info':
+		device_id = body['actions'][0]['selected_option']['value']
+	elif 'device_info__' in action_id:
+		device_id = action_id.split('__')[1]
+	else:
+		raise SlackRoutingError(f"Invalid action_id for device_info action: {action_id}")
+
 	builder = builders.DeviceAndProductView()
 	builder.device = device_id
 

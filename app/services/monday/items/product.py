@@ -3,6 +3,7 @@ from ..api import columns, get_api_items, monday_connection
 from ..api.exceptions import MondayDataError
 from ....utilities import notify_admins_of_error
 from .repair_phases import RepairPhaseModel
+from .part import PartItem
 
 
 class ProductItem(BaseCacheableItem):
@@ -21,6 +22,7 @@ class ProductItem(BaseCacheableItem):
 		self.product_type = columns.StatusValue("status3")
 
 		self._device_id = None
+		self._part_ids = None
 
 		self.profit_model_gen_text = columns.TextValue("text74")
 
@@ -70,6 +72,7 @@ class ProductItem(BaseCacheableItem):
 		self.name = cache_data['name']
 		self._device_id = cache_data['device_id']
 		self.id = cache_data['id']
+		self._part_ids = cache_data['part_ids']
 		return self
 
 	def prepare_cache_data(self):
@@ -78,7 +81,8 @@ class ProductItem(BaseCacheableItem):
 			"required_minutes": self.required_minutes.value,
 			"name": self.name,
 			"device_id": self.device_id,
-			"id": self.id
+			"id": self.id,
+			"part_ids": self.part_ids
 		}
 
 		if not data['device_id']:
@@ -94,6 +98,23 @@ class ProductItem(BaseCacheableItem):
 			else:
 				notify_admins_of_error(f"{str(self)} has no device connection")
 		return self._device_id
+
+	@property
+	def part_ids(self):
+		if not self._part_ids:
+			try:
+				self._part_ids = [x for x in self.parts_connect.value]
+			except TypeError:
+				# notify_admins_of_error(f"{str(self)} has no parts connections")
+				self._part_ids = []
+		return self._part_ids
+
+	def get_parts(self):
+		if not self.part_ids:
+			notify_admins_of_error(f"{str(self)} has no parts connections")
+			return []
+		return [PartItem(_) for _ in self.part_ids]
+
 
 	def get_phase_model(self):
 		if not self.phase_model_connect.value:

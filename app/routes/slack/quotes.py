@@ -60,40 +60,6 @@ def show_device_info(ack, body, client):
 	return True
 
 
-@slack_app.action("device_select")
-def show_device_info_view(ack, body, client):
-	log.debug("device_select ran")
-	log.debug(body)
-	selected_device_id = body['actions'][0]['selected_option']['value']
-	builder = builders.DeviceAndProductView()
-	builder.device = selected_device_id
-
-	modal_blocks = []
-
-	modal = builders.blocks.base.get_modal_base(
-		"Device Viewer",
-	)
-
-	explanation = (
-		'Device Items describe all of the devices that we offer repairs for. Connected to each '
-		'device is a list of products, or repairs, that we offer for that device. Other pieces of '
-		'data are also connected to Devices, such as specifications for the pre-checks that should '
-		'be completed when accepting a specific device in')
-
-	modal_blocks.append(blocks.add.simple_context_block([blocks.objects.text_object(explanation)]))
-	modal_blocks.extend(builder.get_device_view())
-
-	modal['blocks'] = modal_blocks
-	modal['private_metadata'] = json.dumps(builder.get_meta())
-	p(modal)
-	client.views_update(
-		view_id=body['view']['id'],
-		view=modal
-	)
-	ack()
-	return True
-
-
 @slack_app.action(re.compile("^product_overflow__.*$"))
 def respond_to_product_overview_selection(ack, client, body):
 	log.debug("product_overflow ran")

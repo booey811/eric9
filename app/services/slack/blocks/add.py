@@ -1,8 +1,9 @@
 from . import elements
 
 
-def input_block(block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[],
-				action_id=''):
+def input_block(
+		block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[], action_id=''
+):
 	basic = {
 		"type": "input",
 		"element": element,

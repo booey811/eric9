@@ -48,28 +48,32 @@ class DeviceAndProductView:
 
 	def get_device_select_blocks(self):
 		results = []
-		external_select = blocks.elements.external_select_element(
-			action_id="device_select",
-			placeholder="Select a device"
+
+		device_data = items.DeviceItem.fetch_all(slack_data=True)
+		option_groups = blocks.objects.generate_option_groups(device_data)
+
+		static_select = blocks.elements.static_select_element(
+			placeholder="Select a device",
+			option_groups=option_groups,
+			action_id="device_select"
 		)
+
 		if self.device:
 			device_block = blocks.add.input_block(
 				block_title="Device",
-				element=external_select,
+				element=static_select,
 				block_id="device_select",
 				initial_option=[self.device.name, self.device.id],
 				dispatch_action=True,
-				action_id=f"device_info__{self.device.id}"
+				action_id=f"device_info"
 			)
 		else:
-
 			device_block = blocks.add.input_block(
 				block_title="Device",
-				element=external_select,
+				element=static_select,
 				block_id="device_select",
-				hint='Select a device to explore the entity!',
 				dispatch_action=True,
-				action_id="device_select"
+				action_id=f"device_info"
 			)
 		results.append(device_block)
 		return results

@@ -167,16 +167,16 @@ class BaseCacheableItem(BaseItemType):
 		try:
 			# get keys for devices
 			results = get_redis_connection().scan_iter(f"{key_prefix}*")
-			device_keys = [key for key in results]
+			item_keys = [key for key in results]
 			# now fetch all those keys from the cache
-			cache_data = get_redis_connection().mget(device_keys)
+			cache_data = get_redis_connection().mget(item_keys)
 			cache_data = [json.loads(_.decode('utf-8')) for _ in cache_data]
 			# now convert to device objects
-			devices = [cls().load_from_cache(_) for _ in cache_data]
-			return devices
+			items = [cls().load_from_cache(_) for _ in cache_data]
+			return items
 
 		except Exception as e:
-			notify_admins_of_error(f"Error fetching cached devices: {str(e)}")
+			notify_admins_of_error(f"Error fetching cached items: {str(e)}")
 			return super().fetch_all()
 
 	def load_data(self, api_data=None, cache_data=None):

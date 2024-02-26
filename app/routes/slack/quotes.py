@@ -89,3 +89,29 @@ def respond_to_product_overview_selection(ack, client, body):
 
 	else:
 		raise SlackRoutingError(f"Invalid option selected for product_overflow action: {selected_action}")
+
+
+@slack_app.action("view_part")
+def show_part_info(ack, body, client):
+	log.debug("view_part ran")
+	log.debug(body)
+	action_id = body['actions'][0]['action_id']
+	part_id = body['actions'][0]['selected_option']['value']
+	builder = builders.EntityInformationViews()
+
+	modal_blocks = []
+
+	modal = builders.blocks.base.get_modal_base(
+		"Part Viewer",
+	)
+
+	modal_blocks.extend(builder.view_part(part_id))
+
+	modal['blocks'] = modal_blocks
+	p(modal)
+	client.views_update(
+		view_id=body['view']['id'],
+		view=modal
+	)
+	ack()
+	return True

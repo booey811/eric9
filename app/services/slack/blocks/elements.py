@@ -22,6 +22,28 @@ def multi_external_select_element(action_id, placeholder, min_query_length=3):
 	}
 
 
+def static_select_element(action_id, placeholder, options=(), option_groups=()):
+	basic = {
+		"action_id": str(action_id),
+		"type": "static_select",
+		"placeholder": {
+			"type": "plain_text",
+			"text": placeholder
+		},
+	}
+
+	if not options and not option_groups:
+		raise ValueError("options or option_groups must be provided")
+	elif options:
+		basic["options"] = options
+	elif option_groups:
+		basic["option_groups"] = option_groups
+	else:
+		raise ValueError("options or option_groups must be provided")
+
+	return basic
+
+
 def rich_text_elements(list_of_content):
 	assert isinstance(list_of_content, list), "list_of_content must be a list of dictionaries"
 

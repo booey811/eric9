@@ -27,7 +27,7 @@ class ProductItem(BaseCacheableItem):
 		super().__init__(item_id, api_data, search)
 
 	@classmethod
-	def fetch_all(cls, index_items=False):
+	def fetch_all(cls, index_items=False, *args):
 		results = super().fetch_all("product:")
 		filtered = []
 		for item in results:
@@ -106,7 +106,6 @@ class ProductItem(BaseCacheableItem):
 			notify_admins_of_error(f"{str(self)} has no parts connections")
 			return []
 		return [PartItem(_) for _ in self.part_ids]
-
 
 	def get_phase_model(self):
 		if not self.phase_model_connect.value:

@@ -8,7 +8,6 @@ from ....cache import get_redis_connection
 
 
 class DeviceItem(BaseCacheableItem):
-
 	BOARD_ID = 3923707691
 
 	def __init__(self, item_id=None, api_data: dict | None = None):
@@ -20,8 +19,19 @@ class DeviceItem(BaseCacheableItem):
 		super().__init__(item_id, api_data)
 
 	@classmethod
-	def fetch_all(cls, *args):
-		return super().fetch_all("device:")
+	def fetch_all(cls, slack_data=False, force_api=False, *args):
+		results = super().fetch_all("device:", force_api=force_api)
+		if not slack_data:
+			return results
+		else:
+			dct = {}
+			for device in results:
+				inner_list = [device.name, str(device.id)]
+				try:
+					dct[device.device_type.value].append(inner_list)
+				except KeyError:
+					dct[device.device_type.value] = [inner_list]
+			return dct
 
 	def cache_key(self):
 		return f"device:{self.id}"
@@ -52,9 +62,3 @@ class DeviceItem(BaseCacheableItem):
 			else:
 				self._products = ProductItem.get(product_ids)
 		return self._products
-
-
-
-
-
-

@@ -44,3 +44,14 @@ def text_element(content):
 		"type": "mrkdwn",
 		"text": str(content)
 	}
+
+
+def overflow_accessory(action_id, options):
+
+	basic = {
+		"type": "overflow",
+		"options": options,
+		"action_id": action_id
+	}
+
+	return basic

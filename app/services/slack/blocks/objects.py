@@ -5,6 +5,18 @@ def text_object(content):
 	}
 
 
+def plain_text_object(text, value):
+	basic = {
+		"text": {
+			"type": "plain_text",
+			"text": text,
+			"emoji": True
+		},
+		"value": value
+	}
+	return basic
+
+
 def generate_option(text, value):
 	return {
 		"text": text,

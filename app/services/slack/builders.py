@@ -46,6 +46,45 @@ class DeviceAndProductView:
 				self._products = items.ProductItem.get(self._product_ids)
 		return self._products
 
+	def get_device_select_blocks(self):
+		results = []
+		external_select = blocks.elements.external_select_element(
+			action_id="device_select",
+			placeholder="Select a device"
+		)
+		if self.device:
+			device_block = blocks.add.input_block(
+				block_title="Device",
+				element=external_select,
+				block_id="device_select",
+				initial_option=[self.device.name, self.device.id],
+				dispatch_action=True,
+				action_id=f"device_info__{self.device.id}"
+			)
+		else:
+
+			device_block = blocks.add.input_block(
+				block_title="Device",
+				element=external_select,
+				block_id="device_select",
+				hint='Select a device to explore the entity!',
+				dispatch_action=True,
+				action_id="device_select"
+			)
+		results.append(device_block)
+		return results
+
+	def get_device_view(self):
+		if not self.device:
+			raise exceptions.SlackDataError(f"Cannot view Device as no device is set. {self._device_id=}")
+
+		results = [
+			blocks.add.header_block(f"{self.device.name}"),
+			blocks.add.simple_text_display(f"*Device Type:* {self.device.device_type.value}")
+		]
+
+		return results
+
 	def create_device_and_product_blocks(self):
 
 		results = []
@@ -84,8 +123,6 @@ class DeviceAndProductView:
 				action_id="device_select"
 			)
 			results.append(device_block)
-
-
 
 		if self.device:
 			results.append(blocks.add.simple_text_display("*Related Products*"))

@@ -74,3 +74,16 @@ def rich_text_block(list_of_elements, block_id=''):
 	}
 
 	return basic
+
+
+def header_block(text, block_id=''):
+	basic = {
+		"type": "header",
+		"text": {
+			"type": "plain_text",
+			"text": text,
+			"emoji": True
+		},
+		"block_id": block_id
+	}
+	return basic

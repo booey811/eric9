@@ -31,14 +31,14 @@ def send_macro(main_item_id):
 		results = search_item.search_board_for_items('macro_search_term', macro_search_term)
 
 		if not results:
-			body = f"Could not find macro for {macro_search_term}, no macro sent"
-			# macro search has failed
-			comment = Comment(
-				public=False,
-				body=body
-			)
-			ticket.comment = comment
-			zendesk.client.tickets.update(ticket)
+			# body = f"Could not find macro for {macro_search_term}, no macro sent"
+			# # macro search has failed
+			# comment = Comment(
+			# 	public=False,
+			# 	body=body
+			# )
+			# ticket.comment = comment
+			# zendesk.client.tickets.update(ticket)
 			return False
 		elif len(results) > 1:
 			body = f"Too Many Macros ({len(results)}) Found for {macro_search_term}, no macro sent"

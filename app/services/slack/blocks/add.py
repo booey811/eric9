@@ -58,10 +58,10 @@ def simple_text_display(text, block_id=''):
 	return basic
 
 
-def simple_context_block(list_of_elements, block_id=''):
+def simple_context_block(list_of_texts, block_id=''):
 	basic = {
 		"type": "context",
-		"elements": list_of_elements,
+		"elements": [{"type": "mrkdwn", "text": text} for text in list_of_texts],
 		"block_id": block_id
 	}
 	return basic

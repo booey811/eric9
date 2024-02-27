@@ -25,7 +25,8 @@ class EntityInformationViews:
 			static_select_element = blocks.elements.static_select_element(
 				placeholder="Select a product",
 				action_id="product_select",
-				options=[blocks.objects.option_object(f"{product.name}: £{product.price}", product.id) for product in device_products]
+				options=[blocks.objects.option_object(f"{product.name}: £{product.price}", product.id) for product in
+						 device_products]
 			)
 
 			static_select_block = blocks.add.input_block(
@@ -69,7 +70,8 @@ class EntityInformationViews:
 				))
 			else:
 				view_blocks.append(
-					blocks.add.simple_text_display(f"No parts are connected to the products for this device, which is odd!"))
+					blocks.add.simple_text_display(
+						f"No parts are connected to the products for this device, which is odd!"))
 
 		else:
 			view_blocks.append(
@@ -128,3 +130,48 @@ class EntityInformationViews:
 
 		results.append(device_block)
 		return results
+
+
+class QuoteInformationViews:
+
+	@staticmethod
+	def quote_selection_view():
+		view_blocks = []
+
+		text_input_element = blocks.elements.text_input_element(
+			placeholder='Enter an email address',
+			action_id="desired_email"
+		)
+
+		text_input_block = blocks.add.input_block(
+			block_title="Search for a main board item by email",
+			element=text_input_element,
+			block_id="quote_search",
+			dispatch_action=True,
+			action_id="main_board_search__email"
+		)
+
+		view_blocks.append(text_input_block)
+
+		return view_blocks
+
+	@staticmethod
+	def show_products_editor(meta_dict: dict):
+		view_blocks = []
+		total = 0
+		for product in meta_dict['products']:
+			overflow_data = [
+				[":gear:  Product Info", f"view_product"],
+				# [":pound:  Adjust Price", f"adjust_price"],
+			]
+			overflow_options = [blocks.objects.plain_text_object(_[0], _[1]) for _ in overflow_data]
+			overflow_block = blocks.elements.overflow_accessory(f"product_overflow__{product['id']}", overflow_options)
+			product_block = blocks.add.section_block(
+				title=f"{product['name']}: *£{product['price']}*",
+				accessory=overflow_block
+			)
+			view_blocks.append(product_block)
+			total += int(product['price'])
+
+		view_blocks.append(blocks.add.divider_block())
+		view_blocks.append(blocks.add.header_block(f"Total: £{total}"))

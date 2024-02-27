@@ -32,6 +32,7 @@ class MainItem(items.BaseItemType):
 		# repair info
 		self.products_connect = columns.ConnectBoards("board_relation")
 		self.device_connect = columns.ConnectBoards("board_relation5")
+		self.custom_quote_connect = columns.ConnectBoards("board_relation0")
 		self.description = columns.TextValue("text368")
 		self.imeisn = columns.TextValue("text4")
 		self.passcode = columns.TextValue('text8')

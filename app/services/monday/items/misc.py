@@ -120,3 +120,23 @@ class RepairSessionItem(BaseItemType):
 		self.gcal_plot_status = columns.StatusValue("status3")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class CustomQuoteLineItem(BaseItemType):
+
+	BOARD_ID = 4570780706
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.description = columns.TextValue('repair_description')
+		self.price = columns.NumberValue('numbers')
+		self.turnaround_hours = columns.NumberValue('numbers3')
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+	def prepare_cache_data(self):
+		return {
+			"id": str(self.id),
+			"description": self.description,
+			"price": self.price,
+		}

@@ -1,4 +1,4 @@
-def get_modal_base(title, submit="Submit", cancel="Cancel"):
+def get_modal_base(title, submit="Submit", cancel="Cancel", callback_id=""):
 	basic = {
 		"type": "modal",
 		"title": {
@@ -27,5 +27,8 @@ def get_modal_base(title, submit="Submit", cancel="Cancel"):
 			"text": cancel,
 			"emoji": True
 		}
+
+	if callback_id:
+		basic["callback_id"] = callback_id
 
 	return basic

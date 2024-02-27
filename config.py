@@ -72,6 +72,7 @@ class Config(object):
 	SLACK_SIGNING_SECRET = os.environ["SLACK_SECRET"]  # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
+	SLACK_SHOW_META = os.environ['SHOW_META']
 
 	# MONDAY BOARD IDS
 	MONDAY_MAIN_BOARD_ID = 349212843

@@ -69,7 +69,6 @@ def text_element(content):
 
 
 def overflow_accessory(action_id, options):
-
 	basic = {
 		"type": "overflow",
 		"options": options,
@@ -92,4 +91,20 @@ def text_input_element(placeholder='', action_id='', multiline=False, initial_va
 		}
 	if initial_value:
 		basic['initial_value'] = str(initial_value)
+	return basic
+
+
+def button_element(button_text, button_value='', action_id=''):
+	basic = {
+		"type": "button",
+		"text": {
+			"type": "plain_text",
+			"text": button_text
+		},
+		"style": "primary",
+	}
+	if button_value:
+		basic['value'] = button_value
+	if action_id:
+		basic['action_id'] = action_id
 	return basic

@@ -24,6 +24,22 @@ def generate_option(text, value):
 	}
 
 
+def option_object(text, value, description=''):
+	basic = {
+		"text": {
+			"type": "plain_text",
+			"text": str(text)
+		},
+		"value": str(value)
+	}
+	if description:
+		basic['description'] = {
+			"type": "plain_text",
+			"text": description
+		}
+	return basic
+
+
 def generate_option_groups(options_dict):
 	"""
 	:param options_dict: dictionary containing a group title key with list of lists (text-value pairs) values to use

@@ -40,7 +40,7 @@ def generate_product_options(device_id=None, filter_by_name=''):
 		products = [_ for _ in products if filter_by_name.lower() in _.name.lower()]
 
 	options = {
-		"options": [objects.generate_option(_.name, _.id) for _ in products]
+		"options": [{"text": _.name, "value": str(_.id)} for _ in products]
 	}
 
 	return options

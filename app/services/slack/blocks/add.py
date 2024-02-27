@@ -88,3 +88,10 @@ def header_block(text, block_id=''):
 		"block_id": block_id
 	}
 	return basic
+
+
+def divider_block():
+	basic = {
+		"type": "divider",
+	}
+	return basic

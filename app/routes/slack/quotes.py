@@ -17,7 +17,7 @@ def show_quote_editor(ack, client, body):
 		"Quote Editor",
 		submit="Save Quote"
 	)
-	modal['blocks'] = builders.QuoteInformationViews().quote_selection_view()
+	modal['blocks'] = builders.QuoteInformationViews().search_main_board()
 	p(modal)
 	client.views_open(
 		trigger_id=body["trigger_id"],
@@ -46,35 +46,9 @@ def search_for_main_board_item(ack, client, body):
 		"Main Board Search",
 		cancel='Go Back'
 	)
-	view_blocks = []
-
-	if results:
-		for result in results:
-			item = monday.items.MainItem(result['id'], result)
-			name = item.name
-			item_id = item.id
-			date_received = item.date_received.value
-			if date_received:
-				date_received = date_received.strftime("%d/%m/%Y")
-			else:
-				date_received = "No date received"
-
-			button_object = blocks.elements.button_element(
-				button_text='View',
-				action_id=f"main_board_item__{item_id}",
-			)
-			view_blocks.append(blocks.add.section_block(
-				title=name,
-				accessory=button_object,
-
-			))
-			view_blocks.append(blocks.add.simple_context_block([f"Date Received: {date_received}"]))
-			view_blocks.append(blocks.add.simple_context_block([f"IMEI/SN: {item.imeisn.value}"]))
-			view_blocks.append(blocks.add.divider_block())
-	else:
-		view_blocks.append(blocks.add.simple_text_display("No results found. go back to try again"))
-
+	view_blocks = builders.QuoteInformationViews().main_board_search_results(results)
 	modal['blocks'] = view_blocks
+
 	p(modal)
 	client.views_push(
 		trigger_id=body["trigger_id"],

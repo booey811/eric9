@@ -170,6 +170,36 @@ class QuoteInformationViews:
 		return view_blocks
 
 	@staticmethod
+	def main_board_search_results(results: List[dict]):
+		view_blocks = []
+		if results:
+			for result in results:
+				item = items.MainItem(result['id'], result)
+				name = item.name
+				item_id = item.id
+				date_received = item.date_received.value
+				if date_received:
+					date_received = date_received.strftime("%d/%m/%Y")
+				else:
+					date_received = "No date received"
+
+				button_object = blocks.elements.button_element(
+					button_text='View',
+					action_id=f"view_main_item__{item_id}",
+				)
+				view_blocks.append(blocks.add.section_block(
+					title=name,
+					accessory=button_object,
+
+				))
+				view_blocks.append(blocks.add.simple_context_block([f"Date Received: {date_received}"]))
+				view_blocks.append(blocks.add.simple_context_block([f"IMEI/SN: {item.imeisn.value}"]))
+				view_blocks.append(blocks.add.divider_block())
+		else:
+			view_blocks.append(blocks.add.simple_text_display("No results found. go back to try again"))
+		return view_blocks
+
+	@staticmethod
 	def show_products_editor(meta_dict: dict):
 		view_blocks = []
 		total = 0

@@ -16,10 +16,29 @@ class EntityInformationViews:
 		view_blocks = []
 		device = items.DeviceItem(device_id)
 		view_blocks.append(blocks.add.header_block(f"{device.name}"))
-		view_blocks.append(blocks.add.simple_text_display(f"*Related Products*"))
 		device_products = device.products
 		if device_products:
 			part_ids = []
+			for prod in device_products:
+				if prod.part_ids:
+					part_ids.extend(prod.part_ids)
+			static_select_element = blocks.elements.static_select_element(
+				placeholder="Select a product",
+				action_id="product_select",
+				options=[blocks.objects.option_object(f"{product.name}: £{product.price}", product.id) for product in device_products]
+			)
+
+			static_select_block = blocks.add.input_block(
+				block_title="Related Products",
+				element=static_select_element,
+				block_id="product_select",
+				dispatch_action=True,
+				action_id="view_product",
+				hint='Select a product to view more information about it!'
+			)
+
+			view_blocks.append(static_select_block)
+
 			for product in device_products:
 				overflow_data = [
 					[":gear:  Product Info", f"view_product"],
@@ -36,16 +55,21 @@ class EntityInformationViews:
 					part_ids.extend(product.part_ids)
 
 			if part_ids:
+				view_blocks.append({"type": "divider"})
 				parts = items.PartItem.get(part_ids)
-				options = [blocks.objects.generate_option(part.name, part.id) for part in parts]
+				parts.sort(key=lambda x: x.name)
+				options = [blocks.objects.option_object(part.name, part.id) for part in parts]
 				view_blocks.append(blocks.add.input_block(
-					block_title="*View Related Parts*",
+					block_title="Related Parts",
 					element=blocks.elements.static_select_element("view_part", "Select a part", options=options),
 					block_id="view_part",
 					dispatch_action=True,
 					action_id="view_part",
 					hint='Select a part to view more information about it!'
 				))
+			else:
+				view_blocks.append(
+					blocks.add.simple_text_display(f"No parts are connected to the products for this device, which is odd!"))
 
 		else:
 			view_blocks.append(

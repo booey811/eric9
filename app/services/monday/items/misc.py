@@ -82,13 +82,13 @@ class TypeFormWalkInResponseItem(BaseItemType):
 				device_answer_dict = get_answer_by_field_id(field_id)
 				self.device = device_answer_dict['text']
 				break
-			except KeyError:
+			except IndexError:
 				continue
 
 		zendesk_user_results = helpers.search_zendesk(self.email)
 		if not zendesk_user_results:
 			helpers.create_user(
-				name=self.email,
+				name=self.name,
 				email=self.email,
 				phone=self.phone
 			)

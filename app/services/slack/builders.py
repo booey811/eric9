@@ -200,22 +200,185 @@ class QuoteInformationViews:
 		return view_blocks
 
 	@staticmethod
-	def show_products_editor(meta_dict: dict):
+	def view_repair_details(meta_dict):
+		view_blocks = []
+
+		# Monday Info
+		main_id = meta_dict['main_id'] or 'new_item'
+
+		# User Info
+		username = meta_dict['user']['name'] or 'No User Selected'
+		email = meta_dict['user']['email'] or 'No Email Provided'
+		phone = meta_dict['user']['phone'] or 'No Phone Provided'
+		user_id = meta_dict['user']['id'] or 'No User Selected'
+
+		user_blocks = [
+			blocks.add.section_block(
+				title='*User Information*',
+				accessory=blocks.elements.overflow_accessory(
+					action_id=f"user_overflow__{user_id}",
+					options=[
+						blocks.objects.plain_text_object("Edit User Details", f"edit_user"),
+						blocks.objects.plain_text_object("Change User", "view_user"),
+					]
+				)
+			),
+			blocks.add.simple_text_display(f"*Name*: {username}"),
+			blocks.add.simple_text_display(f"*Email*: {email}"),
+			blocks.add.simple_text_display(f"*Phone Number*: {phone}"),
+			blocks.add.divider_block()
+		]
+		view_blocks.extend(user_blocks)
+
+		# Repair Info
+		repair_blocks = [
+			blocks.add.section_block(
+				title="Repair Information",
+				accessory=blocks.elements.button_element(
+					button_text="Edit Quote",
+					button_value="edit_quote",
+					action_id=f"edit_quote__{main_id}"
+				)
+			),
+		]
+		total = 0
+		if meta_dict.get('product_ids'):
+			products = items.ProductItem.get(meta_dict['product_ids'])
+			for prod in products:
+				repair_blocks.append(
+					blocks.add.simple_text_display(f"{prod.name}: *£{prod.price}*"),
+				)
+				total += int(prod.price.value)
+		if meta_dict.get('custom_products'):
+			custom_data = meta_dict['custom_products']
+			for custom in custom_data:
+				repair_blocks.append(
+					blocks.add.simple_text_display(f"{custom['name']}: *£{custom['price']}*"),
+				)
+				total += int(custom['price'])
+		if not meta_dict.get('products') and not meta_dict.get('custom_products'):
+			repair_blocks.append(
+				blocks.add.simple_text_display(f"No products or custom lines added to this quote"),
+			)
+
+		if total:
+			repair_blocks.append(blocks.add.divider_block())
+			repair_blocks.append(blocks.add.header_block(f"Total: £{total}"))
+
+		view_blocks.extend(repair_blocks)
+
+		return view_blocks
+
+	@staticmethod
+	def show_quote_editor(meta_dict: dict):
 		view_blocks = []
 		total = 0
-		for product in meta_dict['products']:
-			overflow_data = [
-				[":gear:  Product Info", f"view_product"],
-				# [":pound:  Adjust Price", f"adjust_price"],
-			]
-			overflow_options = [blocks.objects.plain_text_object(_[0], _[1]) for _ in overflow_data]
-			overflow_block = blocks.elements.overflow_accessory(f"product_overflow__{product['id']}", overflow_options)
-			product_block = blocks.add.section_block(
-				title=f"{product['name']}: *£{product['price']}*",
-				accessory=overflow_block
+
+		products = items.ProductItem.get(meta_dict['product_ids'])
+
+		view_blocks.append(blocks.add.section_block(
+			title="*Standard Products*",
+			accessory=blocks.elements.button_element(
+				button_text="Add Products",
+				button_value="add_products",
+				action_id="add_products"
 			)
-			view_blocks.append(product_block)
-			total += int(product['price'])
+		))
+
+		if products:
+			for product in products:
+				view_blocks.append(blocks.add.section_block(
+					title=f"{product.name}: *£{product.price}*",
+					accessory=blocks.elements.button_element(
+						button_text="Remove Product",
+						button_value=str(product.id),
+						action_id="remove_product",
+						button_style='danger'
+					)
+				))
+				total += int(product.price.value)
+		else:
+			view_blocks.append(blocks.add.simple_text_display("No products selected"))
+
+		view_blocks.append(blocks.add.divider_block())
+
+		view_blocks.append(blocks.add.section_block(
+			title="*Custom Products*",
+			accessory=blocks.elements.button_element(
+				button_text="Add Custom Product",
+				button_value="add_custom_product",
+				action_id="add_custom_product"
+			)
+		))
+		if meta_dict['custom_products']:
+			for custom in meta_dict['custom_products']:
+				view_blocks.append(blocks.add.section_block(
+					title='Custom Products',
+					accessory=blocks.elements.button_element(
+						button_text="Remove Custom Product",
+						button_value=custom['id'],
+						action_id="remove_custom_product",
+						button_style='danger'
+					)
+				))
+				total += int(custom.price.value)
+		else:
+			view_blocks.append(blocks.add.simple_text_display("No custom products added"))
 
 		view_blocks.append(blocks.add.divider_block())
 		view_blocks.append(blocks.add.header_block(f"Total: £{total}"))
+
+		return view_blocks
+
+	@staticmethod
+	def show_product_selection(meta_dict: dict):
+		view_blocks = []
+
+		device_id = meta_dict.get('device_id')
+		if device_id:
+			selected_device = items.DeviceItem(device_id)
+			initial_device = [selected_device.name, selected_device.id]
+		else:
+			initial_device = None
+
+		view_blocks.append(blocks.add.input_block(
+			block_title="Select a device",
+			element=blocks.elements.static_select_element(
+				placeholder="Select a device",
+				action_id="device_select",
+				option_groups=blocks.options.generate_device_options_list()
+			),
+			block_id="device_select",
+			dispatch_action=True,
+			action_id="device_select",
+			initial_option=initial_device
+		))
+
+		if device_id:
+			options = blocks.options.generate_product_options(meta_dict['device_id'])
+
+			initial_prod_options = []
+			if meta_dict.get('product_ids'):
+				products = items.ProductItem.get(meta_dict['product_ids'])
+				for prod in products:
+					initial_prod_options.append([str(prod.name), str(prod.id)])
+
+			static_select = blocks.elements.multi_select_element(
+				placeholder="Select a product",
+				options=options,
+				action_id="product_select"
+			)
+
+			product_block = blocks.add.input_block(
+				block_title="Products",
+				element=static_select,
+				block_id="product_select",
+				action_id='product_select',
+				initial_options=initial_prod_options
+			)
+		else:
+			product_block = blocks.add.simple_text_display("No device selected, select a device to see products")
+
+		view_blocks.append(product_block)
+
+		return view_blocks

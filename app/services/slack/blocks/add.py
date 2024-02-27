@@ -2,7 +2,7 @@ from . import elements
 
 
 def input_block(
-		block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[], action_id=''
+		block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[], action_id='', initial_options=[]
 ):
 	basic = {
 		"type": "input",
@@ -16,9 +16,20 @@ def input_block(
 		"block_id": block_id,
 		"optional": optional
 	}
-	if initial_option:
+
+	if initial_option and initial_options:
+		raise ValueError("initial_option and inital_options are mutually exclusive")
+
+	elif initial_option:
 		basic['element']['initial_option'] = {"text": {'type': 'plain_text', 'text': initial_option[0]},
 											  "value": initial_option[1]}
+	elif initial_options:
+		basic['element']['initial_options'] = []
+		for option_set in initial_options:
+			basic['element']['initial_options'].append(
+				{"text": {'type': 'plain_text', 'text': option_set[0]}, "value": option_set[1]}
+			)
+
 	if hint:
 		basic['hint'] = {
 			"type": "plain_text",

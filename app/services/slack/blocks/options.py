@@ -23,11 +23,7 @@ def generate_device_options_list(filter_by_name=''):
 		raw_dict[d_set].sort(key=lambda x: x[0])
 		raw_dict[d_set].reverse()
 
-	options = {
-		"option_groups": objects.generate_option_groups(raw_dict)
-	}
-
-	return options
+	return objects.generate_option_groups(raw_dict)
 
 
 def generate_product_options(device_id=None, filter_by_name=''):
@@ -39,8 +35,4 @@ def generate_product_options(device_id=None, filter_by_name=''):
 	if filter_by_name:
 		products = [_ for _ in products if filter_by_name.lower() in _.name.lower()]
 
-	options = {
-		"options": [{"text": _.name, "value": str(_.id)} for _ in products]
-	}
-
-	return options
+	return [objects.plain_text_object(_.name, _.id) for _ in products]

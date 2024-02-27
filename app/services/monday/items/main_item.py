@@ -21,6 +21,7 @@ class MainItem(items.BaseItemType):
 		self.repair_type = columns.StatusValue('status24')
 		self.notifications_status = columns.StatusValue('status_18')
 		self.booking_date = columns.DateValue("date6")
+		self.date_received = columns.DateValue("date4")
 
 		# contact info
 		self.ticket_url = columns.LinkURLValue("link1")
@@ -145,7 +146,7 @@ class MainItem(items.BaseItemType):
 
 	@property
 	def products(self):
-		if self._products is None:
+		if not self._products:
 			if self.products_connect.value:
 				product_data = get_api_items(self.products_connect.value)
 				self._products = [ProductItem(p['id'], p) for p in product_data]

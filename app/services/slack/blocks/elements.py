@@ -44,6 +44,42 @@ def static_select_element(action_id, placeholder, options=(), option_groups=()):
 	return basic
 
 
+def multi_select_element(placeholder, action_id='', options=(), option_groups=(), initial_options=()):
+	basic = {
+		"type": "multi_static_select",
+		"placeholder": {
+			"type": "plain_text",
+			"text": placeholder
+		},
+	}
+
+	if not options and not option_groups:
+		raise ValueError("options or option_groups must be provided")
+	elif options:
+		basic["options"] = options
+		if initial_options:
+
+			basic['initial_options'] = initial_options
+	elif option_groups:
+		basic["option_groups"] = option_groups
+	else:
+		raise ValueError("options or option_groups must be provided")
+
+	if action_id:
+		basic['action_id'] = action_id
+
+	if initial_options:
+		for ds in initial_options:
+
+
+			if ds not in options:
+				raise ValueError(f"Initial option {ds} not in options")
+
+		basic['initial_options']
+
+	return basic
+
+
 def rich_text_elements(list_of_content):
 	assert isinstance(list_of_content, list), "list_of_content must be a list of dictionaries"
 
@@ -94,17 +130,33 @@ def text_input_element(placeholder='', action_id='', multiline=False, initial_va
 	return basic
 
 
-def button_element(button_text, button_value='', action_id=''):
+def button_element(button_text, button_value='', action_id='', button_style='primary'):
 	basic = {
 		"type": "button",
 		"text": {
 			"type": "plain_text",
 			"text": button_text
 		},
-		"style": "primary",
+		"style": button_style,
 	}
 	if button_value:
 		basic['value'] = button_value
 	if action_id:
 		basic['action_id'] = action_id
+	return basic
+
+
+def checkbox_element(title, options, action_id=''):
+	basic = {
+		"type": "checkboxes",
+		"options": options,
+		"label": {
+			"type": "plain_text",
+			"text": title,
+			"emoji": True
+		}
+	}
+	if action_id:
+		basic['action_id'] = action_id
+
 	return basic

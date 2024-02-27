@@ -1,6 +1,9 @@
+import time
+
 from ..api.items import BaseItemType
 from ..api import columns
 from ... import typeform
+from ...zendesk import helpers
 
 
 class WebBookingItem(BaseItemType):
@@ -82,17 +85,24 @@ class TypeFormWalkInResponseItem(BaseItemType):
 			except KeyError:
 				continue
 
+		zendesk_user_results = helpers.search_zendesk(self.email)
+		if not zendesk_user_results:
+			helpers.create_user(
+				name=self.email,
+				email=self.email,
+				phone=self.phone
+			)
+			time.sleep(15)
+
 		self.push_to_slack = 'Do Now!'
 		self.commit()
 		return self
 
 
 class NotificationMappingItem(BaseItemType):
-
 	BOARD_ID = 3428830196
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.macro_search_term = columns.TextValue('text8')
 		self.macro_id = columns.TextValue("text")
 
@@ -100,11 +110,9 @@ class NotificationMappingItem(BaseItemType):
 
 
 class RepairSessionItem(BaseItemType):
-
 	BOARD_ID = 5997573759
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.main_board_id = columns.TextValue('text')
 		self.start_time = columns.DateValue("date")
 		self.end_time = columns.DateValue("date2")
@@ -120,3 +128,21 @@ class RepairSessionItem(BaseItemType):
 		self.gcal_plot_status = columns.StatusValue("status3")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class CustomQuoteLineItem(BaseItemType):
+	BOARD_ID = 4570780706
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.description = columns.TextValue('repair_description')
+		self.price = columns.NumberValue('numbers')
+		self.turnaround_hours = columns.NumberValue('numbers3')
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+	def prepare_cache_data(self):
+		return {
+			"id": str(self.id),
+			"description": self.description,
+			"price": self.price,
+		}

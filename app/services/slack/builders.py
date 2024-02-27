@@ -135,23 +135,37 @@ class EntityInformationViews:
 class QuoteInformationViews:
 
 	@staticmethod
-	def quote_selection_view():
+	def search_main_board():
 		view_blocks = []
 
-		text_input_element = blocks.elements.text_input_element(
+		email_input_element = blocks.elements.text_input_element(
 			placeholder='Enter an email address',
 			action_id="desired_email"
 		)
 
-		text_input_block = blocks.add.input_block(
+		email_input_block = blocks.add.input_block(
 			block_title="Search for a main board item by email",
-			element=text_input_element,
-			block_id="quote_search",
+			element=email_input_element,
+			block_id="email_search",
 			dispatch_action=True,
 			action_id="main_board_search__email"
 		)
 
-		view_blocks.append(text_input_block)
+		ticket_input_element = blocks.elements.text_input_element(
+			placeholder='Enter a Zendesk Ticket ID',
+			action_id="desired_ticket_id"
+		)
+
+		ticket_input_block = blocks.add.input_block(
+			block_title="Search for a main board item by ticket number",
+			element=ticket_input_element,
+			block_id="ticket_search",
+			dispatch_action=True,
+			action_id="main_board_search__ticket"
+		)
+
+		view_blocks.append(email_input_block)
+		view_blocks.append(ticket_input_block)
 
 		return view_blocks
 

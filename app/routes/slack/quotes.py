@@ -59,6 +59,10 @@ def search_for_main_board_item(ack, client, body):
 		search_term = body['actions'][0]['value']
 		search = monday.items.MainItem(search=True)
 		results = search.search_board_for_items('email', search_term)
+	elif search_entity == 'ticket':
+		search_term = body['actions'][0]['value']
+		search = monday.items.MainItem(search=True)
+		results = search.search_board_for_items('ticket_id', search_term)
 
 	else:
 		raise SlackRoutingError(f"Invalid search_entity for main_board_search action: {search_entity}")

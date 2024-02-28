@@ -1,5 +1,5 @@
 from ..api.items import BaseItemType, BaseCacheableItem
-from ..api import columns
+from ..api import columns, monday_connection
 from ..api.exceptions import MondayDataError
 from .... import notify_admins_of_error
 from .repair_phases import RepairPhaseModel
@@ -20,7 +20,15 @@ class ProductItem(BaseCacheableItem):
 
 		self.product_type = columns.StatusValue("status3")
 
+		self.profit_model_gen_text = columns.TextValue("text74")
+
 		super().__init__(item_id, api_data, search)
+
+		if not search:
+			if '"' in self.name:
+				new_name = self.name.replace('"', '')
+				monday_connection.items.change_item_value(self.BOARD_ID, self.id, "name", new_name)
+				self.name = new_name
 
 	@classmethod
 	def fetch_all(cls, index_items=False):

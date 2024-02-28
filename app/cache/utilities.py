@@ -6,6 +6,15 @@ from ..services import monday
 log = logging.getLogger('eric')
 
 
+def clear_cache(key_prefix=''):
+	log.info(f"Clearing cache for key: {key_prefix}")
+	redis_connection = get_redis_connection()
+	pipe = redis_connection.pipeline()
+	for key in redis_connection.scan_iter(f"{key_prefix}*"):
+		pipe.delete(key)
+	pipe.execute()
+
+
 def build_product_cache():
 	def cache_item_set(item_set):
 		for i in item_set:
@@ -13,6 +22,7 @@ def build_product_cache():
 			p.save_to_cache(pipe)
 
 	log.info("Building product cache")
+	clear_cache("product:*")
 	pipe = get_redis_connection().pipeline()
 
 	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
@@ -41,6 +51,7 @@ def build_device_cache():
 			d.save_to_cache(pipe)
 
 	log.info("Building Device Cache")
+	clear_cache("device:*")
 	pipe = get_redis_connection().pipeline()
 
 	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
@@ -69,6 +80,7 @@ def build_part_cache():
 			p.save_to_cache(pipe)
 
 	log.info("Building Parts Cache")
+	clear_cache("part:*")
 	pipe = get_redis_connection().pipeline()
 
 	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(

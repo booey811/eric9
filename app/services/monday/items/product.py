@@ -28,7 +28,7 @@ class ProductItem(BaseCacheableItem):
 
 		super().__init__(item_id, api_data, search)
 
-		if not search:
+		if self.name:
 			if '"' in self.name:
 				new_name = self.name.replace('"', '')
 				monday_connection.items.change_item_value(self.BOARD_ID, self.id, "name", new_name)

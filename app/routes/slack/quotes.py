@@ -276,6 +276,7 @@ def handle_device_selection(ack, client, body):
 	device_id = body['actions'][0]['selected_option']['value']
 	meta = json.loads(body['view']['private_metadata'])
 	meta['device_id'] = device_id
+	meta['product_ids'] = []
 	modal = builders.blocks.base.get_modal_base(
 		"Select Products",
 		cancel="Cancel",
@@ -296,7 +297,8 @@ def handle_product_selection_submission(ack, client, body):
 	log.debug("add_products view submitted")
 	log.debug(body)
 	meta = json.loads(body['view']['private_metadata'])
-	selected_product_ids = [_['value'] for _ in body['view']['state']['values']['product_select']['product_select']['selected_options']]
+	dct_key = f"product_select__{meta['device_id']}"
+	selected_product_ids = [int(_['value']) for _ in body['view']['state']['values'][dct_key]['product_select']['selected_options']]
 	meta['product_ids'] = selected_product_ids
 	modal = builders.blocks.base.get_modal_base(
 		"Quote Editor",

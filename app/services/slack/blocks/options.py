@@ -3,7 +3,7 @@ from . import objects
 
 
 def generate_device_options_list(filter_by_name=''):
-	devices = monday.items.DeviceItem.fetch_all()
+	devices = monday.items.DeviceItem.fetch_all(slack_data=False)
 
 	if filter_by_name:
 		devices = [device for device in devices if filter_by_name.lower() in device.name.lower()]

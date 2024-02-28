@@ -233,11 +233,10 @@ class QuoteInformationViews:
 		# Repair Info
 		repair_blocks = [
 			blocks.add.section_block(
-				title="Repair Information",
-				accessory=blocks.elements.button_element(
-					button_text="Edit Quote",
-					button_value="edit_quote",
-					action_id=f"edit_quote__{main_id}"
+				title="*Repair Information*",
+				accessory=blocks.elements.overflow_accessory(
+					action_id=f"edit_quote__{main_id}",
+					options=[blocks.objects.plain_text_object("Edit Quote", "edit_quote")]
 				)
 			),
 		]
@@ -256,7 +255,7 @@ class QuoteInformationViews:
 					blocks.add.simple_text_display(f"{custom['name']}: *£{custom['price']}*"),
 				)
 				total += int(custom['price'])
-		if not meta_dict.get('products') and not meta_dict.get('custom_products'):
+		if not meta_dict.get('product_ids') and not meta_dict.get('custom_products'):
 			repair_blocks.append(
 				blocks.add.simple_text_display(f"No products or custom lines added to this quote"),
 			)
@@ -372,7 +371,7 @@ class QuoteInformationViews:
 			product_block = blocks.add.input_block(
 				block_title="Products",
 				element=static_select,
-				block_id="product_select",
+				block_id=f"product_select__{device_id}",
 				action_id='product_select',
 				initial_options=initial_prod_options
 			)

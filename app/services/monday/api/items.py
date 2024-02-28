@@ -158,26 +158,38 @@ class BaseItemType:
 class BaseCacheableItem(BaseItemType):
 
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
-		super().__init__(item_id, api_data, search)
+		super().__init__(item_id=item_id, api_data=api_data, search=search, cache_data=cache_data)
 
 	@classmethod
 	def fetch_all(cls, key_prefix, force_api=False):
 		if force_api:
 			return super().fetch_all()
-		try:
-			# get keys for devices
-			results = get_redis_connection().scan_iter(f"{key_prefix}*")
-			item_keys = [key for key in results]
-			# now fetch all those keys from the cache
-			cache_data = get_redis_connection().mget(item_keys)
-			cache_data = [json.loads(_.decode('utf-8')) for _ in cache_data]
-			# now convert to device objects
-			items = [cls().load_from_cache(_) for _ in cache_data]
-			return items
+		# get keys for devices
+		results = get_redis_connection().scan_iter(f"{key_prefix}*")
+		item_keys = [key for key in results]
+		# now fetch all those keys from the cache
+		cache_data = []
+		cache_raw = get_redis_connection().mget(item_keys)
+		for cache_item in cache_raw:
+			if isinstance(cache_item, bytes):
+				cache_data.append(json.loads(cache_item.decode('utf-8')))
+			elif isinstance(cache_item, str):
+				cache_data.append(json.loads(cache_item))
+			elif isinstance(cache_item, dict):
+				cache_data.append(cache_item)
+			else:
+				raise ValueError(f"Unknown type for cache item: {type(cache_item)}")
 
-		except Exception as e:
-			notify_admins_of_error(f"Error fetching cached items: {str(e)}")
-			return super().fetch_all()
+		items = []
+		for data in cache_data:
+			try:
+				item = cls().load_from_cache(data)
+				items.append(item)
+			except Exception as e:
+				notify_admins_of_error(f"Error loading item from cache: {str(e)}")
+				notify_admins_of_error(data)
+				raise e
+		return items
 
 	def load_data(self, api_data=None, cache_data=None):
 		# load the item data from the cache

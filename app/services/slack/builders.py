@@ -185,7 +185,7 @@ class QuoteInformationViews:
 
 				button_object = blocks.elements.button_element(
 					button_text='View',
-					action_id=f"view_main_item__{item_id}",
+					action_id=f"edit_quote__{item_id}",
 				)
 				view_blocks.append(blocks.add.section_block(
 					title=name,

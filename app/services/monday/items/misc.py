@@ -146,3 +146,17 @@ class CustomQuoteLineItem(BaseItemType):
 			"description": self.description,
 			"price": self.price,
 		}
+
+
+class RepairProfitModelItem(BaseItemType):
+
+	BOARD_ID = 5938137198
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.products_connect = columns.ConnectBoards("connect_boards")
+		self.parts_connect = columns.ConnectBoards("connect_boards4")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+

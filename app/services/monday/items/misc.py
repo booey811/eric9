@@ -143,8 +143,9 @@ class CustomQuoteLineItem(BaseItemType):
 	def prepare_cache_data(self):
 		return {
 			"id": str(self.id),
-			"description": self.description,
-			"price": self.price,
+			"description": self.description.value,
+			"price": self.price.value,
+			"name": self.name
 		}
 
 

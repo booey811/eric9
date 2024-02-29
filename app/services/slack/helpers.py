@@ -36,7 +36,7 @@ def create_meta(user_id=None, device_id=None, product_ids=None, user=None, devic
 			'phone': ''
 		},
 		'device_id': '',
-		'products': [],
+		'product_ids': [],
 		'custom_products': [],
 	}
 

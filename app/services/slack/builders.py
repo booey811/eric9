@@ -204,13 +204,14 @@ class QuoteInformationViews:
 		view_blocks = []
 
 		# Monday Info
-		main_id = meta_dict['main_id'] or 'new_item'
+		main_id = meta_dict.get('main_id') or 'new_item'
 
 		# User Info
-		username = meta_dict['user']['name'] or 'No User Selected'
-		email = meta_dict['user']['email'] or 'No Email Provided'
-		phone = meta_dict['user']['phone'] or 'No Phone Provided'
-		user_id = meta_dict['user']['id'] or 'No User Selected'
+		user = meta_dict.get('user', {})
+		username = user.get('name', 'No User Selected')
+		email = user.get('email', 'No Email Provided')
+		phone = user.get('phone', 'No Phone Number Provided')
+		user_id = user.get('id', 'No User Selected')
 
 		user_blocks = [
 			blocks.add.section_block(
@@ -252,7 +253,7 @@ class QuoteInformationViews:
 			custom_data = meta_dict['custom_products']
 			for custom in custom_data:
 				repair_blocks.append(
-					blocks.add.simple_text_display(f"{custom['name']}: *£{custom['price']}*"),
+					blocks.add.simple_text_display(f"Custom: {custom['name']}: *£{custom['price']}*"),
 				)
 				total += int(custom['price'])
 		if not meta_dict.get('product_ids') and not meta_dict.get('custom_products'):
@@ -320,7 +321,7 @@ class QuoteInformationViews:
 						button_style='danger'
 					)
 				))
-				total += int(custom.price.value)
+				total += custom['price']
 		else:
 			view_blocks.append(blocks.add.simple_text_display("No custom products added"))
 
@@ -381,3 +382,26 @@ class QuoteInformationViews:
 		view_blocks.append(product_block)
 
 		return view_blocks
+
+
+class ResultScreenViews:
+
+	@staticmethod
+	def get_loading_screen(message='Doing the thing...', modal=True):
+		view_blocks = [blocks.add.header_block("Loading..."), blocks.add.simple_text_display(message)]
+
+		if modal:
+			view = blocks.base.get_modal_base("Loading...")
+			view['blocks'] = view_blocks
+			return view
+
+		return view_blocks
+
+	@staticmethod
+	def get_error_screen(message='An Error Occurred', modal=True):
+		view_blocks = [blocks.add.header_block("An Error Occurred"), blocks.add.simple_text_display(message)]
+
+		if modal:
+			view = blocks.base.get_modal_base("Loading...")
+			view['blocks'] = view_blocks
+			return view

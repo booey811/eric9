@@ -2,11 +2,28 @@ import logging
 import re
 from pprint import pprint as p
 
-
-from ...services.slack import slack_app, builders
+from ...services.slack import slack_app, builders, blocks
 from .exceptions import SlackRoutingError
 
 log = logging.getLogger('eric')
+
+
+@slack_app.command("/entity")
+def run_test_function(ack, body, client):
+	ack()
+	log.debug("entity viewer function ran")
+	log.debug(body)
+	builder = builders.EntityInformationViews()
+	modal = blocks.get_modal_base(
+		"Entity Viewer",
+		submit=None
+	)
+	modal['blocks'] = builder.entity_view_entry_point()
+	client.views_open(
+		trigger_id=body["trigger_id"],
+		view=modal
+	)
+	return True
 
 
 @slack_app.action('device_info')

@@ -229,13 +229,7 @@ class WalkInFlow(FlowController):
 		return view
 
 	@handle_errors
-	def view_quote(self):
-		loading_screen = self.client.views_push(
-			trigger_id=self.received_body["trigger_id"],
-			view=builders.ResultScreenViews.get_loading_screen("Gathering products....", modal=True)
-		)
-		self.ack()
-
+	def view_quote(self, method='update'):
 		blocks = builders.QuoteInformationViews.show_quote_editor(self.meta)
 		view = self.get_view(
 			"Search for Repair",
@@ -243,8 +237,8 @@ class WalkInFlow(FlowController):
 			submit='Save Changes',
 			callback_id='quote_editor'
 		)
-
-		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+		self.update_view(view, method=method)
+		self.ack()
 		return True
 
 

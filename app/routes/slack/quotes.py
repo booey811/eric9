@@ -126,7 +126,7 @@ def show_quote_editor(ack, body, client):
 
 	meta = json.loads(body['view']['private_metadata'])
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
-	view = flow_controller.view_quote()
+	view = flow_controller.view_quote('push')
 	log.debug(view)
 	return True
 
@@ -135,27 +135,13 @@ def show_quote_editor(ack, body, client):
 def remove_product_from_quote(ack, body, client):
 	log.debug("remove_product ran")
 	log.debug(body)
-	product_id = body['actions'][0]['value']
 
-	try:
-		meta = json.loads(body['view']['private_metadata'])
-	except json.JSONDecodeError:
-		raise SlackRoutingError("Invalid private_metadata for remove_product action")
+	remove_id = body['actions'][0]['value']
+	meta = json.loads(body['view']['private_metadata'])
+	meta['product_ids'] = [prod for prod in meta['product_ids'] if str(prod) != str(remove_id)]
 
-	meta['product_ids'] = [prod for prod in meta['product_ids'] if str(prod) != str(product_id)]
-
-	modal = builders.blocks.base.get_modal_base(
-		"Quote Editor",
-		submit="Save Changes",
-		callback_id=f"edit_quote__{meta['main_id']}"
-	)
-	modal['blocks'] = builders.QuoteInformationViews().show_quote_editor(meta)
-	modal['private_metadata'] = json.dumps(meta)
-	client.views_update(
-		view_id=body['view']['id'],
-		view=modal
-	)
-	ack()
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.view_quote(method='update')
 	return True
 
 

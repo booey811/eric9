@@ -12,12 +12,7 @@ log = logging.getLogger('eric')
 
 @slack_app.command("/test")
 def test_modal(ack, client, body):
-	ack()
-	log.debug("test command ran")
-	flow_controller = flows.get_flow('walk_in', client, ack, body)
-	view = flow_controller.todays_repairs()
-	log.debug(view)
-	return True
+	raise Exception("Test Error")
 
 
 @slack_app.command("/walk")
@@ -46,6 +41,7 @@ def fetch_and_show_repair_details(ack, client, body):
 	view = flow_controller.show_repair_details(view_id=loading_screen.data['view']['id'])
 	log.debug(view)
 	return True
+
 
 @slack_app.action(re.compile("^view_repair__.*$"))
 def show_repair_details(ack, client, body):
@@ -98,24 +94,6 @@ def search_for_main_board_item(ack, client, body):
 		view=modal
 	)
 	ack()
-	return True
-
-
-@slack_app.command("/entity")
-def run_test_function(ack, body, client):
-	ack()
-	log.debug("entity viewer function ran")
-	log.debug(body)
-	builder = builders.EntityInformationViews()
-	modal = blocks.get_modal_base(
-		"Entity Viewer",
-		submit=None
-	)
-	modal['blocks'] = builder.entity_view_entry_point()
-	client.views_open(
-		trigger_id=body["trigger_id"],
-		view=modal
-	)
 	return True
 
 
@@ -189,19 +167,3 @@ def handle_quote_editor_submission(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	return True
-
-# @slack_app.action("view_quote")
-# def show_quote_editor(ack, client, body):
-# 	log.debug("view_quote ran")
-# 	log.debug(body)
-# 	modal = builders.blocks.base.get_modal_base(
-# 		"Quote Editor",
-# 		submit="Save Quote"
-# 	)
-# 	modal['blocks'] = builders.QuoteEditor().build_quote_editor()
-# 	client.views_open(
-# 		trigger_id=body["trigger_id"],
-# 		view=modal
-# 	)
-# 	ack()
-# 	return True

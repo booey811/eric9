@@ -117,7 +117,6 @@ def overflow_accessory(action_id, options):
 def text_input_element(placeholder='', action_id='', multiline=False, initial_value=''):
 	basic = {
 		"type": "plain_text_input",
-		"action_id": action_id,
 		"multiline": multiline
 	}
 	if placeholder:
@@ -127,6 +126,8 @@ def text_input_element(placeholder='', action_id='', multiline=False, initial_va
 		}
 	if initial_value:
 		basic['initial_value'] = str(initial_value)
+	if action_id:
+		basic['action_id'] = action_id
 	return basic
 
 

@@ -247,6 +247,24 @@ class WalkInFlow(FlowController):
 		self.ack()
 		return True
 
+	@handle_errors
+	def add_custom_product(self, method='update', view_id='', errors=None):
+		if errors is None:
+			errors = {}
+		blocks = builders.QuoteInformationViews.show_custom_product_form(errors)
+		view = self.get_view(
+			"Add Custom Product",
+			blocks=blocks,
+			submit='Save Changes',
+			callback_id='add_custom_product'
+		)
+		if errors:
+			self.ack({'response_action': "update", "view": view})
+			return False
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
+		return True
+
 
 class AdjustQuoteFlow(FlowController):
 

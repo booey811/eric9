@@ -133,6 +133,45 @@ def add_product_to_quote(ack, client, body):
 	return True
 
 
+@slack_app.action("add_custom_product")
+def add_custom_product_to_quote(ack, client, body):
+	log.debug("add_custom_product ran")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.add_custom_product('push')
+	return True
+
+
+@slack_app.view('add_custom_product')
+def handle_custom_product_submission(ack, client, body):
+	log.debug("custom_product view submitted")
+	log.debug(body)
+	custom_info = body['view']['state']['values']
+	new_custom = {
+		'name': custom_info['custom_product_name']['name_input']['value'],
+		'price': custom_info['custom_product_price']['price_input']['value'],
+		'description': custom_info['custom_product_description']['description_input']['value'],
+		'id': 'new_item'
+	}
+
+	errors = {}
+
+	try:
+		int(new_custom['price'])
+	except ValueError:
+		errors['custom_product_price'] = "Price must be a number"
+
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	if errors:
+		flow_controller.add_custom_product('update', errors=errors, view_id=body['view']['id'])
+	else:
+		meta['custom_products'].append(new_custom)
+		flow_controller.view_quote('update', view_id=body['view']['previous_view_id'])
+	return True
+
+
 @slack_app.action('device_select')
 def handle_device_selection(ack, client, body):
 	meta = json.loads(body['view']['private_metadata'])

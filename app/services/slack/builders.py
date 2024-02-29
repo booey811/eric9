@@ -321,7 +321,7 @@ class QuoteInformationViews:
 						button_style='danger'
 					)
 				))
-				total += custom['price']
+				total += int(custom['price'])
 		else:
 			view_blocks.append(blocks.add.simple_text_display("No custom products added"))
 
@@ -380,6 +380,59 @@ class QuoteInformationViews:
 			product_block = blocks.add.simple_text_display("No device selected, select a device to see products")
 
 		view_blocks.append(product_block)
+
+		return view_blocks
+
+	@staticmethod
+	def show_custom_product_form(error_dict=None):
+		view_blocks = []
+
+		#  name element
+		name_input = blocks.elements.text_input_element(
+			placeholder="Enter a name for the product",
+			action_id='name_input'
+		)
+		# price element
+		price_input = blocks.elements.text_input_element(
+			placeholder="Enter a price for the product",
+			action_id='price_input'
+		)
+
+		# description element
+		description_input = blocks.elements.text_input_element(
+			placeholder="Enter a description for the product",
+			action_id='description_input'
+		)
+
+		# name block
+		view_blocks.append(blocks.add.input_block(
+			block_title="Custom Product Name",
+			element=name_input,
+			block_id="custom_product_name",
+			action_id="custom_product_name"
+		))
+		if error_dict.get('custom_product_name'):
+			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_name']}"))
+
+		# price block
+		view_blocks.append(blocks.add.input_block(
+			block_title="Custom Product Price",
+			element=price_input,
+			block_id="custom_product_price",
+			action_id="custom_product_price"
+		))
+		if error_dict.get('custom_product_price'):
+			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_price']}"))
+
+		# description block
+		view_blocks.append(blocks.add.input_block(
+			block_title="Custom Product Description",
+			element=description_input,
+			block_id="custom_product_description",
+			action_id="custom_product_description"
+		))
+		if error_dict.get('custom_product_description'):
+			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_description']}"))
 
 		return view_blocks
 

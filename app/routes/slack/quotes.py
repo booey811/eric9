@@ -29,6 +29,24 @@ def show_todays_walk_in_repairs(ack, client, body):
 	return True
 
 
+@slack_app.action(re.compile("^load_repair__.*$"))
+def fetch_and_show_repair_details(ack, client, body):
+	log.debug("load_repair ran")
+	log.debug(body)
+
+	loading_screen = client.views_update(
+		view_id=body['view']['id'],
+		view=builders.ResultScreenViews.get_loading_screen("Fetching Main Board Item.....")
+	)
+	ack()
+
+	main_id = body['actions'][0]['action_id'].split('__')[1]
+	meta = helpers.extract_meta_from_main_item(main_id=main_id)
+	flow_controller = flows.get_flow('walk_in', client, ack, body, meta)
+	view = flow_controller.show_repair_details(view_id=loading_screen.data['view']['id'])
+	log.debug(view)
+	return True
+
 @slack_app.action(re.compile("^view_repair__.*$"))
 def show_repair_details(ack, client, body):
 	log.debug("view_repair_details ran")
@@ -37,24 +55,6 @@ def show_repair_details(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	view = flow_controller.show_repair_details()
 	log.debug(view)
-	return True
-
-
-@slack_app.command("/quote")
-def show_quote_editor(ack, client, body):
-	log.debug("quote command ran")
-	modal = builders.blocks.base.get_modal_base(
-		"Search for Repair",
-		submit=False
-	)
-	modal['blocks'] = builders.QuoteInformationViews().search_main_board()
-	modal['private_metadata'] = json.dumps({'flow': 'adjust_quote'})
-	p(modal)
-	client.views_open(
-		trigger_id=body["trigger_id"],
-		view=modal
-	)
-	ack()
 	return True
 
 
@@ -150,40 +150,19 @@ def add_product_to_quote(ack, client, body):
 	log.debug("add_products ran")
 	log.debug(body)
 	meta = json.loads(body['view']['private_metadata'])
-	modal = builders.blocks.base.get_modal_base(
-		"Select Products",
-		cancel="Cancel",
-		callback_id="add_products"
-	)
-	modal['blocks'] = builders.QuoteInformationViews().show_product_selection(meta)
-	p(modal)
-	modal['private_metadata'] = body['view']['private_metadata']
-	client.views_push(
-		trigger_id=body["trigger_id"],
-		view=modal
-	)
-	ack()
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.add_products('push')
 	return True
 
 
 @slack_app.action('device_select')
 def handle_device_selection(ack, client, body):
-	device_id = body['actions'][0]['selected_option']['value']
 	meta = json.loads(body['view']['private_metadata'])
+	device_id = body['actions'][0]['selected_option']['value']
 	meta['device_id'] = device_id
 	meta['product_ids'] = []
-	modal = builders.blocks.base.get_modal_base(
-		"Select Products",
-		cancel="Cancel",
-		callback_id="add_products"
-	)
-	modal['blocks'] = builders.QuoteInformationViews().show_product_selection(meta)
-	modal['private_metadata'] = json.dumps(meta)
-	client.views_update(
-		view_id=body['view']['id'],
-		view=modal
-	)
-	ack()
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.add_products('update')
 	return True
 
 
@@ -196,18 +175,19 @@ def handle_product_selection_submission(ack, client, body):
 	selected_product_ids = [int(_['value']) for _ in
 							body['view']['state']['values'][dct_key]['product_select']['selected_options']]
 	meta['product_ids'] = selected_product_ids
-	modal = builders.blocks.base.get_modal_base(
-		"Quote Editor",
-		submit="Save Changes",
-		callback_id=f'edit_quote__{meta["main_id"]}'
-	)
-	modal['blocks'] = builders.QuoteInformationViews().show_quote_editor(meta)
-	modal['private_metadata'] = json.dumps(meta)
-	client.views_update(
-		view_id=body['view']['previous_view_id'],
-		view=modal
-	)
-	ack()
+
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.view_quote('update', view_id=body['view']['previous_view_id'])
+	return True
+
+
+@slack_app.view('quote_editor')
+def handle_quote_editor_submission(ack, client, body):
+	log.debug("quote_editor view submitted")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	return True
 
 # @slack_app.action("view_quote")

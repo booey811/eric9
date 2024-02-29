@@ -29,10 +29,10 @@ def handle_errors(func):
 			current_view = flow_controller.get_view("ERROR REPORT", submit=None, close='Close')
 
 			# Check the environment
-			if os.getenv('ENV') == 'development':
+			if conf.CONFIG == 'development':
 				# Print the current view
 				str_view = json.loads(current_view)
-				log.error("Error in view")
+				log.error(f"Error in view: {e}")
 				log.error(json.dumps(str_view, indent=4))
 			else:
 				# Dump the view to an external service
@@ -54,6 +54,7 @@ class FlowController:
 		self.blocks = []
 
 		self.meta = {'flow': self.flow}
+
 		if meta:
 			self.meta.update(meta)
 
@@ -183,7 +184,7 @@ class WalkInFlow(FlowController):
 					title=f"*{repair.name}*",
 					accessory=s_blocks.elements.button_element(
 						button_text=device_name,
-						action_id=f"view_repair__{repair.id}",
+						action_id=f"load_repair__{repair.id}",
 						button_style="primary",
 						button_value=str(repair.id)
 					),
@@ -204,16 +205,7 @@ class WalkInFlow(FlowController):
 		return view
 
 	@handle_errors
-	def show_repair_details(self):
-
-		loading_screen = self.client.views_update(
-			view_id=self.received_body['view']['id'],
-			view=builders.ResultScreenViews.get_loading_screen("Fetching Main Board Item.....")
-		)
-		self.ack()
-
-		meta_from_item = helpers.extract_meta_from_main_item(main_id=self.received_body['actions'][0]['value'])
-		self.meta.update(meta_from_item)
+	def show_repair_details(self, method='update', view_id=''):
 
 		blocks = builders.QuoteInformationViews.view_repair_details(self.meta)
 		view = self.get_view(
@@ -224,12 +216,13 @@ class WalkInFlow(FlowController):
 			callback_id='repair_viewer'
 		)
 
-		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
 
 		return view
 
 	@handle_errors
-	def view_quote(self, method='update'):
+	def view_quote(self, method='update', view_id=''):
 		blocks = builders.QuoteInformationViews.show_quote_editor(self.meta)
 		view = self.get_view(
 			"Search for Repair",
@@ -237,7 +230,20 @@ class WalkInFlow(FlowController):
 			submit='Save Changes',
 			callback_id='quote_editor'
 		)
-		self.update_view(view, method=method)
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
+		return True
+
+	@handle_errors
+	def add_products(self, method='update', view_id=''):
+		blocks = builders.QuoteInformationViews.show_product_selection(self.meta)
+		view = self.get_view(
+			"Add Products",
+			blocks=blocks,
+			submit='Save Changes',
+			callback_id='add_products'
+		)
+		self.update_view(view, method=method, view_id=view_id)
 		self.ack()
 		return True
 

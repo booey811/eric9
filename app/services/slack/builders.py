@@ -313,7 +313,7 @@ class QuoteInformationViews:
 		if meta_dict['custom_products']:
 			for custom in meta_dict['custom_products']:
 				view_blocks.append(blocks.add.section_block(
-					title='Custom Products',
+					title=f"{custom['name']}: *£{custom['price']}*",
 					accessory=blocks.elements.button_element(
 						button_text="Remove Custom Product",
 						button_value=custom['id'],

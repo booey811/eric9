@@ -1,7 +1,7 @@
 import time
 
 from ..api.items import BaseItemType
-from ..api import columns
+from ..api import columns, get_api_items
 from ... import typeform
 from ...zendesk import helpers
 
@@ -150,14 +150,44 @@ class CustomQuoteLineItem(BaseItemType):
 
 
 class RepairProfitModelItem(BaseItemType):
-
 	BOARD_ID = 5938137198
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.products_connect = columns.ConnectBoards("connect_boards")
 		self.parts_connect = columns.ConnectBoards("connect_boards4")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 
+class PreCheckSet(BaseItemType):
+	BOARD_ID = 4347106321
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.set_type = columns.StatusValue('status9')
+		self.pre_check_items_connect = columns.ConnectBoards('connect_boards4')
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+	@property
+	def pre_check_items(self):
+		if not self.pre_check_items_connect.value:
+			return []
+		item_data = get_api_items(self.pre_check_items_connect.value)
+		return [PreCheckItem(i['id'], i) for i in item_data]
+
+
+class PreCheckItem(BaseItemType):
+	BOARD_ID = 4455646189
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.available_responses = columns.DropdownValue('dropdown')
+		self.check_sets_connect = columns.ConnectBoards('board_relation')
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+	@property
+	def check_sets(self):
+		if not self.check_sets_connect.value:
+			return []
+		item_data = get_api_items(self.check_sets_connect.value)
+		return [PreCheckSet(i['id'], i) for i in item_data]

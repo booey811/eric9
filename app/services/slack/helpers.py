@@ -1,3 +1,6 @@
+import uuid
+import hashlib
+
 from ...services import monday, zendesk
 
 
@@ -74,3 +77,17 @@ def create_meta(user_id=None, device_id=None, product_ids=None, user=None, devic
 		meta['custom_products'] = [line.prepare_cache_data() for line in custom_lines]
 
 	return meta
+
+
+def generate_unique_block_id():
+	# Generate a UUID
+	unique_id = uuid.uuid4()
+
+	# Create a hash of the UUID
+	hash_object = hashlib.sha1(str(unique_id).encode())
+	hex_dig = hash_object.hexdigest()
+
+	# Take the first 10 characters of the hash for a short block_id
+	short_id = hex_dig[:10]
+
+	return short_id

@@ -94,7 +94,7 @@ class FlowController:
 		if self.meta:
 			view['private_metadata'] = json.dumps(self.meta)
 			if conf.SLACK_SHOW_META:
-				blocks.append(s_blocks.add.simple_text_display("*MetaData*"))
+				blocks.append(s_blocks.add.simple_text_display("*MetaData*", block_id=helpers.generate_unique_block_id()))
 				blocks.append(
 					s_blocks.add.simple_text_display(
 						json.dumps(self.meta, indent=4)

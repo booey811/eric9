@@ -1,7 +1,8 @@
 import time
+import json
 
 from ..api.items import BaseItemType
-from ..api import columns, get_api_items
+from ..api import columns, get_api_items, exceptions, monday_connection
 from ... import typeform
 from ...zendesk import helpers
 
@@ -166,14 +167,17 @@ class PreCheckSet(BaseItemType):
 		self.set_type = columns.StatusValue('status9')
 		self.pre_check_items_connect = columns.ConnectBoards('connect_boards4')
 
+		self._pre_check_items = None
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
-	@property
-	def pre_check_items(self):
+	def get_pre_check_items(self):
 		if not self.pre_check_items_connect.value:
-			return []
-		item_data = get_api_items(self.pre_check_items_connect.value)
-		return [PreCheckItem(i['id'], i) for i in item_data]
+			self.load_from_api()
+		if not self.pre_check_items_connect.value:
+			raise exceptions.MondayDataError(f"{self} could not load pre check items: {self._api_data}")
+		self._pre_check_items = [PreCheckItem(i['id'], i) for i in get_api_items(self.pre_check_items_connect.value)]
+		return self._pre_check_items
 
 
 class PreCheckItem(BaseItemType):
@@ -191,3 +195,20 @@ class PreCheckItem(BaseItemType):
 			return []
 		item_data = get_api_items(self.check_sets_connect.value)
 		return [PreCheckSet(i['id'], i) for i in item_data]
+
+	def get_available_responses(self):
+		results = self.available_responses.value
+		try:
+			column_data = [
+				_ for _ in
+				monday_connection.boards.fetch_columns_by_board_id(self.BOARD_ID)['data']['boards'][0]['columns'] if
+				_['id'] == 'dropdown'][0]
+		except IndexError:
+			raise exceptions.MondayDataError(f"Could not find column data for {self.available_responses}")
+
+		settings = json.loads(column_data['settings_str'])['labels']
+		labels = []
+		for _id in results:
+			labels.append([i['name'] for i in settings if str(i['id']) == str(_id)][0])
+
+		return labels

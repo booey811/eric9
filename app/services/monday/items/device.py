@@ -1,7 +1,8 @@
 import json
 
 from ..api.items import BaseItemType, BaseCacheableItem
-from ..api import columns
+from ..api import columns, exceptions
+from .. import items
 from .product import ProductItem
 from ....utilities import notify_admins_of_error
 from ....cache import get_redis_connection
@@ -13,8 +14,10 @@ class DeviceItem(BaseCacheableItem):
 	def __init__(self, item_id=None, api_data: dict | None = None):
 		self.device_type = columns.StatusValue('status9')
 		self.products_connect = columns.ConnectBoards('connect_boards5')
+		self.pre_checks_connect = columns.ConnectBoards('connect_boards41')
 
 		self._products = None
+		self._pre_check_set = None
 
 		super().__init__(item_id, api_data)
 
@@ -41,7 +44,8 @@ class DeviceItem(BaseCacheableItem):
 			"name": self.name,
 			"id": self.id,
 			"device_type": self.device_type.value,
-			"product_ids": [str(_) for _ in self.products_connect.value]
+			"product_ids": [str(_) for _ in self.products_connect.value],
+			"pre_check_set_id": [self.pre_checks_connect.value[0]] if self.pre_checks_connect.value else []
 		}
 
 	def load_from_cache(self, cache_data=None):
@@ -51,6 +55,10 @@ class DeviceItem(BaseCacheableItem):
 		self.id = cache_data['id']
 		self.device_type.value = cache_data['device_type']
 		self.products_connect.value = cache_data['product_ids']
+		try:
+			self.pre_checks_connect.value = cache_data['pre_check_set_id']
+		except KeyError:
+			self.load_from_api()
 		return self
 
 	@property
@@ -62,3 +70,17 @@ class DeviceItem(BaseCacheableItem):
 			else:
 				self._products = ProductItem.get(product_ids)
 		return self._products
+
+	@property
+	def pre_check_set(self) -> items.misc.PreCheckSet | None:
+		if self._pre_check_set is None:
+			if not self.pre_checks_connect.value:
+				if not self._api_data:
+					self.load_from_api()
+				if self.pre_checks_connect.value:
+					self._pre_check_set = items.misc.PreCheckSet(self.pre_checks_connect.value[0])
+			else:
+				self._pre_check_set = items.misc.PreCheckSet(self.pre_checks_connect.value[0])
+		if self._pre_check_set is None:
+			raise exceptions.MondayDataError(f"Device {self.id} has no pre-check set attached")
+		return self._pre_check_set

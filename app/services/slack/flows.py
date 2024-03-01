@@ -94,7 +94,8 @@ class FlowController:
 		if self.meta:
 			view['private_metadata'] = json.dumps(self.meta)
 			if conf.SLACK_SHOW_META:
-				blocks.append(s_blocks.add.simple_text_display(f"*MetaData* ({len(view['private_metadata'])} chars)", block_id=helpers.generate_unique_block_id()))
+				blocks.append(s_blocks.add.simple_text_display(f"*MetaData* ({len(view['private_metadata'])} chars)",
+															   block_id=helpers.generate_unique_block_id()))
 				blocks.append(
 					s_blocks.add.simple_text_display(
 						json.dumps(self.meta, indent=4)
@@ -273,6 +274,81 @@ class RepairViewFlow(FlowController):
 				view=builders.ResultScreenViews.get_success_screen("No Changes Detected, hit 'Go Back' to continue")
 			)
 			return False
+
+	def show_pre_check_list(self):
+		loading_screen = self.client.views_push(
+			trigger_id=self.received_body["trigger_id"],
+			view=builders.ResultScreenViews.get_loading_screen("Fetching device", modal=True)
+		)
+		self.ack()
+
+		# get the device, and the pre-checks attached to it
+		device = monday.items.DeviceItem(self.meta['device_id']).load_from_api()
+		loading_screen = self.client.views_update(
+			view_id=loading_screen.data['view']['id'],
+			view=builders.ResultScreenViews.get_loading_screen("Fetching Check Sets", modal=True)
+		)
+		pre_check_set = device.pre_check_set.load_from_api()
+
+		loading_screen = self.client.views_update(
+			view_id=loading_screen.data['view']['id'],
+			view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks", modal=True)
+		)
+
+		pre_checks = pre_check_set.get_pre_check_items()
+
+		check_dicts = []
+		for pre_check in pre_checks:
+			try:
+				check_meta = [_ for _ in self.meta['pre_checks'] if _['id'] == str(pre_check.id)][0]
+			except IndexError:
+				check_meta = {
+					"id": str(pre_check.id),
+					"name": str(pre_check.name),
+					"answer": '',
+					"available_answers": pre_check.get_available_responses()
+				}
+			check_dicts.append(check_meta)
+
+			# add one block per pre check item, then the available responses are options`
+
+			# Split checks into sets of 10 and add them to blocks
+			num_sets = len(check_dicts) // 10
+			for i in range(num_sets):
+				start_index = i * 10
+				end_index = start_index + 10
+				checks_set = check_dicts[start_index:end_index]
+
+				options = []
+				for check in checks_set:
+					option = {
+						"text": {
+							"type": "plain_text",
+							"text": check['name']
+						},
+						"value": str(check['id'])
+					}
+					options.append(option)
+
+				self.blocks.append(
+					s_blocks.add.input_block(
+						block_title='Pre-Checks',
+						element=s_blocks.elements.checkbox_element(
+							options=options,
+							action_id=f"pre_check_set_{i + 1}"
+						)
+					)
+				)
+
+		view = self.get_view(
+			title="Today's Repairs",
+			submit='Submit',
+			close='Close'
+		)
+
+		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+
+		return view
 
 
 class WalkInFlow(RepairViewFlow):

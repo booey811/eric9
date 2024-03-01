@@ -498,6 +498,72 @@ class UserInformationView:
 
 		return view_blocks
 
+	@staticmethod
+	def edit_user_view(meta_dict, errors=None):
+		if errors is None:
+			errors = {}
+		view_blocks = []
+
+		user_dict = meta_dict.get('user', {})
+		for att in ('name', 'email', 'phone'):
+			if att in ('name', 'email'):
+				optional = False
+			else:
+				optional = True
+
+			if errors.get(att):
+				hint = f":no_entry:  {errors[att]}"
+			else:
+				hint = None
+
+			view_blocks.append(blocks.add.input_block(
+				block_title=att.capitalize(),
+				element=blocks.elements.text_input_element(
+					placeholder=f"Enter a new {att} for the user",
+					initial_value=user_dict.get(att, None),
+					action_id=f"edit_user__{att}"
+				),
+				block_id='edit_user__' + att,
+				optional=optional,
+				hint=hint
+			)
+			)
+		#
+		# if meta_dict['user']['id']:
+		# 	user = zendesk_client.users(id=int(meta_dict['user']['id']))
+		# 	view_blocks.append(blocks.add.section_block(
+		# 		title=f"*{user.name}*",
+		# 		accessory=blocks.elements.overflow_accessory(
+		# 			action_id=f"view_user_overflow__{meta_dict['user']['id']}",
+		# 			options=[
+		# 				blocks.objects.plain_text_object("View User Details", f"view_user"),
+		# 			]
+		# 		)
+		# 	))
+		# 	view_blocks.append(blocks.add.simple_text_display(str(user.email)))
+		# 	view_blocks.append(blocks.add.simple_text_display(str(user.phone)))
+		# else:
+		# 	view_blocks.append(blocks.add.simple_text_display("*No user selected*"))
+		#
+		# view_blocks.append(blocks.add.divider_block())
+		#
+		# email_input_element = blocks.elements.external_select_element(
+		# 	placeholder='Enter a name or email address',
+		# 	action_id="zendesk_email_search",
+		# 	min_query_length=3,
+		# 	focus_on_load=True,
+		# )
+		# email_input_block = blocks.add.input_block(
+		# 	block_title="Select another user by searching name or email",
+		# 	element=email_input_element,
+		# 	block_id="zendesk_search",
+		# 	dispatch_action=True,
+		# 	action_id="zendesk_user_search"
+		# )
+		# view_blocks.append(email_input_block)
+
+		return view_blocks
+
 
 class ResultScreenViews:
 
@@ -517,6 +583,15 @@ class ResultScreenViews:
 		view_blocks = [blocks.add.header_block("An Error Occurred"), blocks.add.simple_text_display(message)]
 
 		if modal:
-			view = blocks.base.get_modal_base("Loading...")
+			view = blocks.base.get_modal_base("Loading...", cancel='Go Back', submit=False)
+			view['blocks'] = view_blocks
+			return view
+
+	@staticmethod
+	def get_success_screen(message='Success!', modal=True):
+		view_blocks = [blocks.add.header_block("Success!"), blocks.add.simple_text_display(message)]
+
+		if modal:
+			view = blocks.base.get_modal_base("Loading...", submit=False, cancel='Continue')
 			view['blocks'] = view_blocks
 			return view

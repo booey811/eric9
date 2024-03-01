@@ -118,13 +118,14 @@ def generate_zendesk_search_results(ack, body):
 	log.debug("zendesk_email_search ran")
 	log.debug(body)
 	search_term = body['value']
-	results = zendesk.helpers.search_zendesk(search_term)
+	results = zendesk.helpers.search_zendesk(search_term.lower())
 	options = []
 	for user in results:
 		name = user.name
 		email = user.email
 		result_name = f"{name} - {email}"[:74]
 		options.append(blocks.objects.plain_text_object(text=result_name, value=str(user.id)))
+	options.append(blocks.objects.plain_text_object(text="Create New User", value="new_user"))
 	ack(options=options)
 	return True
 
@@ -135,14 +136,66 @@ def handle_zendesk_user_assignment(ack, body, client):
 	log.debug(body)
 	user_id = body['actions'][0]['selected_option']['value']
 	meta = json.loads(body['view']['private_metadata'])
-	user = zendesk.client.users(id=int(user_id))
-	meta['user']['id'] = str(user.id)
-	meta['user']['name'] = str(user.name)
-	meta['user']['email'] = str(user.email)
-	meta['user']['phone'] = str(user.phone)
-	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
-	view = flow_controller.change_user('update')
+	if user_id == 'new_user':
+		meta['user']['id'] = 'new_user'
+		meta['user']['name'] = ''
+		meta['user']['email'] = ''
+		meta['user']['phone'] = ''
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		view = flow_controller.edit_user('push')
+	else:
+		user = zendesk.client.users(id=int(user_id))
+		meta['user']['id'] = str(user.id)
+		meta['user']['name'] = str(user.name)
+		meta['user']['email'] = str(user.email)
+		meta['user']['phone'] = str(user.phone)
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		view = flow_controller.change_user('update')
 	log.debug(view)
+	return True
+
+
+@slack_app.view("change_user")
+def handle_user_adjustment(ack, client, body):
+	log.debug("change_user view submitted")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	view = flow_controller.show_repair_details('update', view_id=body['view']['root_view_id'])
+	log.debug(view)
+	return True
+
+
+@slack_app.action(re.compile("^view_user_overflow__.*$"))
+def show_user_details_editor(ack, client, body):
+	log.debug("view_user_overflow ran")
+	log.debug(body)
+	action_id = body['actions'][0]['action_id']
+	selected_option = body['actions'][0]['selected_option']['value']
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	if selected_option == 'edit_user':
+		view = flow_controller.edit_user('push')
+	else:
+		raise SlackRoutingError(f"Invalid action_id for view_user_overflow: {action_id}")
+	log.debug(view)
+	return True
+
+
+@slack_app.view("edit_user")
+def handle_user_edit_submission(ack, client, body):
+	log.debug("edit_user view submitted")
+	log.debug(body)
+	user_info = body['view']['state']['values']
+	meta = json.loads(body['view']['private_metadata'])
+	user_info = {
+		'name': user_info['edit_user__name']['edit_user__name']['value'],
+		'email': user_info['edit_user__email']['edit_user__email']['value'],
+		'phone': user_info['edit_user__phone']['edit_user__phone']['value'],
+		'id': meta['user']['id']
+	}
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.handle_user_details_update(new_user_info=user_info)
 	return True
 
 

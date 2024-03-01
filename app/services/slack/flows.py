@@ -2,11 +2,13 @@ import logging
 import functools
 import traceback
 import os
-
 import json
 
-from . import blocks as s_blocks, builders, helpers
-from .. import monday
+from zenpy.lib.exception import APIException
+from zenpy.lib.api_objects import User
+
+from . import blocks as s_blocks, builders, helpers, exceptions
+from .. import monday, zendesk
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 
@@ -37,6 +39,10 @@ def handle_errors(func):
 			else:
 				# Dump the view to an external service
 				notify_admins_of_error(current_view)
+
+			if getattr(flow_controller, 'meta', None):
+				flow = flow_controller.meta.get('meta', 'unknown_flow')
+				exceptions.save_metadata(flow_controller.meta, f"{flow}__{func.__name__}")
 
 			# Reraise the exception
 			raise e
@@ -149,12 +155,124 @@ class RepairViewFlow(FlowController):
 		view = self.get_view(
 			"Change User",
 			blocks=blocks,
-			submit='Save Changes',
+			submit='Use details',
 			callback_id='change_user'
 		)
 		self.update_view(view, method=method, view_id=view_id)
 		self.ack()
 		return True
+
+	def edit_user(self, method='update', view_id='', errors=None):
+		if errors is None:
+			errors = {}
+		blocks = builders.UserInformationView.edit_user_view(self.meta, errors)
+		view = self.get_view(
+			"Edit User",
+			blocks=blocks,
+			submit='Save Changes',
+			callback_id='edit_user'
+		)
+		if method == 'ack':
+			self.ack({'response_action': "update", "view": view})
+			return False
+		else:
+			self.update_view(view, method=method, view_id=view_id)
+			self.ack()
+		return True
+
+	def handle_user_details_update(self, new_user_info):
+		errors = {}
+		if "@" not in new_user_info['email'] or '.' not in new_user_info['email'] or ' ' in new_user_info['email']:
+			errors['email'] = "Invalid Email Address"
+		if new_user_info['phone'] and not new_user_info['phone'].isdigit():
+			errors['phone'] = "Invalid Phone Number"
+
+		if errors:
+			view_id = self.received_body['view']['id']
+			self.edit_user(method='ack', view_id=view_id, errors=errors)
+			return False
+
+		# show a loading screen while the changes occur
+		loading_screen = builders.ResultScreenViews.get_loading_screen(f"Attempting User Update\n\n{new_user_info}",
+																	   modal=True)
+
+		self.ack(response_action="update", view=loading_screen)
+
+		if new_user_info['id'] == 'new_user':
+			if new_user_info['phone']:
+				new_user = zendesk.client.users.create(
+					User(
+						name=new_user_info['name'],
+						email=new_user_info['email'],
+						phone=new_user_info['phone']
+					)
+				)
+			else:
+				new_user = zendesk.client.users.create(
+					User(
+						name=new_user_info['name'],
+						email=new_user_info['email']
+					)
+				)
+			self.meta['user']['id'] = str(new_user.id)
+			self.meta['user']['name'] = str(new_user.name)
+			self.meta['user']['email'] = str(new_user.email)
+			self.meta['user']['phone'] = str(new_user.phone)
+			self.client.views_update(
+				view_id=self.received_body['view']['id'],
+				view=builders.ResultScreenViews.get_success_screen(
+					f"User Created Successfully. Please close this window to continue\n\n{new_user_info}")
+			)
+			self.change_user(method='update', view_id=self.received_body['view']['previous_view_id'])
+			return True
+
+		user = zendesk.client.users(id=int(self.meta['user']['id']))
+
+		update_required = False
+		for att in new_user_info:
+			new_val = new_user_info.get(att)
+			if not new_val:
+				continue
+			zen_val = getattr(user, att)
+			if new_val != zen_val:
+				update_required = True
+				setattr(user, att, new_val)
+
+		if update_required:
+			try:
+				user = zendesk.client.users.update(user)
+				self.client.views_update(
+					view_id=self.received_body['view']['id'],
+					view=builders.ResultScreenViews.get_success_screen(
+						f"User Updated Successfully. Please close this window to continue\n\n{new_user_info}")
+				)
+				self.meta['user']['name'] = user.name
+				self.meta['user']['email'] = user.email
+				self.meta['user']['phone'] = user.phone
+				self.change_user(method='update', view_id=self.received_body['view']['previous_view_id'])
+				return True
+			except APIException as e:
+				if 'email is already taken' in e.args[0]:
+					self.client.views_update(
+						view_id=self.received_body['view']['id'],
+						view=builders.ResultScreenViews.get_error_screen(
+							f"A user with this email already exists - try selecting that user instead\n\n{e}")
+					)
+					self.change_user(method='update', view_id=self.received_body['view']['previous_view_id'])
+					return False
+			except Exception as e:
+				self.client.views_update(
+					view_id=self.received_body['view']['id'],
+					view=builders.ResultScreenViews.get_error_screen(
+						f"An unexpected error occurred. You can try to close this view and go back if you'd like\n\n{e}")
+				)
+				raise e
+		else:
+			self.client.views_update(
+				view_id=self.received_body['view']['id'],
+				view=builders.ResultScreenViews.get_success_screen("No Changes Detected, hit 'Go Back' to continue")
+			)
+			return False
 
 
 class WalkInFlow(RepairViewFlow):

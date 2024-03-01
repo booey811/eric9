@@ -1,5 +1,5 @@
-def external_select_element(action_id, placeholder, min_query_length=3):
-	return {
+def external_select_element(action_id, placeholder, min_query_length=3, focus_on_load=False):
+	basic = {
 		"action_id": str(action_id),
 		"type": "external_select",
 		"placeholder": {
@@ -8,6 +8,11 @@ def external_select_element(action_id, placeholder, min_query_length=3):
 		},
 		"min_query_length": min_query_length
 	}
+
+	if focus_on_load:
+		basic['focus_on_load'] = focus_on_load
+
+	return basic
 
 
 def multi_external_select_element(action_id, placeholder, min_query_length=3):
@@ -22,7 +27,7 @@ def multi_external_select_element(action_id, placeholder, min_query_length=3):
 	}
 
 
-def static_select_element(action_id, placeholder, options=(), option_groups=()):
+def static_select_element(action_id, placeholder, options=(), option_groups=(), focus_on_load=False):
 	basic = {
 		"action_id": str(action_id),
 		"type": "static_select",
@@ -41,6 +46,9 @@ def static_select_element(action_id, placeholder, options=(), option_groups=()):
 	else:
 		raise ValueError("options or option_groups must be provided")
 
+	if focus_on_load:
+		basic['focus_on_load'] = focus_on_load
+
 	return basic
 
 
@@ -58,7 +66,6 @@ def multi_select_element(placeholder, action_id='', options=(), option_groups=()
 	elif options:
 		basic["options"] = options
 		if initial_options:
-
 			basic['initial_options'] = initial_options
 	elif option_groups:
 		basic["option_groups"] = option_groups
@@ -70,7 +77,6 @@ def multi_select_element(placeholder, action_id='', options=(), option_groups=()
 
 	if initial_options:
 		for ds in initial_options:
-
 
 			if ds not in options:
 				raise ValueError(f"Initial option {ds} not in options")

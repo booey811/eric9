@@ -4,6 +4,7 @@ from typing import List
 
 from . import blocks, exceptions
 from ..monday import items
+from ..zendesk import helpers as zendesk_helpers, client as zendesk_client
 
 
 class EntityInformationViews:
@@ -220,7 +221,7 @@ class QuoteInformationViews:
 					action_id=f"user_overflow__{user_id}",
 					options=[
 						blocks.objects.plain_text_object("Edit User Details", f"edit_user"),
-						blocks.objects.plain_text_object("Change User", "view_user"),
+						blocks.objects.plain_text_object("Change User", "change_user"),
 					]
 				)
 			),
@@ -445,6 +446,55 @@ class QuoteInformationViews:
 			action_id="custom_product_description",
 			hint=hint
 		))
+
+		return view_blocks
+
+
+class UserInformationView:
+
+	@staticmethod
+	def user_search_view(meta_dict):
+		view_blocks = []
+
+		if meta_dict['user']['id']:
+			user = None
+			for att in ('name', 'email', 'phone'):
+				if not meta_dict.get(att):
+					if not user:
+						user = zendesk_client.users(id=int(meta_dict['user']['id']))
+					meta_dict[att] = getattr(user, att)
+
+			view_blocks.append(blocks.add.section_block(
+				title=f"*Selected User*",
+				accessory=blocks.elements.overflow_accessory(
+					action_id=f"view_user_overflow__{meta_dict['user']['id']}",
+					options=[
+						blocks.objects.plain_text_object("Edit User Details", f"edit_user"),
+					]
+				)
+			))
+			view_blocks.append(blocks.add.simple_text_display(str(meta_dict['user']['name'])))
+			view_blocks.append(
+				blocks.add.simple_context_block([str(meta_dict['user']['email']), str(meta_dict['user']['phone'])]))
+		else:
+			view_blocks.append(blocks.add.simple_text_display("*No user selected*"))
+
+		view_blocks.append(blocks.add.divider_block())
+
+		email_input_element = blocks.elements.external_select_element(
+			placeholder='Enter a name or email address',
+			action_id="zendesk_email_search",
+			min_query_length=3,
+			focus_on_load=True,
+		)
+		email_input_block = blocks.add.input_block(
+			block_title="OR Select another user by searching name or email",
+			element=email_input_element,
+			block_id="zendesk_search",
+			dispatch_action=True,
+			action_id="zendesk_user_search"
+		)
+		view_blocks.append(email_input_block)
 
 		return view_blocks
 

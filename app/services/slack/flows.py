@@ -107,7 +107,7 @@ class FlowController:
 	def update_view(self, view, method='update', view_id=''):
 		log.debug("Updating View")
 		log.debug(view)
-		if not view_id:
+		if not view_id and method != 'open':
 			view_id = self.received_body['view']['id']
 		try:
 			if method == 'update':
@@ -407,6 +407,22 @@ class CourierFlow(FlowController):
 
 	def __init__(self, slack_client, ack, body, meta):
 		super().__init__("courier", slack_client, ack, body, meta)
+
+
+class MiscellaneousFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta):
+		super().__init__("miscellaneous", slack_client, ack, body, meta)
+
+	def metadata_retrieval_menu(self):
+		blocks = builders.ResultScreenViews.metadata_retrieval_view()
+		view = self.get_view(
+			"Metadata Retrieval Menu",
+			blocks=blocks,
+			close='Cancel'
+		)
+		self.update_view(view, method='open')
+		self.ack()
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

@@ -1,10 +1,10 @@
-import logging
-from pprint import pprint as p
 from typing import List
+import json
 
 from . import blocks, exceptions
 from ..monday import items
 from ..zendesk import helpers as zendesk_helpers, client as zendesk_client
+from ...cache import get_redis_connection
 
 
 class EntityInformationViews:
@@ -595,3 +595,46 @@ class ResultScreenViews:
 			view = blocks.base.get_modal_base("Loading...", submit=False, cancel='Continue')
 			view['blocks'] = view_blocks
 			return view
+
+	@staticmethod
+	def metadata_retrieval_view():
+		view_blocks = []
+
+		metadata_sets = get_redis_connection().keys("slack_meta:*")
+
+		for meta_set in metadata_sets:
+			data_set = get_redis_connection().get(meta_set)
+			if not data_set:
+				continue
+
+			meta = data_set.decode('utf-8')
+			try:
+				meta = json.loads(meta)
+			except json.JSONDecodeError:
+				continue
+
+
+			flow = meta.get('flow', 'Unknown Workflow')
+
+			user_dict = meta.get('user', {})
+			user_name = user_dict.get('name', 'No Name Provided')
+
+			device_id = meta.get('device_id')
+			if device_id:
+				device = items.DeviceItem(device_id)
+				device_name = device.name
+			else:
+				device_name = "No Device Selected"
+
+			view_blocks.append(
+				blocks.add.section_block(
+					title=f"{flow}: {user_name}",
+					accessory=blocks.elements.button_element(
+						button_text="View",
+						button_value=meta_set.decode('utf-8'),
+						action_id=f"revive_metadata"
+					)
+				)
+			)
+			view_blocks.append(blocks.add.simple_context_block([f"Device: {device_name}"]))
+		return view_blocks

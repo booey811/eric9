@@ -4,7 +4,7 @@ import json
 import re
 
 from ...services.slack import slack_app, builders, blocks, helpers, flows
-from ...services import monday
+from ...services import monday, zendesk
 from .exceptions import SlackRoutingError
 
 log = logging.getLogger('eric')
@@ -94,6 +94,37 @@ def search_for_main_board_item(ack, client, body):
 		view=modal
 	)
 	ack()
+	return True
+
+
+@slack_app.action(re.compile("^user_overflow__.*$"))
+def show_user_change_view(ack, client, body):
+	log.debug("change_user ran")
+	log.debug(body)
+	action_id = body['actions'][0]['action_id']
+	selected_option = body['actions'][0]['selected_option']['value']
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	if selected_option == 'change_user':
+		view = flow_controller.change_user('push')
+	else:
+		raise SlackRoutingError(f"Invalid action_id for user_overflow: {action_id}")
+	log.debug(view)
+	return True
+
+
+@slack_app.options("zendesk_user_search")
+def generate_zendesk_search_results(ack, body):
+	log.debug("zendesk_email_search ran")
+	log.debug(body)
+	search_term = body['value']
+	results = zendesk.helpers.search_zendesk(search_term)
+	options = []
+	for user in results:
+		name = user.name
+		email = user.email
+		options.append(blocks.objects.plain_text_object(text=name, description=email, value=str(user.id)))
+	ack(options=options)
 	return True
 
 

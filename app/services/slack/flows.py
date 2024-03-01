@@ -137,14 +137,27 @@ class FlowController:
 
 class RepairViewFlow(FlowController):
 
-	def __init__(self, slack_client, ack, body, meta: dict = None):
-		super().__init__("repair_view", slack_client, ack, body)
+	def __init__(self, flow, slack_client, ack, body, meta: dict = None):
+		super().__init__(flow=flow, slack_client=slack_client, ack=ack, body=body, meta=meta)
 
 	def end_flow(self):
 		pass
 
+	def change_user(self, method='update', view_id=''):
 
-class WalkInFlow(FlowController):
+		blocks = builders.UserInformationView.user_search_view(self.meta)
+		view = self.get_view(
+			"Change User",
+			blocks=blocks,
+			submit='Save Changes',
+			callback_id='change_user'
+		)
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
+		return True
+
+
+class WalkInFlow(RepairViewFlow):
 
 	def __init__(self, slack_client, ack, body, meta: dict = None):
 		super().__init__("walk_in", slack_client, ack, body, meta)

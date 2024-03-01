@@ -405,34 +405,46 @@ class QuoteInformationViews:
 		)
 
 		# name block
+		if error_dict.get('custom_product_name'):
+			hint = f":no_entry:  {error_dict['custom_product_name']}"
+		else:
+			hint = None
+
 		view_blocks.append(blocks.add.input_block(
 			block_title="Custom Product Name",
 			element=name_input,
 			block_id="custom_product_name",
-			action_id="custom_product_name"
+			action_id="custom_product_name",
+			hint=hint
 		))
-		if error_dict.get('custom_product_name'):
-			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_name']}"))
 
 		# price block
+		if error_dict.get('custom_product_price'):
+			hint = f":no_entry:  {error_dict['custom_product_price']}"
+		else:
+			hint = None
+
 		view_blocks.append(blocks.add.input_block(
 			block_title="Custom Product Price",
 			element=price_input,
 			block_id="custom_product_price",
-			action_id="custom_product_price"
+			action_id="custom_product_price",
+			hint=hint
 		))
-		if error_dict.get('custom_product_price'):
-			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_price']}"))
 
 		# description block
+		if error_dict.get('custom_product_description'):
+			hint = f":no_entry:  {error_dict['custom_product_description']}"
+		else:
+			hint = None
+
 		view_blocks.append(blocks.add.input_block(
 			block_title="Custom Product Description",
 			element=description_input,
 			block_id="custom_product_description",
-			action_id="custom_product_description"
+			action_id="custom_product_description",
+			hint=hint
 		))
-		if error_dict.get('custom_product_description'):
-			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  {error_dict['custom_product_description']}"))
 
 		return view_blocks
 

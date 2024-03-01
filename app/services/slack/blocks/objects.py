@@ -5,7 +5,7 @@ def text_object(content):
 	}
 
 
-def plain_text_object(text, value):
+def plain_text_object(text, value, description=''):
 	basic = {
 		"text": {
 			"type": "plain_text",
@@ -14,6 +14,11 @@ def plain_text_object(text, value):
 		},
 		"value": value
 	}
+	if description:
+		basic['description'] = {
+			"type": "plain_text",
+			"text": description
+		}
 	return basic
 
 

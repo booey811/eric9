@@ -123,8 +123,26 @@ def generate_zendesk_search_results(ack, body):
 	for user in results:
 		name = user.name
 		email = user.email
-		options.append(blocks.objects.plain_text_object(text=name, description=email, value=str(user.id)))
+		result_name = f"{name} - {email}"[:74]
+		options.append(blocks.objects.plain_text_object(text=result_name, value=str(user.id)))
 	ack(options=options)
+	return True
+
+
+@slack_app.action("zendesk_user_search")
+def handle_zendesk_user_assignment(ack, body, client):
+	log.debug("zendesk_user_search ran")
+	log.debug(body)
+	user_id = body['actions'][0]['selected_option']['value']
+	meta = json.loads(body['view']['private_metadata'])
+	user = zendesk.client.users(id=int(user_id))
+	meta['user']['id'] = str(user.id)
+	meta['user']['name'] = str(user.name)
+	meta['user']['email'] = str(user.email)
+	meta['user']['phone'] = str(user.phone)
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	view = flow_controller.change_user('update')
+	log.debug(view)
 	return True
 
 

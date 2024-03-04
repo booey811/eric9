@@ -167,3 +167,18 @@ def checkbox_element(options, action_id='', initial_options=()):
 				raise ValueError(f"Initial option {ds} not in options: {options}")
 
 	return basic
+
+
+def radio_button_element(options, action_id='', initial_option=''):
+	basic = {
+		"type": "radio_buttons",
+		"options": options,
+	}
+	if action_id:
+		basic['action_id'] = action_id
+	if initial_option:
+		basic['initial_option'] = initial_option
+		if initial_option not in options:
+			raise ValueError(f"Initial option {initial_option} not in options: {options}")
+
+	return basic

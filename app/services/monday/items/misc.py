@@ -1,8 +1,9 @@
 import time
 import json
 
-from ..api.items import BaseItemType
+from ..api.items import BaseItemType, BaseCacheableItem
 from ..api import columns, get_api_items, exceptions, monday_connection
+from ..api.exceptions import MondayDataError
 from ... import typeform
 from ...zendesk import helpers
 
@@ -160,7 +161,8 @@ class RepairProfitModelItem(BaseItemType):
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 
-class PreCheckSet(BaseItemType):
+class PreCheckSet(BaseCacheableItem):
+
 	BOARD_ID = 4347106321
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -171,6 +173,26 @@ class PreCheckSet(BaseItemType):
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
+	def cache_key(self):
+		return "pre_check_set:" + str(self.id)
+
+	def prepare_cache_data(self):
+		return {
+			"name": str(self.name),
+			"id": str(self.id),
+			"set_type": self.set_type.value,
+			"pre_check_item_ids": self.pre_check_items_connect.value
+		}
+
+	def load_from_cache(self, cache_data=None):
+		if cache_data is None:
+			cache_data = self.fetch_cache_data()
+		self.set_type.value = cache_data['set_type']
+		self.pre_check_items_connect.value = cache_data['pre_check_item_ids']
+		self.id = cache_data['id']
+		self.name = cache_data['name']
+		return self
+
 	def get_pre_check_items(self):
 		if not self.pre_check_items_connect.value:
 			self.load_from_api()
@@ -180,7 +202,8 @@ class PreCheckSet(BaseItemType):
 		return self._pre_check_items
 
 
-class PreCheckItem(BaseItemType):
+class PreCheckItem(BaseCacheableItem):
+
 	BOARD_ID = 4455646189
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -189,6 +212,26 @@ class PreCheckItem(BaseItemType):
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
+	def cache_key(self):
+		return "pre_check_item:" + str(self.id)
+
+	def prepare_cache_data(self):
+		return {
+			"name": str(self.name),
+			"id": str(self.id),
+			"available_responses": self.available_responses.value,
+			"check_set_ids": self.check_sets_connect.value
+		}
+
+	def load_from_cache(self, cache_data=None):
+		if cache_data is None:
+			cache_data = self.fetch_cache_data()
+		self.available_responses.value = cache_data['available_responses']
+		self.check_sets_connect.value = cache_data['check_set_ids']
+		self.id = cache_data['id']
+		self.name = cache_data['name']
+		return self
+
 	@property
 	def check_sets(self):
 		if not self.check_sets_connect.value:
@@ -196,19 +239,15 @@ class PreCheckItem(BaseItemType):
 		item_data = get_api_items(self.check_sets_connect.value)
 		return [PreCheckSet(i['id'], i) for i in item_data]
 
-	def get_available_responses(self):
-		results = self.available_responses.value
-		try:
-			column_data = [
-				_ for _ in
-				monday_connection.boards.fetch_columns_by_board_id(self.BOARD_ID)['data']['boards'][0]['columns'] if
-				_['id'] == 'dropdown'][0]
-		except IndexError:
-			raise exceptions.MondayDataError(f"Could not find column data for {self.available_responses}")
-
-		settings = json.loads(column_data['settings_str'])['labels']
-		labels = []
-		for _id in results:
-			labels.append([i['name'] for i in settings if str(i['id']) == str(_id)][0])
-
-		return labels
+	def get_available_responses(self, labels=True):
+		result_ids = self.available_responses.value
+		if not result_ids:
+			self.load_from_api()
+			result_ids = self.available_responses.value
+			if not result_ids:
+				raise MondayDataError(f"{self} could not load available responses: {self._api_data}")
+		if labels:
+			labels = self.convert_dropdown_ids_to_labels(result_ids, self.available_responses.column_id)
+			return labels
+		else:
+			return result_ids

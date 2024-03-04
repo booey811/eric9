@@ -5,10 +5,10 @@ import json
 import redis.utils
 
 from .columns import ValueType, EditingNotAllowed
-from .client import conn
 from .exceptions import MondayDataError, MondayAPIError
 from ....cache import get_redis_connection, CacheMiss
 from .client import get_api_items, conn
+from . boards import cache as board_cache
 from ....utilities import notify_admins_of_error
 
 log = logging.getLogger('eric')
@@ -153,6 +153,22 @@ class BaseItemType:
 		assert isinstance(att, ValueType), f"{attribute} cannot be used to search for items"
 
 		return att.search_for_board_items(self.BOARD_ID, value)
+
+	def convert_dropdown_ids_to_labels(self, ids_list, column_id):
+		try:
+			board = board_cache.get_board(self.BOARD_ID)
+			column_data = [
+				_ for _ in
+				board['columns'] if
+				_['id'] == str(column_id)][0]
+		except IndexError:
+			raise MondayDataError(f"Could not find column data for {self.__class__.__name__} {self.BOARD_ID}")
+
+		settings = json.loads(column_data['settings_str'])['labels']
+		labels = []
+		for _id in ids_list:
+			labels.append([i['name'] for i in settings if str(i['id']) == str(_id)][0])
+		return labels
 
 
 class BaseCacheableItem(BaseItemType):

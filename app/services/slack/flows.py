@@ -282,64 +282,60 @@ class RepairViewFlow(FlowController):
 		)
 		self.ack()
 
-		# get the device, and the pre-checks attached to it
-		device = monday.items.DeviceItem(self.meta['device_id']).load_from_api()
-		loading_screen = self.client.views_update(
-			view_id=loading_screen.data['view']['id'],
-			view=builders.ResultScreenViews.get_loading_screen("Fetching Check Sets", modal=True)
-		)
-		pre_check_set = device.pre_check_set.load_from_api()
+		if self.meta['pre_checks']:
+			check_dicts = self.meta['pre_checks']
+		else:
+			# get the device, and the pre-checks attached to it
+			device = monday.items.DeviceItem(self.meta['device_id']).load_from_api()
+			loading_screen = self.client.views_update(
+				view_id=loading_screen.data['view']['id'],
+				view=builders.ResultScreenViews.get_loading_screen("Fetching Check Sets", modal=True)
+			)
+			pre_check_set = device.pre_check_set.load_from_api()
 
-		loading_screen = self.client.views_update(
-			view_id=loading_screen.data['view']['id'],
-			view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks", modal=True)
-		)
+			loading_screen = self.client.views_update(
+				view_id=loading_screen.data['view']['id'],
+				view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks", modal=True)
+			)
 
-		pre_checks = pre_check_set.get_pre_check_items()
+			pre_checks = pre_check_set.get_pre_check_items()
 
-		check_dicts = []
-		for pre_check in pre_checks:
-			try:
-				check_meta = [_ for _ in self.meta['pre_checks'] if _['id'] == str(pre_check.id)][0]
-			except IndexError:
-				check_meta = {
-					"id": str(pre_check.id),
-					"name": str(pre_check.name),
-					"answer": '',
-					"available_answers": pre_check.get_available_responses()
+			check_dicts = []
+			for pre_check in pre_checks:
+				try:
+					check_meta = [_ for _ in self.meta['pre_checks'] if _['id'] == str(pre_check.id)][0]
+				except IndexError:
+					check_meta = {
+						"id": str(pre_check.id),
+						"name": str(pre_check.name),
+						"answer": '',
+						"available_answers": pre_check.get_available_responses()
+					}
+				check_dicts.append(check_meta)
+				self.meta['pre_checks'] = check_dicts
+
+		for check in check_dicts:
+			options = []
+			for available_response in check['available_answers']:
+				option = {
+					"text": {
+						"type": "plain_text",
+						"text": available_response
+					},
+					"value": available_response
 				}
-			check_dicts.append(check_meta)
+				options.append(option)
 
-			# add one block per pre check item, then the available responses are options`
-
-			# Split checks into sets of 10 and add them to blocks
-			num_sets = len(check_dicts) // 10
-			for i in range(num_sets):
-				start_index = i * 10
-				end_index = start_index + 10
-				checks_set = check_dicts[start_index:end_index]
-
-				for check in checks_set:
-					options = []
-					for available_response in check['available_answers']:
-						option = {
-							"text": {
-								"type": "plain_text",
-								"text": available_response
-							},
-							"value": available_response
-						}
-						options.append(option)
-
-					self.blocks.append(
-						s_blocks.add.input_block(
-							block_title=check['name'],
-							element=s_blocks.elements.checkbox_element(
-								options=options,
-								action_id=f"pre_check_set_{i + 1}"
-							)
-						)
+			self.blocks.append(
+				s_blocks.add.input_block(
+					block_title=check['name'],
+					optional=True,
+					element=s_blocks.elements.radio_button_element(
+						options=options,
+						action_id=f"pre_check_item__{check['id']}"
 					)
+				)
+			)
 
 		view = self.get_view(
 			title="Today's Repairs",

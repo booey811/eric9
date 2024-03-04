@@ -41,6 +41,7 @@ def input_block(
 		raise ValueError("dispatch_action requires an action_id")
 	elif dispatch_action:
 		basic['element']['action_id'] = action_id
+		basic['dispatch_action'] = True
 	return basic
 
 

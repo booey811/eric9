@@ -16,6 +16,7 @@ FIELDS_DICT = {
 	"address_notes": 360006582798,
 	"address_street": 360006582778,
 	"address_postcode": 360006582758,
+	"main_item_id": 360004570218,
 }
 
 

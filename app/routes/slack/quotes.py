@@ -211,6 +211,30 @@ def show_quote_editor(ack, body, client):
 	return True
 
 
+@slack_app.action("imei_sn")
+def add_imei_to_metadata(ack, client, body):
+	log.debug("imei_sn ran")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	imei_sn = body['view']['state']['values']['imei_sn']['imei_sn']['value']
+	meta['imei_sn'] = imei_sn
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.show_repair_details('update', view_id=body['view']['id'])
+	return True
+
+
+@slack_app.action("additional_notes")
+def add_imei_to_metadata(ack, client, body):
+	log.debug("imei_sn ran")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	notes = body['view']['state']['values']['additional_notes']['additional_notes']['value']
+	meta['additional_notes'] = notes
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.show_repair_details('update', view_id=body['view']['id'])
+	return True
+
+
 @slack_app.action("remove_product")
 def remove_product_from_quote(ack, body, client):
 	log.debug("remove_product ran")
@@ -359,11 +383,13 @@ def handle_repair_view_submission(ack, client, body):
 	if not meta['pre_checks']:
 		errors.append("Please complete pre-checks before submitting")
 
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+
 	if errors:
-		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 		flow_controller.show_repair_details('ack', errors=errors, view_id=body['view']['id'])
-
-
+		return
+	else:
+		flow_controller.end_flow()
 
 	# flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	# flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])

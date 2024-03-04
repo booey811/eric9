@@ -325,7 +325,7 @@ class QuoteInformationViews:
 		if diagnostic:
 			notes_optional = False
 		else:
-			notes_optional=True
+			notes_optional = True
 
 		notes_blocks.append(
 			blocks.add.input_block(
@@ -336,8 +336,11 @@ class QuoteInformationViews:
 					action_id="additional_notes",
 					multiline=True,
 					initial_value=initial_notes,
+					dispatch_config=True
 				),
-				optional=notes_optional
+				optional=notes_optional,
+				dispatch_action=True,
+				action_id='additional_notes'
 			)
 		)
 
@@ -352,9 +355,13 @@ class QuoteInformationViews:
 				element=blocks.elements.text_input_element(
 					placeholder="Enter a note",
 					initial_value=initial_imei,
+					action_id='imei_sn',
+					dispatch_config=True
 				),
 				block_id="imei_sn",
 				optional=False,
+				action_id='imei_sn',
+				dispatch_action=True,
 			)
 		)
 

@@ -120,7 +120,7 @@ def overflow_accessory(action_id, options):
 	return basic
 
 
-def text_input_element(placeholder='', action_id='', multiline=False, initial_value=''):
+def text_input_element(placeholder='', action_id='', multiline=False, initial_value='', dispatch_config=False):
 	basic = {
 		"type": "plain_text_input",
 		"multiline": multiline
@@ -134,6 +134,10 @@ def text_input_element(placeholder='', action_id='', multiline=False, initial_va
 		basic['initial_value'] = str(initial_value)
 	if action_id:
 		basic['action_id'] = action_id
+	if dispatch_config:
+		basic['dispatch_action_config'] = {
+			"trigger_actions_on": ["on_enter_pressed"]
+		}
 	return basic
 
 

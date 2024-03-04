@@ -5,12 +5,13 @@ import os
 import json
 
 from zenpy.lib.exception import APIException
-from zenpy.lib.api_objects import User
+from zenpy.lib.api_objects import User, Ticket, CustomField
 
 from . import blocks as s_blocks, builders, helpers, exceptions
 from .. import monday, zendesk
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
+from ...tasks.sync_platform import sync_to_zendesk
 
 import config
 
@@ -481,6 +482,82 @@ class WalkInFlow(RepairViewFlow):
 		self.update_view(view, method=method, view_id=view_id)
 		self.ack()
 		return True
+
+	def end_flow(self):
+		try:
+			user = zendesk.client.users(id=int(self.meta['user']['id']))
+
+			if not self.meta['main_id']:
+				main = monday.items.MainItem().create(user.name, reload=True)
+			else:
+				main = monday.items.MainItem(self.meta['main_id'])
+
+			note = "Front of House Notes\n\nREQUESTED_PRODUCTS"
+
+			device = monday.items.DeviceItem(self.meta['device_id'])
+			products = monday.items.ProductItem.get(self.meta['product_ids'])
+
+			diagnostic = False
+
+			for prod in products:
+				note += f"\n{prod.name}"
+				if 'diagnostic' in prod.name.lower():
+					diagnostic = True
+
+			if not main.ticket_id.value:
+				# create ticket
+				subject = f"Your {device.name} Repair"
+				ticket = zendesk.client.tickets.create(
+					Ticket(
+						requester_id=int(self.meta['user']['id']),
+						description=subject,
+						custom_fields=[
+							CustomField(
+								id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
+								value=str(main.id)
+							)
+						],
+						tags=['mondayactive']
+					)
+				)
+				ticket = zendesk.client.tickets.create(ticket).ticket
+				main.ticket_id = int(ticket.id)
+			else:
+				ticket = zendesk.client.tickets(id=int(main.ticket_id.value))
+
+			main.main_status = 'Received'
+			main.device_id = int(device.id)
+			main.products_connect = [str(product.id) for product in products]
+			main.imeisn = self.meta['imei_sn']
+			if diagnostic:
+				main.repair_type = 'Diagnostic'
+			else:
+				main.repair_type = 'Repair'
+
+			custom_ids = main.custom_quote_connect.value
+			for custom in self.meta['custom_products']:
+				if not custom['id']:
+					# create custom line item
+					custom_line = monday.items.misc.CustomQuoteLineItem()
+					custom_line.price = int(custom['price'])
+					custom_line.description = custom['description']
+					custom_line = custom_line.create(custom['name'])
+					custom_ids.append(custom_line.id)
+			main.custom_quote_connect = custom_ids
+			main.commit()
+
+			note += "\n\nPRE-CHECKS"
+			for pre_check in self.meta['pre_checks']:
+				note += f"\n*{pre_check['name']}*: {pre_check['answer']}"
+
+			if self.meta['additional_notes']:
+				note += f"\n\nADDITIONAL NOTES\n{self.meta['additional_notes']}"
+
+			main.add_update(note, main.notes_thread_id.value)
+		except Exception as e:
+			exceptions.save_metadata(self.meta, f"{self.meta['flow']}__end_flow")
+			notify_admins_of_error(e)
+			raise e
 
 
 class AdjustQuoteFlow(FlowController):

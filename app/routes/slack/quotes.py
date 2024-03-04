@@ -5,7 +5,13 @@ import re
 
 from ...services.slack import slack_app, builders, blocks, helpers, flows
 from ...services import monday, zendesk
+from ... import tasks
+from ...cache.rq import q_low, q_high
 from .exceptions import SlackRoutingError
+
+import config
+
+conf = config.get_config()
 
 log = logging.getLogger('eric')
 
@@ -389,8 +395,13 @@ def handle_repair_view_submission(ack, client, body):
 		flow_controller.show_repair_details('ack', errors=errors, view_id=body['view']['id'])
 		return
 	else:
-		flow_controller.end_flow()
+		ack()
+		if conf.CONFIG == 'development':
+			tasks.slack.submissions.process_repair_view_submission(meta)
+		else:
+			q_high.enqueue(
+				f=tasks.slack.submissions.process_repair_view_submission,
+				kwargs={'metadata': meta}
+			)
 
-	# flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
-	# flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	return True

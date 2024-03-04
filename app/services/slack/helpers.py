@@ -24,17 +24,25 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 		products = main_item.products
 
 	if main_item.custom_quote_connect.value:
-		custom_lines = [monday.items.misc.CustomQuoteLineItem(line_id) for line_id in main_item.custom_quote_connect.value]
+		custom_lines = [monday.items.misc.CustomQuoteLineItem(line_id) for line_id in
+						main_item.custom_quote_connect.value]
 
+	imei_sn = pay_status = None
 	if main_item.imeisn.value:
 		imei_sn = main_item.imeisn.value
 
-	return create_meta(user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines, imei_sn=imei_sn)
+	if main_item.payment_status.value:
+		pay_status = main_item.payment_status.value
+
+	return create_meta(
+		user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines,
+		imei_sn=imei_sn, pay_status=pay_status
+	)
 
 
 def create_meta(
 		user_id=None, device_id=None, product_ids=None, user=None, device=None,
-		products=None, main_item=None, custom_lines=None, imei_sn=None
+		products=None, main_item=None, custom_lines=None, imei_sn=None, pay_status=None
 ):
 	meta = {
 		'main_id': '',
@@ -49,7 +57,8 @@ def create_meta(
 		'custom_products': [],
 		'pre_checks': [],
 		'additional_notes': '',
-		'imei_sn': ''
+		'imei_sn': '',
+		'pay_status': ''
 	}
 
 	if not user and not user_id:
@@ -84,6 +93,12 @@ def create_meta(
 
 	if custom_lines:
 		meta['custom_products'] = [line.prepare_cache_data() for line in custom_lines]
+
+	if imei_sn:
+		meta['imei_sn'] = imei_sn
+
+	if pay_status:
+		meta['pay_status'] = pay_status
 
 	return meta
 

@@ -277,6 +277,9 @@ class QuoteInformationViews:
 			repair_blocks.append(blocks.add.divider_block())
 			repair_blocks.append(blocks.add.header_block(f"Total: £{total}"))
 
+		if meta_dict['pay_status'] == 'Confirmed':
+			repair_blocks.append(blocks.add.simple_text_display(":white_check_mark:  Payment has already been taken"))
+
 		view_blocks.extend(repair_blocks)
 
 		# pre check info

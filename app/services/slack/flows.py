@@ -543,6 +543,7 @@ class WalkInFlow(RepairViewFlow):
 					custom_line.description = custom['description']
 					custom_line = custom_line.create(custom['name'])
 					custom_ids.append(custom_line.id)
+				note += f"\n{custom['name']}"
 			main.custom_quote_connect = custom_ids
 			main.commit()
 

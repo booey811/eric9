@@ -327,6 +327,11 @@ class RepairViewFlow(FlowController):
 				}
 				options.append(option)
 
+			if check['answer']:
+				initial_option = [check['answer'], check['answer']]
+			else:
+				initial_option = None
+
 			self.blocks.append(
 				s_blocks.add.input_block(
 					block_title=check['name'],
@@ -334,7 +339,8 @@ class RepairViewFlow(FlowController):
 					element=s_blocks.elements.radio_button_element(
 						options=options,
 						action_id=f"pre_check_item__{check['id']}"
-					)
+					),
+					initial_option=initial_option
 				)
 			)
 

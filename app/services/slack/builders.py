@@ -277,12 +277,30 @@ class QuoteInformationViews:
 			pre_check_blocks.append(blocks.add.simple_text_display("No device selected, select a device to see pre-checks"))
 		else:
 			if meta_dict.get('pre_checks'):
-				pass
+				completed = True
+				for pre_check in meta_dict['pre_checks']:
+					if not pre_check.get('answer'):
+						completed = False
+						break
+				if completed:
+					pre_check_blocks.append(
+						blocks.add.actions_block(
+							block_elements=[blocks.elements.button_element(":white_check_mark:  Checks Complete", "open_pre_checks",
+																		   f"open_pre_checks__{meta_dict['device_id']}")])
+					)
+				else:
+					# add a button to open pre-check view (which will fetch the pre_checks and add them to meta)
+					pre_check_blocks.append(
+						blocks.add.actions_block(
+							block_elements=[
+								blocks.elements.button_element(":no_entry:  Checks Not Completed", "open_pre_checks",
+															   f"open_pre_checks__{meta_dict['device_id']}")])
+					)
 			else:
 				# add a button to open pre-check view (which will fetch the pre_checks and add them to meta)
 				pre_check_blocks.append(
 					blocks.add.actions_block(
-						block_elements=[blocks.elements.button_element("Open Pre-Checks", "open_pre_checks", f"open_pre_checks__{meta_dict['device_id']}")])
+						block_elements=[blocks.elements.button_element(":no_entry:  Checks Not Completed", "open_pre_checks", f"open_pre_checks__{meta_dict['device_id']}")])
 				)
 
 		view_blocks.extend(pre_check_blocks)

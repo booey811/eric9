@@ -26,10 +26,16 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 	if main_item.custom_quote_connect.value:
 		custom_lines = [monday.items.misc.CustomQuoteLineItem(line_id) for line_id in main_item.custom_quote_connect.value]
 
-	return create_meta(user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines)
+	if main_item.imeisn.value:
+		imei_sn = main_item.imeisn.value
+
+	return create_meta(user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines, imei_sn=imei_sn)
 
 
-def create_meta(user_id=None, device_id=None, product_ids=None, user=None, device=None, products=None, main_item=None, custom_lines=None):
+def create_meta(
+		user_id=None, device_id=None, product_ids=None, user=None, device=None,
+		products=None, main_item=None, custom_lines=None, imei_sn=None
+):
 	meta = {
 		'main_id': '',
 		'user': {

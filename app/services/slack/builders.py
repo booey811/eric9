@@ -2,6 +2,7 @@ from typing import List
 import json
 
 from . import blocks, exceptions
+from .. import monday
 from ..monday import items
 from ..zendesk import helpers as zendesk_helpers, client as zendesk_client
 from ...cache import get_redis_connection
@@ -168,6 +169,33 @@ class QuoteInformationViews:
 		view_blocks.append(email_input_block)
 		view_blocks.append(ticket_input_block)
 
+		view_blocks.append(blocks.add.divider_block())
+		view_blocks.append(blocks.add.simple_text_display("*OR* Browse Diagnostic Complete Items"))
+
+		search = monday.items.MainItem(search=True)
+		raw_results = monday.api.monday_connection.items.fetch_items_by_column_value(search.BOARD_ID, 'status4', 'Diagnostic Complete')
+		result_item_data = raw_results['data']['items_page_by_column_values']['items']
+		results = [monday.items.MainItem(result['id'], result) for result in result_item_data]
+
+		for m in results:
+			if m.device_id:
+				device = items.DeviceItem(m.device_id)
+			else:
+				device = items.DeviceItem(4028854241)
+			view_blocks.append(
+				blocks.add.section_block(
+					title=f"*{m.name}*",
+					accessory=blocks.elements.button_element(
+						button_text=device.name,
+						action_id=f"load_repair__{m.id}",
+						button_style="primary",
+						button_value=str(m.id)
+					),
+					block_id=f"repair__{m.id}",
+				)
+			)
+			view_blocks.append(blocks.add.divider_block())
+
 		return view_blocks
 
 	@staticmethod
@@ -288,7 +316,8 @@ class QuoteInformationViews:
 			blocks.add.header_block("Pre-Checks & Information"),
 		]
 		if not meta_dict.get('device_id'):
-			pre_check_blocks.append(blocks.add.simple_text_display("No device selected, select a device to see pre-checks"))
+			pre_check_blocks.append(
+				blocks.add.simple_text_display("No device selected, select a device to see pre-checks"))
 		else:
 			if meta_dict.get('pre_checks'):
 				completed = True
@@ -299,8 +328,9 @@ class QuoteInformationViews:
 				if completed:
 					pre_check_blocks.append(
 						blocks.add.actions_block(
-							block_elements=[blocks.elements.button_element(":white_check_mark:  Checks Complete", "open_pre_checks",
-																		   f"open_pre_checks__{meta_dict['device_id']}")])
+							block_elements=[
+								blocks.elements.button_element(":white_check_mark:  Checks Complete", "open_pre_checks",
+															   f"open_pre_checks__{meta_dict['device_id']}")])
 					)
 				else:
 					# add a button to open pre-check view (which will fetch the pre_checks and add them to meta)
@@ -314,7 +344,9 @@ class QuoteInformationViews:
 				# add a button to open pre-check view (which will fetch the pre_checks and add them to meta)
 				pre_check_blocks.append(
 					blocks.add.actions_block(
-						block_elements=[blocks.elements.button_element(":no_entry:  Checks Not Completed", "open_pre_checks", f"open_pre_checks__{meta_dict['device_id']}")])
+						block_elements=[
+							blocks.elements.button_element(":no_entry:  Checks Not Completed", "open_pre_checks",
+														   f"open_pre_checks__{meta_dict['device_id']}")])
 				)
 
 		view_blocks.extend(pre_check_blocks)
@@ -729,7 +761,6 @@ class ResultScreenViews:
 				meta = json.loads(meta)
 			except json.JSONDecodeError:
 				continue
-
 
 			flow = meta.get('flow', 'Unknown Workflow')
 

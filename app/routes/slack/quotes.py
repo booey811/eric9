@@ -21,6 +21,15 @@ def test_modal(ack, client, body):
 	raise Exception("Test Error")
 
 
+@slack_app.command("/quote")
+@slack_app.action("adjust_quote")
+def show_quote_search_modal(ack, client, body):
+	log.debug("quote command ran")
+	flow_controller = flows.get_flow('adjust_quote', client, ack, body)
+	flow_controller.quote_search()
+	return True
+
+
 @slack_app.command("/walk")
 @slack_app.action("walk_from_home")
 def show_todays_walk_in_repairs(ack, client, body):
@@ -35,16 +44,33 @@ def show_todays_walk_in_repairs(ack, client, body):
 def fetch_and_show_repair_details(ack, client, body):
 	log.debug("load_repair ran")
 	log.debug(body)
-
+	main_id = body['actions'][0]['action_id'].split('__')[1]
 	loading_screen = client.views_update(
 		view_id=body['view']['id'],
 		view=builders.ResultScreenViews.get_loading_screen("Fetching Main Board Item.....")
 	)
 	ack()
 
+	try:
+		meta = json.loads(body['view']['private_metadata'])
+	except json.JSONDecodeError as e:
+		client.views_update(
+			view_id=loading_screen.data['view']['id'],
+			view=builders.ResultScreenViews.get_error_screen(
+				f"An error occurred while getting your metadata\n\n{e}\n\n{body['view']['private_metadata']}")
+		)
+		return
+
+	if meta['flow'] == 'adjust_quote':
+		main_meta = helpers.extract_meta_from_main_item(main_id=main_id)
+		meta.update(main_meta)
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		flow_controller.view_quote('push')
+		return
+
 	main_id = body['actions'][0]['action_id'].split('__')[1]
 	meta = helpers.extract_meta_from_main_item(main_id=main_id)
-	flow_controller = flows.get_flow('walk_in', client, ack, body, meta)
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	view = flow_controller.show_repair_details(view_id=loading_screen.data['view']['id'])
 	log.debug(view)
 	return True
@@ -337,7 +363,12 @@ def handle_quote_editor_submission(ack, client, body):
 	log.debug(body)
 	meta = json.loads(body['view']['private_metadata'])
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
-	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
+	if meta['flow'] == 'adjust_quote':
+		flow_controller.view_quote()
+	elif meta['flow'] == 'walk_in':
+		flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
+	else:
+		raise SlackRoutingError(f"Invalid flow for quote_editor: {meta['flow']}")
 	return True
 
 

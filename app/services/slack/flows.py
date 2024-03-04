@@ -94,7 +94,7 @@ class FlowController:
 
 		if self.meta:
 			view['private_metadata'] = json.dumps(self.meta)
-			if conf.SLACK_SHOW_META == 'on':
+			if conf.SLACK_SHOW_META == 'True':
 				blocks.append(s_blocks.add.simple_text_display(f"*MetaData* ({len(view['private_metadata'])} chars)",
 															   block_id=helpers.generate_unique_block_id()))
 				blocks.append(
@@ -151,6 +151,7 @@ class RepairViewFlow(FlowController):
 	def end_flow(self):
 		pass
 
+	@handle_errors
 	def change_user(self, method='update', view_id=''):
 
 		blocks = builders.UserInformationView.user_search_view(self.meta)
@@ -164,6 +165,7 @@ class RepairViewFlow(FlowController):
 		self.ack()
 		return True
 
+	@handle_errors
 	def edit_user(self, method='update', view_id='', errors=None):
 		if errors is None:
 			errors = {}
@@ -182,6 +184,7 @@ class RepairViewFlow(FlowController):
 			self.ack()
 		return True
 
+	@handle_errors
 	def handle_user_details_update(self, new_user_info):
 		errors = {}
 		if "@" not in new_user_info['email'] or '.' not in new_user_info['email'] or ' ' in new_user_info['email']:
@@ -276,6 +279,7 @@ class RepairViewFlow(FlowController):
 			)
 			return False
 
+	@handle_errors
 	def show_pre_check_list(self):
 		loading_screen = self.client.views_push(
 			trigger_id=self.received_body["trigger_id"],
@@ -356,67 +360,6 @@ class RepairViewFlow(FlowController):
 
 		return view
 
-
-class WalkInFlow(RepairViewFlow):
-
-	def __init__(self, slack_client, ack, body, meta: dict = None):
-		super().__init__("walk_in", slack_client, ack, body, meta)
-
-	@handle_errors
-	def todays_repairs(self):
-
-		loading_screen = self.client.views_open(
-			trigger_id=self.received_body["trigger_id"],
-			view=builders.ResultScreenViews.get_loading_screen(modal=True)
-		)
-		self.ack()
-
-		# Get the repairs
-		results = monday.api.monday_connection.groups.get_items_by_group(monday.items.MainItem.BOARD_ID,
-																		 conf.TODAYS_REPAIRS_GROUP_ID)
-		results = results['data']['boards'][0]['groups'][0]['items_page']['items']
-		item_data = monday.api.get_api_items([_['id'] for _ in results])
-		repairs = [monday.items.MainItem(item['id'], item) for item in item_data]
-		repairs = [repair for repair in repairs if 'walk' in repair.service.value.lower()]
-
-		for repair in repairs:
-			device_id = repair.device_id
-			if device_id:
-				device_name = monday.items.DeviceItem(device_id).name
-			else:
-				device_name = "Device Not Selected"
-
-			booking_time = repair.booking_date.value
-			if booking_time:
-				booking_time = booking_time.strftime("%a %d %B %-I%p")
-			else:
-				booking_time = 'No Booking Time Provided'
-
-			self.blocks.append(
-				s_blocks.add.section_block(
-					title=f"*{repair.name}*",
-					accessory=s_blocks.elements.button_element(
-						button_text=device_name,
-						action_id=f"load_repair__{repair.id}",
-						button_style="primary",
-						button_value=str(repair.id)
-					),
-					block_id=f"repair__{repair.id}",
-				)
-			)
-			self.blocks.append(s_blocks.add.simple_context_block([booking_time]))
-			self.blocks.append(s_blocks.add.divider_block())
-
-		view = self.get_view(
-			title="Today's Repairs",
-			submit='',
-			close='Close'
-		)
-
-		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
-
-		return view
-
 	@handle_errors
 	def show_repair_details(self, method='update', view_id='', errors=None):
 		if errors is None:
@@ -482,6 +425,67 @@ class WalkInFlow(RepairViewFlow):
 		self.update_view(view, method=method, view_id=view_id)
 		self.ack()
 		return True
+
+
+class WalkInFlow(RepairViewFlow):
+
+	def __init__(self, slack_client, ack, body, meta: dict = None):
+		super().__init__("walk_in", slack_client, ack, body, meta)
+
+	@handle_errors
+	def todays_repairs(self):
+
+		loading_screen = self.client.views_open(
+			trigger_id=self.received_body["trigger_id"],
+			view=builders.ResultScreenViews.get_loading_screen(modal=True)
+		)
+		self.ack()
+
+		# Get the repairs
+		results = monday.api.monday_connection.groups.get_items_by_group(monday.items.MainItem.BOARD_ID,
+																		 conf.TODAYS_REPAIRS_GROUP_ID)
+		results = results['data']['boards'][0]['groups'][0]['items_page']['items']
+		item_data = monday.api.get_api_items([_['id'] for _ in results])
+		repairs = [monday.items.MainItem(item['id'], item) for item in item_data]
+		repairs = [repair for repair in repairs if 'walk' in repair.service.value.lower()]
+
+		for repair in repairs:
+			device_id = repair.device_id
+			if device_id:
+				device_name = monday.items.DeviceItem(device_id).name
+			else:
+				device_name = "Device Not Selected"
+
+			booking_time = repair.booking_date.value
+			if booking_time:
+				booking_time = booking_time.strftime("%a %d %B %-I%p")
+			else:
+				booking_time = 'No Booking Time Provided'
+
+			self.blocks.append(
+				s_blocks.add.section_block(
+					title=f"*{repair.name}*",
+					accessory=s_blocks.elements.button_element(
+						button_text=device_name,
+						action_id=f"load_repair__{repair.id}",
+						button_style="primary",
+						button_value=str(repair.id)
+					),
+					block_id=f"repair__{repair.id}",
+				)
+			)
+			self.blocks.append(s_blocks.add.simple_context_block([booking_time]))
+			self.blocks.append(s_blocks.add.divider_block())
+
+		view = self.get_view(
+			title="Today's Repairs",
+			submit='',
+			close='Close'
+		)
+
+		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+
+		return view
 
 	def end_flow(self):
 		try:
@@ -603,10 +607,23 @@ class HomeScreenFlow:
 		return
 
 
-class AdjustQuoteFlow(FlowController):
+class AdjustQuoteFlow(RepairViewFlow):
 
 	def __init__(self, slack_client, ack, body, meta: dict = None):
 		super().__init__("adjust_quote", slack_client, ack, body, meta)
+
+	def quote_search(self):
+		blocks = builders.QuoteInformationViews.search_main_board()
+		view = self.get_view(
+			"Search for Quote",
+			blocks=blocks,
+			submit='',
+			close='Cancel',
+			callback_id='quote_search'
+		)
+		self.update_view(view, method='open')
+		self.ack()
+		return True
 
 
 class CourierFlow(FlowController):

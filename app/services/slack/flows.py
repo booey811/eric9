@@ -561,6 +561,48 @@ class WalkInFlow(RepairViewFlow):
 			raise e
 
 
+class HomeScreenFlow:
+
+	def __init__(self, slack_client, body, ack):
+		self.client = slack_client
+		self.received_body = body
+		self.ack = ack
+
+	def show_home_screen(self):
+		view = {
+			"type": "home",
+			"blocks": []
+		}
+
+		button_data = [
+			["Walk In", "walk_from_home"],
+			['Check Stock', 'check_stock'],
+			['Adjust Quote', 'adjust_quote'],
+		]
+		buttons = []
+		for button in button_data:
+			buttons.append(
+				s_blocks.elements.button_element(
+					button_text=button[0],
+					button_value=button[1],
+					action_id=button[1],
+				)
+			)
+
+		view['blocks'].append(
+			s_blocks.add.actions_block(
+				block_id='home_actions',
+				block_elements=buttons
+			)
+		)
+
+		self.client.views_publish(
+			user_id=self.received_body['event']['user'],
+			view=view
+		)
+		return
+
+
 class AdjustQuoteFlow(FlowController):
 
 	def __init__(self, slack_client, ack, body, meta: dict = None):

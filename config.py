@@ -134,7 +134,7 @@ class DevelopmentConfig(Config):
 	DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///development.db'
 	REDIS_URL = 'redis://localhost:6379/0'
 
-	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace
+	SLACK_BOT = os.environ.get("SLACK_DEV_BOT")  # dev workspace: eric9-dev
 	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
 	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET")  # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing

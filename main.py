@@ -17,11 +17,6 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.services.zendesk import helpers
-		from app.utilities import notify_admins_of_error
-		from app.services.slack import exceptions as s, helpers as s_help
-		from app.cache.utilities import build_device_cache
-		build_device_cache()
-
+		pass
 	else:
 		raise Exception(f"Invalid ENV: {env}")

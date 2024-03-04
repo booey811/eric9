@@ -41,3 +41,11 @@ def revive_metadata_view(ack, client, body):
 			view=builders.ResultScreenViews().get_error_screen(f"Could not revive your metadata, but it's all down here\n\n{meta}")
 		)
 		return
+
+
+@slack_app.event("app_home_opened")
+def render_home_screen(client, ack, body):
+	log.info('rendering home screen')
+	flow = flows.HomeScreenFlow(slack_client=client, ack=ack, body=body)
+	flow.show_home_screen()
+	return

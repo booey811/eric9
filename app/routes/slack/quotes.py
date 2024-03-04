@@ -22,6 +22,7 @@ def test_modal(ack, client, body):
 
 
 @slack_app.command("/walk")
+@slack_app.action("walk_from_home")
 def show_todays_walk_in_repairs(ack, client, body):
 	log.debug("walk command ran")
 	flow_controller = flows.get_flow('walk_in', client, ack, body)

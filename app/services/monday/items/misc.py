@@ -1,11 +1,14 @@
 import time
 import json
 
+from zenpy.lib.api_objects import Ticket, CustomField, Comment
+
 from ..api.items import BaseItemType, BaseCacheableItem
 from ..api import columns, get_api_items, exceptions, monday_connection
 from ..api.exceptions import MondayDataError
 from ... import typeform
-from ...zendesk import helpers
+from ..items import MainItem
+from ...zendesk import helpers, client as zendesk_client, custom_fields
 
 
 class WebBookingItem(BaseItemType):
@@ -87,17 +90,42 @@ class TypeFormWalkInResponseItem(BaseItemType):
 			except IndexError:
 				continue
 
-		zendesk_user_results = helpers.search_zendesk(self.email)
+		zendesk_user_results = helpers.search_zendesk(self.email.value)
 		if not zendesk_user_results:
-			helpers.create_user(
+			user = helpers.create_user(
 				name=self.name,
-				email=self.email,
-				phone=self.phone
+				email=self.email.value,
+				phone=self.phone.value
 			)
-			time.sleep(15)
+		else:
+			user = next(zendesk_user_results)
 
-		self.push_to_slack = 'Do Now!'
-		self.commit()
+		main = MainItem()
+		main.create(name=self.name, reload=True)
+
+		subject = f"Your {self.device_type.value} Repair with iCorrect"
+
+		ticket = Ticket(
+			requester_id=user.id,
+			description=subject,
+			custom_fields=[
+				CustomField(id=custom_fields.FIELDS_DICT['main_item_id'], value=str(main.id))
+			],
+			comment=Comment(
+				public=False,
+				body=subject
+			)
+		)
+
+		ticket = zendesk_client.tickets.create(ticket).ticket
+
+		main.ticket_id = str(ticket.id)
+		main.description = str(self.repair_notes)
+		main.client = 'End User'
+		main.service = 'Walk-In'
+		main.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
+		main.commit()
+
 		return self
 
 

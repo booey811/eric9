@@ -301,5 +301,12 @@ def transfer_web_booking(web_booking_item_id):
 	return main
 
 
+def transfer_type_form_booking(type_form_booking_item_id):
+
+	item = get_api_items([type_form_booking_item_id])[0]
+	type_form_booking = monday.items.misc.TypeFormWalkInResponseItem(item['id'], item)
+	main = monday.items.MainItem()
+
+
 class WebBookingTransferError(EricError):
 	pass

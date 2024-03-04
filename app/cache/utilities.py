@@ -103,3 +103,35 @@ def build_part_cache():
 		counter += len(query_results['items'])
 		log.debug(f"Total items fetched: {counter}")
 	pipe.execute()
+
+
+def build_pre_check_cache():
+	def cache_item_set(item_set):
+		for i in item_set:
+			p = monday.items.misc.PreCheckItem(i['id'], i)
+			p.save_to_cache(pipe)
+
+	log.info("Building Pre-Check Item Cache")
+	clear_cache("pre_check_item:*")
+	pipe = get_redis_connection().pipeline()
+
+	query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+		monday.items.misc.PreCheckItem.BOARD_ID
+	)['data']['boards'][0]['items_page']
+	cursor = query_results['cursor']
+	log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+	cache_item_set(query_results['items'])
+	counter = len(query_results['items'])
+	while True:
+		query_results = monday.api.monday_connection.boards.fetch_items_by_board_id(
+			monday.items.misc.PreCheckItem.BOARD_ID,
+			cursor=cursor
+		)['data']['boards'][0]['items_page']
+		cursor = query_results['cursor']
+		log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+		cache_item_set(query_results['items'])
+		if not cursor:
+			break
+		counter += len(query_results['items'])
+		log.debug(f"Total items fetched: {counter}")
+	pipe.execute()

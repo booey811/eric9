@@ -417,9 +417,11 @@ class WalkInFlow(RepairViewFlow):
 		return view
 
 	@handle_errors
-	def show_repair_details(self, method='update', view_id=''):
+	def show_repair_details(self, method='update', view_id='', errors=None):
+		if errors is None:
+			errors = []
 
-		blocks = builders.QuoteInformationViews.view_repair_details(self.meta)
+		blocks = builders.QuoteInformationViews.view_repair_details(self.meta, errors)
 		view = self.get_view(
 			'View Repair',
 			blocks=blocks,
@@ -428,8 +430,11 @@ class WalkInFlow(RepairViewFlow):
 			callback_id='repair_viewer'
 		)
 
-		self.update_view(view, method=method, view_id=view_id)
-		self.ack()
+		if method == 'ack':
+			self.ack({"response_action": "update", "view": view})
+		else:
+			self.update_view(view, method=method, view_id=view_id)
+			self.ack()
 
 		return view
 

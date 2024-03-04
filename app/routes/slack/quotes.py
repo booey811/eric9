@@ -342,3 +342,29 @@ def handle_pre_check_submission(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	return True
+
+
+@slack_app.view("repair_viewer")
+def handle_repair_view_submission(ack, client, body):
+	log.debug("repair_viewer view submitted")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+
+	errors = []
+	# check pre checks
+	for check in meta['pre_checks']:
+		if not check['answer']:
+			errors.append("Please complete pre-checks before submitting")
+			break
+	if not meta['pre_checks']:
+		errors.append("Please complete pre-checks before submitting")
+
+	if errors:
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		flow_controller.show_repair_details('ack', errors=errors, view_id=body['view']['id'])
+
+
+
+	# flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	# flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
+	return True

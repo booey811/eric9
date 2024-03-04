@@ -201,11 +201,19 @@ class QuoteInformationViews:
 		return view_blocks
 
 	@staticmethod
-	def view_repair_details(meta_dict):
+	def view_repair_details(meta_dict, errors=None):
+		if errors is None:
+			errors = []
 		view_blocks = []
 
 		# Monday Info
 		main_id = meta_dict.get('main_id') or 'new_item'
+
+		# add errors, if any
+		if errors:
+			for error in errors:
+				view_blocks.append(blocks.add.simple_text_display(f":no_entry:  *{error}*"))
+			view_blocks.append(blocks.add.divider_block())
 
 		# User Info
 		user = meta_dict.get('user', {})
@@ -243,6 +251,7 @@ class QuoteInformationViews:
 			),
 		]
 		total = 0
+		diagnostic = False
 		if meta_dict.get('product_ids'):
 			products = items.ProductItem.get(meta_dict['product_ids'])
 			for prod in products:
@@ -250,6 +259,8 @@ class QuoteInformationViews:
 					blocks.add.simple_text_display(f"{prod.name}: *£{prod.price}*"),
 				)
 				total += int(prod.price.value)
+				if 'diagnostic' in prod.name.lower():
+					diagnostic = True
 		if meta_dict.get('custom_products'):
 			custom_data = meta_dict['custom_products']
 			for custom in custom_data:
@@ -304,6 +315,50 @@ class QuoteInformationViews:
 				)
 
 		view_blocks.extend(pre_check_blocks)
+
+		notes_blocks = []
+		if meta_dict.get('additional_notes'):
+			initial_notes = meta_dict['additional_notes']
+		else:
+			initial_notes = None
+
+		if diagnostic:
+			notes_optional = False
+		else:
+			notes_optional=True
+
+		notes_blocks.append(
+			blocks.add.input_block(
+				block_title="Additional Notes",
+				block_id='additional_notes',
+				element=blocks.elements.text_input_element(
+					placeholder="Enter additional notes for this repair",
+					action_id="additional_notes",
+					multiline=True,
+					initial_value=initial_notes,
+				),
+				optional=notes_optional
+			)
+		)
+
+		if meta_dict.get('imei_sn'):
+			initial_imei = meta_dict['imei_sn']
+		else:
+			initial_imei = None
+
+		notes_blocks.append(
+			blocks.add.input_block(
+				block_title="IMEI/SN",
+				element=blocks.elements.text_input_element(
+					placeholder="Enter a note",
+					initial_value=initial_imei,
+				),
+				block_id="imei_sn",
+				optional=False,
+			)
+		)
+
+		view_blocks.extend(notes_blocks)
 
 		return view_blocks
 

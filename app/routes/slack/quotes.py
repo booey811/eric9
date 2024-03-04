@@ -319,3 +319,26 @@ def open_pre_check_menu(ack, client, body):
 	view = flow_controller.show_pre_check_list()
 	log.debug(view)
 	return True
+
+
+@slack_app.view("pre_checks")
+def handle_pre_check_submission(ack, client, body):
+	log.debug("pre_checks view submitted")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	pre_check_state_values = body['view']['state']['values']
+
+	for state_val in pre_check_state_values:
+		pre_check_data = pre_check_state_values[state_val]
+		pre_check_id = list(pre_check_data.keys())[0].split('__')[1]
+		pre_check_answer = list(pre_check_data.values())[0]['selected_option']
+		if pre_check_answer is None:
+			answer = ''
+		else:
+			answer = pre_check_answer['value']
+		meta_check = [i for i in meta['pre_checks'] if str(i['id']) == str(pre_check_id)][0]
+		meta_check['answer'] = answer
+
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
+	return True

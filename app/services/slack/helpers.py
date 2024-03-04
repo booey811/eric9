@@ -41,6 +41,7 @@ def create_meta(user_id=None, device_id=None, product_ids=None, user=None, devic
 		'device_id': '',
 		'product_ids': [],
 		'custom_products': [],
+		'pre_checks': [],
 	}
 
 	if not user and not user_id:

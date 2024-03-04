@@ -2,7 +2,8 @@ from . import elements
 
 
 def input_block(
-		block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[], action_id='', initial_options=[]
+		block_title, element, dispatch_action=False, block_id="", hint="", optional=False, initial_option=[],
+		action_id='', initial_options=[]
 ):
 	basic = {
 		"type": "input",
@@ -53,6 +54,16 @@ def section_block(title, accessory, block_id=''):
 		},
 		"accessory": accessory,
 	}
+	return basic
+
+
+def actions_block(block_elements, block_id=''):
+	basic = {
+		"type": "actions",
+		"elements": block_elements,
+	}
+	if block_id:
+		basic['block_id'] = block_id
 	return basic
 
 

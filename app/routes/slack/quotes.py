@@ -308,3 +308,14 @@ def handle_quote_editor_submission(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	return True
+
+
+@slack_app.action(re.compile("^open_pre_checks__.*$"))
+def open_pre_check_menu(ack, client, body):
+	log.debug("open_pre_checks ran")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	view = flow_controller.show_pre_check_list()
+	log.debug(view)
+	return True

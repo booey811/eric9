@@ -268,6 +268,25 @@ class QuoteInformationViews:
 
 		view_blocks.extend(repair_blocks)
 
+		# pre check info
+		pre_check_blocks = [
+			blocks.add.divider_block(),
+			blocks.add.header_block("Pre-Checks & Information"),
+		]
+		if not meta_dict.get('device_id'):
+			pre_check_blocks.append(blocks.add.simple_text_display("No device selected, select a device to see pre-checks"))
+		else:
+			if meta_dict.get('pre_checks'):
+				pass
+			else:
+				# add a button to open pre-check view (which will fetch the pre_checks and add them to meta)
+				pre_check_blocks.append(
+					blocks.add.actions_block(
+						block_elements=[blocks.elements.button_element("Open Pre-Checks", "open_pre_checks", f"open_pre_checks__{meta_dict['device_id']}")])
+				)
+
+		view_blocks.extend(pre_check_blocks)
+
 		return view_blocks
 
 	@staticmethod
@@ -447,6 +466,21 @@ class QuoteInformationViews:
 			hint=hint
 		))
 
+		return view_blocks
+
+	@staticmethod
+	def show_pre_check_view(pre_checks: List[items.misc.PreCheckItem]):
+		view_blocks = []
+
+		for check in pre_checks:
+			view_blocks.append(blocks.add.section_block(
+				title=check.name,
+				accessory=blocks.elements.button_element(
+					button_text="View",
+					button_value=str(check.id),
+					action_id="view_pre_check"
+				)
+			))
 		return view_blocks
 
 

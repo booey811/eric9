@@ -153,17 +153,17 @@ def button_element(button_text, button_value='', action_id='', button_style='pri
 	return basic
 
 
-def checkbox_element(title, options, action_id=''):
+def checkbox_element(options, action_id='', initial_options=()):
 	basic = {
 		"type": "checkboxes",
 		"options": options,
-		"label": {
-			"type": "plain_text",
-			"text": title,
-			"emoji": True
-		}
 	}
 	if action_id:
 		basic['action_id'] = action_id
+	if initial_options:
+		basic['initial_options'] = initial_options
+		for ds in initial_options:
+			if ds not in options:
+				raise ValueError(f"Initial option {ds} not in options: {options}")
 
 	return basic

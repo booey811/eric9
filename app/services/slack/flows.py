@@ -309,14 +309,15 @@ class RepairViewFlow(FlowController):
 						"id": str(pre_check.id),
 						"name": str(pre_check.name),
 						"answer": '',
-						"available_answers": pre_check.get_available_responses()
 					}
 				check_dicts.append(check_meta)
 				self.meta['pre_checks'] = check_dicts
 
 		for check in check_dicts:
+			pre_check_item = monday.items.misc.PreCheckItem(check['id']).load_from_cache()
+			available_responses = pre_check_item.get_available_responses(labels=True)
 			options = []
-			for available_response in check['available_answers']:
+			for available_response in available_responses:
 				option = {
 					"text": {
 						"type": "plain_text",
@@ -338,9 +339,10 @@ class RepairViewFlow(FlowController):
 			)
 
 		view = self.get_view(
-			title="Today's Repairs",
+			title="Pre-Checks",
 			submit='Submit',
-			close='Close'
+			close='Close',
+			callback_id="pre_checks"
 		)
 
 		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])

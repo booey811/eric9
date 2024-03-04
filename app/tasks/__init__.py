@@ -1,1 +1,1 @@
-from . import monday, notifications, notion, recurring, scheduling, sync_platform
+from . import monday, notifications, notion, recurring, scheduling, sync_platform, slack

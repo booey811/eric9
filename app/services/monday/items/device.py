@@ -81,6 +81,4 @@ class DeviceItem(BaseCacheableItem):
 					self._pre_check_set = items.misc.PreCheckSet(self.pre_checks_connect.value[0])
 			else:
 				self._pre_check_set = items.misc.PreCheckSet(self.pre_checks_connect.value[0])
-		if self._pre_check_set is None:
-			raise exceptions.MondayDataError(f"Device {self.id} has no pre-check set attached")
 		return self._pre_check_set

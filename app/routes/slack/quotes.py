@@ -3,7 +3,7 @@ from pprint import pprint as p
 import json
 import re
 
-from ...services.slack import slack_app, builders, blocks, helpers, flows
+from ...services.slack import slack_app, builders, blocks, helpers, flows, exceptions
 from ...services import monday, zendesk
 from ... import tasks
 from ...cache.rq import q_low, q_high
@@ -452,3 +452,13 @@ def handle_repair_view_submission(ack, client, body):
 			)
 
 	return True
+
+
+@slack_app.use
+def global_view_dump(body):
+	log.debug("global view dump")
+	q_high.enqueue(
+		f=exceptions.dump_slack_view_data,
+		kwargs={"view": body['view']}
+	)
+	return

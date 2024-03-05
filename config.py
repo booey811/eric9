@@ -72,6 +72,7 @@ class Config(object):
 	SLACK_SIGNING_SECRET = os.environ["SLACK_SECRET"]  # icorrect workspace
 	SLACK_DEV_CHANNEL = "C036M43NBR6"  # icorrect workspace: dev-testing
 	SLACK_ERROR_CHANNEL = "C06EYFD359P"  # icorrect-workspace: eric9:errors
+	SLACK_DUMP_CHANNEL = "C04DD337JTT"  # icorrect-workspace: eric9:dumps
 	SLACK_SHOW_META = os.environ['SHOW_META']
 
 	# MONDAY BOARD IDS
@@ -138,6 +139,7 @@ class DevelopmentConfig(Config):
 	SLACK_APP = os.environ.get("SLACK_DEV_APP")  # dev workspace
 	SLACK_SIGNING_SECRET = os.environ.get("SLACK_DEV_SECRET")  # dev workspace
 	SLACK_DEV_CHANNEL = "C037P4MLAF4"  # dev workspace: dev-testing
+	SLACK_DUMP_CHANNEL = "C04DG52S00H"
 	SLACK_ERROR_CHANNEL = "C047C1L0WLW"  # dev-workspace: reporting
 
 

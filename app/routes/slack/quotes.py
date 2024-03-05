@@ -25,7 +25,7 @@ def test_modal(ack, client, body):
 @slack_app.action("adjust_quote")
 def show_quote_search_modal(ack, client, body):
 	log.debug("quote command ran")
-	flow_controller = flows.get_flow('adjust_quote', client, ack, body)
+	flow_controller = flows.get_flow('adjust_quote', client, ack, body, meta={"flow": "adjust_quote"})
 	flow_controller.quote_search()
 	return True
 
@@ -238,7 +238,10 @@ def show_quote_editor(ack, body, client):
 	log.debug("edit_quote ran")
 	log.debug(body)
 
-	meta = json.loads(body['view']['private_metadata'])
+	try:
+		meta = json.loads(body['view']['private_metadata'])
+	except json.JSONDecodeError as e:
+		meta = {}
 	if meta['flow'] == 'adjust_quote':
 		main_id = body['actions'][0]['action_id'].split('__')[1]
 		main_meta = helpers.extract_meta_from_main_item(main_id=main_id)

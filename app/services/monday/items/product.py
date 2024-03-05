@@ -26,6 +26,8 @@ class ProductItem(BaseCacheableItem):
 
 		self.profit_model_gen_text = columns.TextValue("text74")
 
+		self.turnaround = columns.NumberValue("numeric8")
+
 		super().__init__(item_id, api_data, search)
 
 		if self.name:

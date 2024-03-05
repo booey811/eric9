@@ -1,7 +1,10 @@
+import datetime
 import uuid
 import hashlib
+from dateutil.parser import parse
 
 from ...services import monday, zendesk
+from ...utilities import notify_admins_of_error
 
 
 def extract_meta_from_main_item(main_item=None, main_id=''):
@@ -27,7 +30,7 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 		custom_lines = [monday.items.misc.CustomQuoteLineItem(line_id) for line_id in
 						main_item.custom_quote_connect.value]
 
-	imei_sn = pay_status = passcode = None
+	imei_sn = pay_status = passcode = deadline = None
 	if main_item.imeisn.value:
 		imei_sn = main_item.imeisn.value
 
@@ -37,16 +40,19 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 	if main_item.passcode.value:
 		passcode = main_item.passcode.value
 
+	if main_item.hard_deadline.value:
+		deadline = main_item.hard_deadline.value
+
 	return create_meta(
 		user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines,
-		imei_sn=imei_sn, pay_status=pay_status, passcode=passcode
+		imei_sn=imei_sn, pay_status=pay_status, passcode=passcode, deadline=deadline
 	)
 
 
 def create_meta(
 		user_id=None, device_id=None, product_ids=None, user=None, device=None,
 		products=None, main_item=None, custom_lines=None, imei_sn=None, pay_status=None,
-		passcode=None
+		passcode=None, deadline=None
 ):
 	meta = {
 		'main_id': '',
@@ -64,6 +70,7 @@ def create_meta(
 		'imei_sn': '',
 		'pay_status': '',
 		'pc': '',
+		'deadline': ''
 	}
 
 	if not user and not user_id:
@@ -107,6 +114,21 @@ def create_meta(
 
 	if passcode:
 		meta['pc'] = passcode
+
+	if deadline:
+		try:
+			if isinstance(deadline, str):
+				try:
+					dt = parse(deadline)
+					deadline = dt.timestamp()
+				except Exception as e:
+					notify_admins_of_error(e)
+					deadline = None
+			elif isinstance(deadline, datetime.datetime):
+				deadline = deadline.timestamp()
+		except Exception as e:
+			notify_admins_of_error(e)
+			deadline = None
 
 	return meta
 

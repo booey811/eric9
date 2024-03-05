@@ -549,6 +549,7 @@ class WalkInFlow(RepairViewFlow):
 					custom_ids.append(custom_line.id)
 				note += f"\n{custom['name']}"
 			main.custom_quote_connect = custom_ids
+			main.main_status = 'Received'
 			main.commit()
 
 			note += "\n\nPRE-CHECKS"
@@ -613,6 +614,10 @@ class AdjustQuoteFlow(RepairViewFlow):
 		super().__init__("adjust_quote", slack_client, ack, body, meta)
 
 	def quote_search(self):
+		loading_screen = self.client.views_open(
+			trigger_id=self.received_body["trigger_id"],
+			view=builders.ResultScreenViews.get_loading_screen(modal=True)
+		)
 		blocks = builders.QuoteInformationViews.search_main_board()
 		view = self.get_view(
 			"Search for Quote",
@@ -621,9 +626,41 @@ class AdjustQuoteFlow(RepairViewFlow):
 			close='Cancel',
 			callback_id='quote_search'
 		)
-		self.update_view(view, method='open')
+		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
 		self.ack()
 		return True
+
+	def end_flow(self):
+
+		if not self.meta['main_id']:
+			raise ValueError("No Main ID Provided, should not be possible")
+
+		main = monday.items.MainItem(self.meta['main_id'])
+
+		main.products_connect = [str(_) for _ in self.meta['product_ids']]
+
+		custom_ids_set = []
+		for custom in self.meta['custom_products']:
+			if not custom['id']:
+				# create custom line item
+				custom_line = monday.items.misc.CustomQuoteLineItem()
+				custom_line.price = int(custom['price'])
+				custom_line.description = custom['description']
+				custom_line = custom_line.create(custom['name'])
+				custom_ids_set.append(str(custom_line.id))
+
+		for assigned_custom_id in main.custom_quote_connect.value:
+			if assigned_custom_id not in custom_ids_set:
+				# delete custom line item
+				try:
+					monday.api.monday_connection.items.delete_item_by_id(int(assigned_custom_id))
+				except Exception as e:
+					notify_admins_of_error(f"Failed to delete custom line item: {e}")
+
+		main.custom_quote_connect = custom_ids_set
+		main.commit()
+
+		return main
 
 
 class CourierFlow(FlowController):

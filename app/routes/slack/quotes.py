@@ -281,6 +281,20 @@ def remove_product_from_quote(ack, body, client):
 	flow_controller.view_quote(method='update')
 	return True
 
+@slack_app.action("remove_custom_product")
+def remove_custom_product(ack, body, client):
+	log.debug("remove_custom_product ran")
+	log.debug(body)
+
+	remove_id = body['actions'][0]['value']
+	meta = json.loads(body['view']['private_metadata'])
+	meta['custom_products'] = [prod for prod in meta['custom_products'] if str(prod['id']) != str(remove_id)]
+
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.view_quote(method='update')
+	return True
+
+
 
 @slack_app.action('add_products')
 def add_product_to_quote(ack, client, body):
@@ -364,7 +378,7 @@ def handle_quote_editor_submission(ack, client, body):
 	meta = json.loads(body['view']['private_metadata'])
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	if meta['flow'] == 'adjust_quote':
-		flow_controller.view_quote()
+		flow_controller.end_flow()
 	elif meta['flow'] == 'walk_in':
 		flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
 	else:

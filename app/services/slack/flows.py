@@ -545,7 +545,7 @@ class WalkInFlow(RepairViewFlow):
 				main.repair_type = 'Repair'
 
 			custom_ids = main.custom_quote_connect.value
-			new_custom_ids = [str(_) for _ in self.meta['custom_ids']]
+			new_custom_ids = [str(_) for _ in self.meta['custom_products']]
 			for custom_id in custom_ids:
 				if str(custom_id) not in new_custom_ids:
 					# delete custom line item

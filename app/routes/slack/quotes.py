@@ -451,7 +451,21 @@ def handle_repair_view_submission(ack, client, body):
 	log.debug(body)
 	meta = json.loads(body['view']['private_metadata'])
 	exceptions.save_metadata(meta, f"{meta['flow']}__repair_viewer")
-	ack({"response_action": "update", "view": builders.ResultScreenViews.get_success_screen("Processing Repair Submission")})
+	ack({"response_action": "update",
+		 "view": builders.ResultScreenViews.get_success_screen("Processing Repair Submission")})
+
+	state_passcode = body['view']['state']['values']['pc']['pc']['value']
+	state_notes = body['view']['state']['values']['additional_notes']['additional_notes']['value']
+	state_imei = body['view']['state']['values']['imei_sn']['imei_sn']['value']
+
+	if state_passcode and not meta['pc']:
+		meta['pc'] = state_passcode
+
+	if state_notes and not meta['additional_notes']:
+		meta['additional_notes'] = state_notes
+
+	if state_imei and not meta['imei_sn']:
+		meta['imei_sn'] = state_imei
 
 	errors = []
 	# check pre checks
@@ -488,7 +502,6 @@ def global_view_dump(body, next_):
 		data = body['view']
 	except KeyError:
 		data = body
-
 
 	q_high.enqueue(
 		f=exceptions.dump_slack_view_data,

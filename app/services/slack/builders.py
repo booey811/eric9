@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 import json
 
@@ -281,6 +282,7 @@ class QuoteInformationViews:
 		]
 		total = 0
 		diagnostic = False
+		max_turnaround = 0
 		if meta_dict.get('product_ids'):
 			products = items.ProductItem.get(meta_dict['product_ids'])
 			for prod in products:
@@ -290,6 +292,9 @@ class QuoteInformationViews:
 				total += int(prod.price.value)
 				if 'diagnostic' in prod.name.lower():
 					diagnostic = True
+				if prod.turnaround.value:
+					if int(prod.turnaround.value) > int(max_turnaround):
+						max_turnaround = prod.turnaround.value
 		if meta_dict.get('custom_products'):
 			custom_data = meta_dict['custom_products']
 			for custom in custom_data:
@@ -297,6 +302,27 @@ class QuoteInformationViews:
 					blocks.add.simple_text_display(f"Custom: {custom['name']}: *£{custom['price']}*"),
 				)
 				total += int(custom['price'])
+
+		if meta_dict.get('deadline'):
+			deadline = meta_dict['deadline']
+		else:
+			if max_turnaround:
+				now = datetime.datetime.now()
+				deadline = now + datetime.timedelta(hours=int(max_turnaround))
+				deadline = int(deadline.timestamp())
+			else:
+				deadline = None
+
+		repair_blocks.append(
+			blocks.add.input_block(
+				block_title="Deadline",
+				element=blocks.elements.datetime_picker_element(
+					initial_dt=deadline,
+					),
+				optional=False
+				)
+			)
+
 		if not meta_dict.get('product_ids') and not meta_dict.get('custom_products'):
 			repair_blocks.append(
 				blocks.add.simple_text_display(f"No products or custom lines added to this quote"),

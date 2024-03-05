@@ -186,3 +186,18 @@ def radio_button_element(options, action_id='', initial_option=''):
 			raise ValueError(f"Initial option {initial_option} not in options: {options}")
 
 	return basic
+
+
+def datetime_picker_element(action_id='', initial_dt='', focus_on_load=False):
+	basic = {
+		"type": "datetimepicker",
+	}
+	if action_id:
+		basic['action_id'] = action_id
+	if initial_dt:
+		basic['initial_date_time'] = initial_dt
+	if focus_on_load:
+		basic['focus_on_load'] = True
+
+	return basic
+

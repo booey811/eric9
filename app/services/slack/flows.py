@@ -1,3 +1,4 @@
+import datetime
 import logging
 import functools
 import traceback
@@ -364,6 +365,7 @@ class RepairViewFlow(FlowController):
 
 	@handle_errors
 	def show_repair_details(self, method='update', view_id='', errors=None):
+
 		if errors is None:
 			errors = []
 
@@ -383,7 +385,6 @@ class RepairViewFlow(FlowController):
 			self.ack()
 
 		return view
-
 	@handle_errors
 	def view_quote(self, method='update', view_id=''):
 		blocks = builders.QuoteInformationViews.show_quote_editor(self.meta)

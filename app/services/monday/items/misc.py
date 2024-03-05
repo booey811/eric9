@@ -37,6 +37,26 @@ class WebBookingItem(BaseItemType):
 	point_of_collection = columns.TextValue('text9')
 
 
+class WebEnquiryItem(BaseItemType):
+
+	BOARD_ID = 863729294
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.phone = columns.TextValue('text0')
+		self.email = columns.TextValue('text')
+
+		self.zendesk_id = columns.TextValue("zendesk_id")
+
+		self.device_type_string = columns.TextValue('text06')
+		self.model_string = columns.TextValue('text2')
+
+		self.body = columns.TextValue("long_text")
+
+		self.fault_type = columns.StatusValue("status6")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
 class TypeFormWalkInResponseItem(BaseItemType):
 	BOARD_ID = 4752037048
 

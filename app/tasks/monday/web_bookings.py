@@ -1,11 +1,12 @@
 import logging
 import datetime
+import time
 
 from zenpy.lib.exception import APIException
-from zenpy.lib.api_objects import Ticket, Comment
+from zenpy.lib.api_objects import Ticket, Comment, User
 
 import app.services.monday.api.client
-from ...services import monday, woocommerce, zendesk
+from ...services import monday, woocommerce, zendesk, openai
 from ...errors import EricError
 from ...utilities import notify_admins_of_error
 from ...services.monday.api.client import get_api_items
@@ -302,10 +303,127 @@ def transfer_web_booking(web_booking_item_id):
 
 
 def transfer_type_form_booking(type_form_booking_item_id):
-
 	item = get_api_items([type_form_booking_item_id])[0]
 	type_form_booking = monday.items.misc.TypeFormWalkInResponseItem(item['id'], item)
 	main = monday.items.MainItem()
+
+
+def push_web_enquiry_to_zendesk(web_enquiry_id):
+	try:
+		enquiry = monday.items.misc.WebEnquiryItem(web_enquiry_id)
+		device = enquiry.device_type_string.value
+
+		if device:
+			if 'macbook' in device.lower():
+				device = 'MacBook'
+			elif 'iphone' in device.lower():
+				device = 'iPhone'
+			elif 'watch' in device.lower():
+				device = 'Apple Watch'
+			elif 'ipad' in device.lower():
+				device = 'iPad'
+			elif 'ipod' in device.lower():
+				device = 'iPod'
+
+		if not device:
+			subject = 'Your Enquiry with iCorrect'
+			device_name = 'No Device Selected'
+		else:
+			subject = f"Your {device} Enquiry with iCorrect"
+			device_name = device.capitalize()
+
+		model = enquiry.model_string.value
+
+		if not model:
+			model = "No Model Selected"
+		else:
+			model = model.capitalize()
+
+		search_results = zendesk.helpers.search_zendesk(str(enquiry.email.value))
+		if not search_results:
+			if enquiry.phone.value:
+				user = zendesk.client.users.create(
+					User(
+						name=str(enquiry.name).capitalize(),
+						email=str(enquiry.email.value),
+						phone=int(enquiry.phone.value)
+					)
+				)
+			else:
+				user = zendesk.client.users.create(
+					User(
+						name=str(enquiry.name).capitalize(),
+						email=str(enquiry.email.value)
+					)
+				)
+		else:
+			user = next(search_results)
+
+		body = f"""	Device: {device_name}
+					Model: {model}
+
+					Enquiry: {enquiry.body.value}
+		"""
+
+		ticket = Ticket(
+			description=subject,
+			requester_id=str(user.id),
+			comment=Comment(
+				public=False,
+				body=body
+			),
+			tags=['web_enquiry']
+		)
+
+		ticket = zendesk.client.tickets.create(ticket).ticket
+		enquiry.zendesk_id = str(ticket.id)
+		enquiry.commit()
+
+		# generate initial AI response
+		ai_thread = openai.utils.create_thread()
+
+		ai_body = f"""name: {user.name},
+		email: {user.email},
+		phone: {user.phone},
+		device: {device_name},
+		enquiry: {enquiry.body.value}
+		"""
+
+		openai.utils.add_message_to_thread(ai_thread.id, ai_body)
+
+		run = openai.utils.run_thread(ai_thread.id, conf.OPEN_AI_ASSISTANTS['enquiry'])
+
+		# wait for run to finish
+		comment = None
+		while comment is None:
+			if run.status in ('queued', 'in_progress'):
+				time.sleep(2)
+				run = openai.utils.fetch_run(ai_thread.id, run.id)
+			elif run.status == 'completed':
+				comment = openai.utils.client.beta.threads.messages.list(ai_thread.id, limit=1).data[0].content[
+					0].text.value
+			elif run.status in ('requires_action', 'cancelling', 'cancelled', 'failed', 'expired'):
+				comment = (f"Could not fetch AI response, run has invalid status: {run.status}\n\n"
+						   f"run_id: {run.id}\nthread_id: {ai_thread.id}")
+			else:
+				raise RuntimeError(f"Unexpected run status: {run.status}")
+		try:
+			assistant_name = openai.utils.get_assistant_data(str(run.assistant_id))['name']
+		except KeyError:
+			assistant_name = 'Unregistered assistant'
+
+		comment = f"!!!AI-NOTE!! (assistant: {assistant_name})\n\n{comment}"
+
+		ticket.comment = Comment(
+			body=comment,
+			public=False
+		)
+		ticket.tags.extend(['ai_handled'])
+		zendesk.client.tickets.update(ticket)
+
+	except Exception as e:
+		notify_admins_of_error(e)
+		raise e
 
 
 class WebBookingTransferError(EricError):

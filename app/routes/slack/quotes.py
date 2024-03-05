@@ -457,15 +457,19 @@ def handle_repair_view_submission(ack, client, body):
 	state_passcode = body['view']['state']['values']['pc']['pc']['value']
 	state_notes = body['view']['state']['values']['additional_notes']['additional_notes']['value']
 	state_imei = body['view']['state']['values']['imei_sn']['imei_sn']['value']
+	state_deadline = body['view']['state']['values']['deadline']['deadline']['selected_date_time']
 
-	if state_passcode and not meta['pc']:
+	if state_passcode:
 		meta['pc'] = state_passcode
 
-	if state_notes and not meta['additional_notes']:
+	if state_notes:
 		meta['additional_notes'] = state_notes
 
-	if state_imei and not meta['imei_sn']:
+	if state_imei:
 		meta['imei_sn'] = state_imei
+
+	if state_deadline:
+		meta['deadline'] = state_deadline
 
 	errors = []
 	# check pre checks

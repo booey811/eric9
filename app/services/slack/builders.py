@@ -316,8 +316,10 @@ class QuoteInformationViews:
 		repair_blocks.append(
 			blocks.add.input_block(
 				block_title="Deadline",
+				block_id='deadline',
 				element=blocks.elements.datetime_picker_element(
 					initial_dt=deadline,
+					action_id='deadline',
 					),
 				optional=False
 				)

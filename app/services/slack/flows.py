@@ -385,6 +385,7 @@ class RepairViewFlow(FlowController):
 			self.ack()
 
 		return view
+
 	@handle_errors
 	def view_quote(self, method='update', view_id=''):
 		blocks = builders.QuoteInformationViews.show_quote_editor(self.meta)
@@ -540,6 +541,13 @@ class WalkInFlow(RepairViewFlow):
 			main.products_connect = [str(product.id) for product in products]
 			main.imeisn = self.meta['imei_sn']
 			main.passcode = self.meta['pc']
+
+			try:
+				deadline_dt = datetime.datetime.fromtimestamp(self.meta['deadline'])
+				main.hard_deadline = deadline_dt
+			except Exception as e:
+				notify_admins_of_error(f"Failed to convert deadline to datetime: {e}")
+
 			if diagnostic:
 				main.repair_type = 'Diagnostic'
 			else:

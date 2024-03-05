@@ -165,7 +165,7 @@ def map_session_to_gcal(session_item_id):
 
 	main_item = monday.items.MainItem(session.main_board_id.value)
 	try:
-		device = monday.items.DeviceItem(main_item.device_id.value)
+		device = monday.items.DeviceItem(main_item.device_id)
 		device_name = device.name
 	except Exception as e:
 		notify_admins_of_error(f"Could not get device: {str(e)}")

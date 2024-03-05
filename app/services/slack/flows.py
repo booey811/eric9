@@ -719,6 +719,37 @@ class MiscellaneousFlow(FlowController):
 		self.ack()
 
 
+class StockFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta):
+		super().__init__("stock", slack_client, ack, body, meta)
+
+	@handle_errors
+	def show_stock_check_menu(self):
+		blocks = builders.EntityInformationViews.stock_check_entry_point()
+		view = self.get_view(
+			"Stock Check",
+			blocks=blocks,
+			close='Cancel'
+		)
+		self.update_view(view, method='open')
+		self.ack()
+		return view
+
+	@handle_errors
+	def show_stock_info(self, part_id, method='update'):
+		blocks = builders.EntityInformationViews.view_part(part_id)
+		view = self.get_view(
+			"Parts Info",
+			blocks=blocks,
+			submit='',
+			close='Go Back'
+		)
+		self.update_view(view, method=method)
+		self.ack()
+		return view
+
+
 def get_flow(flow_name, slack_client, ack, body, meta=None):
 	if flow_name == 'walk_in':
 		return WalkInFlow(slack_client, ack, body, meta)

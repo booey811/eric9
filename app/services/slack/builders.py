@@ -105,7 +105,7 @@ class EntityInformationViews:
 	@staticmethod
 	def view_part(part_id):
 		view_blocks = []
-		part = items.PartItem(part_id)
+		part = items.PartItem(part_id).load_from_api()
 		view_blocks.append(blocks.add.header_block(f"{part.name}"))
 		view_blocks.append(blocks.add.simple_text_display(f"*Stock Level:* {part.stock_level}"))
 		return view_blocks
@@ -132,6 +132,28 @@ class EntityInformationViews:
 		)
 
 		results.append(device_block)
+		return results
+
+	@staticmethod
+	def stock_check_entry_point():
+		results = []
+
+		# use an external select menu to search for a part
+		results.append(
+			blocks.add.input_block(
+				block_title="Search for a part",
+				element=blocks.elements.external_select_element(
+					placeholder='Enter a part name',
+					action_id="stock_check_part",
+					min_query_length=3,
+					focus_on_load=True,
+				),
+				block_id="part_search",
+				dispatch_action=True,
+				action_id="stock_check_part"
+			)
+		)
+
 		return results
 
 
@@ -320,10 +342,10 @@ class QuoteInformationViews:
 				element=blocks.elements.datetime_picker_element(
 					initial_dt=deadline,
 					action_id='deadline',
-					),
+				),
 				optional=False
-				)
 			)
+		)
 
 		if not meta_dict.get('product_ids') and not meta_dict.get('custom_products'):
 			repair_blocks.append(

@@ -487,6 +487,7 @@ class WalkInFlow(RepairViewFlow):
 
 		return view
 
+	@handle_errors
 	def end_flow(self):
 		try:
 			user = zendesk.client.users(id=int(self.meta['user']['id']))
@@ -613,6 +614,7 @@ class AdjustQuoteFlow(RepairViewFlow):
 	def __init__(self, slack_client, ack, body, meta: dict = None):
 		super().__init__("adjust_quote", slack_client, ack, body, meta)
 
+	@handle_errors
 	def quote_search(self):
 		loading_screen = self.client.views_open(
 			trigger_id=self.received_body["trigger_id"],
@@ -630,6 +632,7 @@ class AdjustQuoteFlow(RepairViewFlow):
 		self.ack()
 		return True
 
+	@handle_errors
 	def end_flow(self):
 
 		if not self.meta['main_id']:

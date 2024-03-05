@@ -12,6 +12,8 @@ from .. import monday, zendesk
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...tasks.sync_platform import sync_to_zendesk
+from ...cache.rq import q_high
+from ...tasks.notifications import quotes
 
 import config
 
@@ -666,6 +668,11 @@ class AdjustQuoteFlow(RepairViewFlow):
 		main.custom_quote_connect = custom_ids_set
 		main.main_status = 'Ready to Quote'
 		main.commit()
+
+		q_high.enqueue(
+			quotes.print_quote_to_zendesk,
+			str(main.id)
+		)
 
 		return main
 

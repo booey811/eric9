@@ -518,7 +518,10 @@ class QuoteInformationViews:
 			if meta_dict.get('product_ids'):
 				products = items.ProductItem.get(meta_dict['product_ids'])
 				for prod in products:
-					initial_prod_options.append([str(prod.name), str(prod.id)])
+					if str(prod.device_id) == str(device_id):
+						initial_prod_options.append([str(prod.name), str(prod.id)])
+					else:
+						meta_dict['product_ids'].remove(prod.id)
 
 			static_select = blocks.elements.multi_select_element(
 				placeholder="Select a product",

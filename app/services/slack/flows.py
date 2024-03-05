@@ -643,6 +643,7 @@ class AdjustQuoteFlow(RepairViewFlow):
 		main = monday.items.MainItem(self.meta['main_id'])
 
 		main.products_connect = [str(_) for _ in self.meta['product_ids']]
+		main.device_connect = [str(self.meta['device_id'])]
 
 		custom_ids_set = []
 		for custom in self.meta['custom_products']:
@@ -663,6 +664,7 @@ class AdjustQuoteFlow(RepairViewFlow):
 					notify_admins_of_error(f"Failed to delete custom line item: {e}")
 
 		main.custom_quote_connect = custom_ids_set
+		main.main_status = 'Ready to Quote'
 		main.commit()
 
 		return main

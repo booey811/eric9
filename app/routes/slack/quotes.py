@@ -239,8 +239,15 @@ def show_quote_editor(ack, body, client):
 	log.debug(body)
 
 	meta = json.loads(body['view']['private_metadata'])
-	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
-	view = flow_controller.view_quote('push')
+	if meta['flow'] == 'adjust_quote':
+		main_id = body['actions'][0]['action_id'].split('__')[1]
+		main_meta = helpers.extract_meta_from_main_item(main_id=main_id)
+		meta.update(main_meta)
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		view = flow_controller.view_quote('update')
+	else:
+		flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+		view = flow_controller.view_quote('push')
 	log.debug(view)
 	return True
 
@@ -392,8 +399,7 @@ def handle_quote_editor_submission(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	if meta['flow'] == 'adjust_quote':
 		exceptions.save_metadata(meta, f"{meta['flow']}")
-		ack({"response_action": "update",
-			 "view": builders.ResultScreenViews.get_success_screen("Processing Repair Submission")})
+		ack({"response_action": "clear"})
 		flow_controller.end_flow()
 	elif meta['flow'] == 'walk_in':
 		flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])

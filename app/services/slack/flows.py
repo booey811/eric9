@@ -491,8 +491,6 @@ class WalkInFlow(RepairViewFlow):
 	def end_flow(self):
 		exceptions.save_metadata(self.meta, f"{self.meta['flow']}__end_flow")
 
-		self.ack({"response_action": "update", "view": builders.ResultScreenViews.get_success_screen('Data submitted....')})
-
 		try:
 			user = zendesk.client.users(id=int(self.meta['user']['id']))
 
@@ -638,8 +636,6 @@ class AdjustQuoteFlow(RepairViewFlow):
 
 	@handle_errors
 	def end_flow(self):
-
-		self.ack({"response_action": "update", "view": builders.ResultScreenViews.get_success_screen('Data submitted....')})
 
 		if not self.meta['main_id']:
 			raise ValueError("No Main ID Provided, should not be possible")

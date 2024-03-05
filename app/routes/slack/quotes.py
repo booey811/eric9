@@ -392,6 +392,8 @@ def handle_quote_editor_submission(ack, client, body):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	if meta['flow'] == 'adjust_quote':
 		exceptions.save_metadata(meta, f"{meta['flow']}")
+		ack({"response_action": "update",
+			 "view": builders.ResultScreenViews.get_success_screen("Processing Repair Submission")})
 		flow_controller.end_flow()
 	elif meta['flow'] == 'walk_in':
 		flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])
@@ -439,6 +441,8 @@ def handle_repair_view_submission(ack, client, body):
 	log.debug("repair_viewer view submitted")
 	log.debug(body)
 	meta = json.loads(body['view']['private_metadata'])
+	exceptions.save_metadata(meta, f"{meta['flow']}__repair_viewer")
+	ack({"response_action": "update", "view": builders.ResultScreenViews.get_success_screen("Processing Repair Submission")})
 
 	errors = []
 	# check pre checks

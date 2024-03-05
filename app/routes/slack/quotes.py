@@ -483,7 +483,7 @@ def handle_repair_view_submission(ack, client, body):
 		return
 	else:
 		ack()
-		if conf.CONFIG == 'development':
+		if conf.CONFIG in ('DEVELOPMENT', 'TESTING'):
 			tasks.slack.submissions.process_repair_view_submission(meta)
 		else:
 			q_high.enqueue(

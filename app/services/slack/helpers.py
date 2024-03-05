@@ -58,7 +58,8 @@ def create_meta(
 		'pre_checks': [],
 		'additional_notes': '',
 		'imei_sn': '',
-		'pay_status': ''
+		'pay_status': '',
+		'pc': '',
 	}
 
 	if not user and not user_id:

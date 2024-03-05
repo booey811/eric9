@@ -173,7 +173,8 @@ class QuoteInformationViews:
 		view_blocks.append(blocks.add.simple_text_display("*OR* Browse Diagnostic Complete Items"))
 
 		search = monday.items.MainItem(search=True)
-		raw_results = monday.api.monday_connection.items.fetch_items_by_column_value(search.BOARD_ID, 'status4', 'Diagnostic Complete')
+		raw_results = monday.api.monday_connection.items.fetch_items_by_column_value(search.BOARD_ID, 'status4',
+																					 'Diagnostic Complete')
 		result_item_data = raw_results['data']['items_page_by_column_values']['items']
 		results = [monday.items.MainItem(result['id'], result) for result in result_item_data]
 
@@ -384,6 +385,11 @@ class QuoteInformationViews:
 		else:
 			initial_imei = None
 
+		if meta_dict.get('pc'):
+			initial_passcode = meta_dict['pc']
+		else:
+			initial_passcode = None
+
 		notes_blocks.append(
 			blocks.add.input_block(
 				block_title="IMEI/SN",
@@ -396,6 +402,22 @@ class QuoteInformationViews:
 				block_id="imei_sn",
 				optional=False,
 				action_id='imei_sn',
+				dispatch_action=True,
+			)
+		)
+
+		notes_blocks.append(
+			blocks.add.input_block(
+				block_title="Password",
+				element=blocks.elements.text_input_element(
+					placeholder="Enter a passcode",
+					initial_value=initial_passcode,
+					action_id='pc',
+					dispatch_config=True
+				),
+				block_id="pc",
+				optional=False,
+				action_id='pc',
 				dispatch_action=True,
 			)
 		)

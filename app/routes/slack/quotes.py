@@ -257,6 +257,18 @@ def add_imei_to_metadata(ack, client, body):
 	return True
 
 
+@slack_app.action("pc")
+def add_imei_to_metadata(ack, client, body):
+	log.debug("pc ran")
+	log.debug(body)
+	meta = json.loads(body['view']['private_metadata'])
+	pc = body['view']['state']['values']['pc']['pc']['value']
+	meta['pc'] = pc
+	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
+	flow_controller.show_repair_details('update', view_id=body['view']['id'])
+	return True
+
+
 @slack_app.action("additional_notes")
 def add_imei_to_metadata(ack, client, body):
 	log.debug("imei_sn ran")
@@ -282,6 +294,7 @@ def remove_product_from_quote(ack, body, client):
 	flow_controller.view_quote(method='update')
 	return True
 
+
 @slack_app.action("remove_custom_product")
 def remove_custom_product(ack, body, client):
 	log.debug("remove_custom_product ran")
@@ -294,7 +307,6 @@ def remove_custom_product(ack, body, client):
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	flow_controller.view_quote(method='update')
 	return True
-
 
 
 @slack_app.action('add_products')
@@ -457,9 +469,16 @@ def handle_repair_view_submission(ack, client, body):
 @slack_app.use
 def global_view_dump(body, next_):
 	log.debug("global view dump")
+
+	try:
+		data = body['view']
+	except KeyError:
+		data = body
+
+
 	q_high.enqueue(
 		f=exceptions.dump_slack_view_data,
-		kwargs={"view": body['view']}
+		kwargs={"view": data}
 	)
 	next_()
 	return

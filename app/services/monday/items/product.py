@@ -76,6 +76,7 @@ class ProductItem(BaseCacheableItem):
 		self._device_id = cache_data['device_id']
 		self.id = cache_data['id']
 		self._part_ids = cache_data['part_ids']
+		self.turnaround.value = int(cache_data['turnaround'])
 		return self
 
 	def prepare_cache_data(self):
@@ -85,7 +86,8 @@ class ProductItem(BaseCacheableItem):
 			"name": self.name,
 			"device_id": self.device_id,
 			"id": self.id,
-			"part_ids": self.part_ids
+			"part_ids": self.part_ids,
+			"turnaround": self.turnaround.value,
 		}
 
 		if not data['device_id']:

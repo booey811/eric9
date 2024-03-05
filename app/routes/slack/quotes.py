@@ -70,6 +70,7 @@ def fetch_and_show_repair_details(ack, client, body):
 
 	main_id = body['actions'][0]['action_id'].split('__')[1]
 	meta = helpers.extract_meta_from_main_item(main_id=main_id)
+	meta['flow'] = 'walk_in'
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	view = flow_controller.show_repair_details(view_id=loading_screen.data['view']['id'])
 	log.debug(view)

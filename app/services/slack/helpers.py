@@ -52,7 +52,7 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 def create_meta(
 		user_id=None, device_id=None, product_ids=None, user=None, device=None,
 		products=None, main_item=None, custom_lines=None, imei_sn=None, pay_status=None,
-		passcode=None, deadline=None
+		passcode=None, deadline: datetime.datetime = None
 ):
 	meta = {
 		'main_id': '',
@@ -118,17 +118,14 @@ def create_meta(
 	if deadline:
 		try:
 			if isinstance(deadline, str):
-				try:
-					dt = parse(deadline)
-					deadline = dt.timestamp()
-				except Exception as e:
-					notify_admins_of_error(e)
-					deadline = None
+				raise NotImplementedError("Deadline must be a datetime object")
 			elif isinstance(deadline, datetime.datetime):
-				deadline = deadline.timestamp()
+				deadline = int(deadline.timestamp())
 		except Exception as e:
 			notify_admins_of_error(e)
-			deadline = None
+			deadline = ''
+
+		meta['deadline'] = deadline
 
 	return meta
 

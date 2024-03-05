@@ -559,7 +559,6 @@ class WalkInFlow(RepairViewFlow):
 					# create custom line item
 					custom_line = monday.items.misc.CustomQuoteLineItem()
 					custom_line.price = int(custom['price'])
-					custom_line.description = custom['description']
 					custom_line = custom_line.create(custom['name'])
 					custom_ids.append(custom_line.id)
 				note += f"\n{custom['name']}"
@@ -671,7 +670,6 @@ class AdjustQuoteFlow(RepairViewFlow):
 				# create custom line item
 				custom_line = monday.items.misc.CustomQuoteLineItem()
 				custom_line.price = int(custom['price'])
-				custom_line.description = custom['description']
 				custom_line = custom_line.create(custom['name'])
 				custom_ids.append(custom_line.id)
 		main.custom_quote_connect = custom_ids
@@ -679,11 +677,13 @@ class AdjustQuoteFlow(RepairViewFlow):
 		main.custom_quote_connect = custom_ids
 		main.main_status = 'Ready to Quote'
 		main.commit()
-
-		q_high.enqueue(
-			quotes.print_quote_to_zendesk,
-			str(main.id)
-		)
+		if conf.CONFIG == 'production':
+			q_high.enqueue(
+				quotes.print_quote_to_zendesk,
+				str(main.id)
+			)
+		else:
+			quotes.print_quote_to_zendesk(str(main.id))
 
 		return main
 

@@ -100,7 +100,7 @@ class QuoteEmailGenerator(EmailBodyGenerator):
 
 		if self._custom_quote:
 			try:
-				from_custom = max([int(custom.turnaround) for custom in self._custom_quote])
+				from_custom = max([int(custom.turnaround.value) for custom in self._custom_quote])
 			except ValueError:
 				from_custom = 0
 			longest = max([longest, from_custom])

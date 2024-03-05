@@ -186,7 +186,7 @@ class CustomQuoteLineItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.description = columns.TextValue('repair_description')
 		self.price = columns.NumberValue('numbers')
-		self.turnaround_hours = columns.NumberValue('numbers3')
+		self.turnaround = columns.NumberValue('numbers3')
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 

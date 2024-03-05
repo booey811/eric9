@@ -455,10 +455,11 @@ def handle_repair_view_submission(ack, client, body):
 
 
 @slack_app.use
-def global_view_dump(body):
+def global_view_dump(body, next_):
 	log.debug("global view dump")
 	q_high.enqueue(
 		f=exceptions.dump_slack_view_data,
 		kwargs={"view": body['view']}
 	)
+	next_()
 	return

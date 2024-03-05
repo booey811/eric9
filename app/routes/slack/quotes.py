@@ -391,6 +391,7 @@ def handle_quote_editor_submission(ack, client, body):
 	meta = json.loads(body['view']['private_metadata'])
 	flow_controller = flows.get_flow(meta['flow'], client, ack, body, meta)
 	if meta['flow'] == 'adjust_quote':
+		exceptions.save_metadata(meta, f"{meta['flow']}")
 		flow_controller.end_flow()
 	elif meta['flow'] == 'walk_in':
 		flow_controller.show_repair_details('update', view_id=body['view']['previous_view_id'])

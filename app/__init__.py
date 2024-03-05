@@ -45,6 +45,7 @@ def create_app():
 	app.register_blueprint(monday_routes.typeform.typeform_bp)
 	app.register_blueprint(ai_routes.ai_blogs_bp)
 	app.register_blueprint(monday_routes.sessions.sessions_bp)
+	app.register_blueprint(monday_routes.misc.monday_misc_bp)
 
 	return app
 

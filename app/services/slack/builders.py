@@ -157,6 +157,137 @@ class EntityInformationViews:
 		return results
 
 
+class OrderViews:
+
+	@staticmethod
+	def order_build_entry_point(meta_dict, errors=None):
+		if errors is None:
+			errors = {}
+		view_blocks = []
+		# use an external select menu to search for a part
+		view_blocks.append(
+			blocks.add.input_block(
+				block_title="Search for a part",
+				element=blocks.elements.external_select_element(
+					placeholder='Enter a part name',
+					action_id="order_part_search",
+					min_query_length=3,
+					focus_on_load=True,
+				),
+				block_id="part_search",
+				dispatch_action=True,
+				action_id="order_part_search"
+			)
+		)
+
+		if errors.get("part_id"):
+			view_blocks.append(blocks.add.simple_text_display(f":no_entry:  *{errors['part_id']}*"))
+
+		order_line_blocks = []
+		order_total = 0
+		if meta_dict.get('order_lines'):
+			for line in meta_dict['order_lines']:
+				line_total = round(float(line['price']) * int(line['quantity']), 3)
+				order_total += line_total
+				order_line_block = [
+					blocks.add.section_block(
+						title=f"*{line['name']}: {line['quantity']}*",
+						accessory=blocks.elements.button_element(
+							button_text="Remove",
+							button_value=line['part_id'],
+							action_id=f"remove_order_line__{line['part_id']}",
+							button_style='danger'
+						)
+					),
+					blocks.add.simple_context_block([f"Total Cost: £{line_total}"])
+				]
+				order_line_blocks.extend(order_line_block)
+			order_line_blocks.append(blocks.add.divider_block())
+			order_line_blocks.append(blocks.add.header_block(f"Total: £{order_total}"))
+		view_blocks.extend(order_line_blocks)
+
+		return view_blocks
+
+	@staticmethod
+	def add_order_line_menu(order_line_meta, cost_method='total', errors=None):
+		if errors is None:
+			errors = {}
+		if order_line_meta is None:
+			order_line_meta = {}
+
+		if order_line_meta:
+			quantity = order_line_meta['quantity']
+			price = order_line_meta['price']
+		else:
+			quantity = None
+			price = None
+
+		if errors.get('quantity_input'):
+			quant_hint = f":no_entry:  {errors['quantity_input']}"
+		else:
+			quant_hint = None
+
+		view_blocks = [
+			blocks.add.header_block(f"Add {order_line_meta['name'][:145]}"),
+			blocks.add.input_block(
+				block_title="Quantity",
+				block_id='quantity_input',
+				element=blocks.elements.text_input_element(
+					placeholder="Enter a quantity",
+					action_id="quantity_input",
+					initial_value=quantity
+				),
+				hint=quant_hint
+			),
+		]
+
+		costing_options = [
+			blocks.objects.plain_text_object(_[0], _[1]) for _ in [
+				["Total Cost", "total"],
+				["Cost Per Unit", "unit"]
+			]
+		]
+
+		if cost_method == 'unit':
+			price_hint = 'Enter the price per single item in the order line'
+			initial_costing = ["Cost Per Unit", "unit"]
+		else:
+			price_hint = 'Enter the total cost for all items in the order line'
+			initial_costing = ["Total Cost", "total"]
+
+		view_blocks.append(
+			blocks.add.input_block(
+				block_title="Costing Method",
+				block_id='costing_method',
+				element=blocks.elements.radio_button_element(
+					action_id="costing_method",
+					options=costing_options,
+				),
+				action_id="costing_method",
+				dispatch_action=True,
+				initial_option=initial_costing
+			)
+		)
+
+		if errors.get('price_input'):
+			price_hint = f":no_entry:  {errors['price_input']}"
+
+		price_block = blocks.add.input_block(
+			block_title="Price",
+			block_id='price_input',
+			element=blocks.elements.text_input_element(
+				placeholder=price_hint,
+				action_id="price_input",
+				initial_value=price
+			),
+			hint=price_hint
+		)
+
+		view_blocks.append(price_block)
+
+		return view_blocks
+
+
 class QuoteInformationViews:
 
 	@staticmethod

@@ -128,6 +128,9 @@ class BaseItemType:
 				item_name=name,
 				column_values=self.staged_changes
 			)
+			if new_item.get('error_message'):
+				notify_admins_of_error(f"Error creating item: {new_item['error_message']}")
+				raise MondayAPIError(f"Error creating item: {new_item['error_message']}")
 			self.id = new_item['data']['create_item']['id']
 			return self
 		except Exception as e:

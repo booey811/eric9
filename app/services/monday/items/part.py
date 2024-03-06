@@ -146,7 +146,7 @@ class OrderItem(BaseItemType):
 
 
 class OrderLineItem(BaseItemType):
-	BOARD_ID = 2854362805
+	BOARD_ID = 2854374997
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.part_id = columns.TextValue("text")

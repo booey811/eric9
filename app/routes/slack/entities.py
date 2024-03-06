@@ -138,20 +138,8 @@ def return_part_options(ack, body, client):
 	log.debug("part_search ran")
 	log.debug(body)
 	search_term = body['value']
-	search_terms = search_term.split(' ')
-	all_parts = monday.items.PartItem.fetch_all()
-	part_options = []
-	for part in all_parts:
-		if 'index' in part.name.lower():
-			continue
-		if all(term.lower() in part.name.lower() for term in search_terms):
-			part_options.append(blocks.objects.plain_text_object(part.name, str(part.id)))
-		if len(part_options) > 98:
-			break
-	for dct in part_options:
-		log.debug(dct)
 
-	part_options.sort(key=lambda x: x['text']['text'].lower(), reverse=True)
+	part_options = blocks.options.create_slack_friendly_parts_options(search_term)
 
 	ack(options=part_options)
 	return True

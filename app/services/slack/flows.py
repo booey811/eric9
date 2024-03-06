@@ -767,6 +767,61 @@ class StockFlow(FlowController):
 		return view
 
 
+class OrderFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta=None):
+		if meta is None:
+			meta = {
+				"order_lines": [],
+				'current_line': {}
+			}
+		super().__init__("order", slack_client, ack, body, meta)
+
+	@handle_errors
+	def show_order_menu(self, method='update', view_id='', errors=None):
+		if errors is None:
+			errors = {}
+		blocks = builders.OrderViews.order_build_entry_point(self.meta, errors=errors)
+		view = self.get_view(
+			"Build Order",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='order_build'
+		)
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
+		return view
+
+	@handle_errors
+	def show_add_order_line_menu(self, order_line_meta, cost_method='total', method='update', view_id='', errors=None):
+		if errors is None:
+			errors = {}
+		blocks = builders.OrderViews.add_order_line_menu(order_line_meta, cost_method=cost_method, errors=errors)
+		view = self.get_view(
+			"Add Order Line",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='add_order_line'
+		)
+		if method == 'ack':
+			self.ack({'response_action': "update", "view": view})
+			return False
+		self.update_view(view, method=method, view_id=view_id)
+		self.ack()
+		return view
+
+	@staticmethod
+	def get_order_line_meta(name='', quantity=0, price=None, part_id=None):
+		return {
+			"name": name,
+			"quantity": int(quantity),
+			"price": price,
+			"part_id": part_id
+		}
+
+
+
+
 def get_flow(flow_name, slack_client, ack, body, meta=None):
 	if flow_name == 'walk_in':
 		return WalkInFlow(slack_client, ack, body, meta)

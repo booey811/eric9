@@ -35,6 +35,14 @@ class BaseItemType:
 				break
 		return items
 
+	@classmethod
+	def get(cls, item_ids):
+		results = []
+		item_data = get_api_items(item_ids)
+		for item in item_data:
+			results.append(cls(item['id'], item))
+		return results
+
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 		self.id = item_id
 		self.name = None

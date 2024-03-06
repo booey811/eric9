@@ -8,7 +8,7 @@ from ...tasks.monday import stock_control as stock_tasks
 
 log = logging.getLogger('eric')
 
-stock_control_bp = Blueprint('monday_stock_control', __name__)
+stock_control_bp = Blueprint('monday_stock_control', __name__, url_prefix="/monday/stock-control")
 
 @stock_control_bp.route("/orders/process", methods=['POST'])
 @monday.monday_challenge

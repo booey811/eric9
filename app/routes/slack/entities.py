@@ -163,5 +163,5 @@ def stock_check_part_info(ack, body, client):
 	log.debug(body)
 	part_id = body['actions'][0]['selected_option']['value']
 	flow_controller = flows.StockFlow(client, ack, body, meta={})
-	flow_controller.show_stock_info(part_id, method='push')
+	flow_controller.show_stock_info([part_id], method='push')
 	return True

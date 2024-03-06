@@ -140,6 +140,7 @@ class OrderItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.app_meta = columns.LongTextValue("long_text")
 		self.order_status = columns.StatusValue("status7")
+		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		super().__init__(item_id, api_data, search)
 

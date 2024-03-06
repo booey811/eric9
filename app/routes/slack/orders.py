@@ -4,8 +4,14 @@ import re
 
 from ...services.slack import slack_app, blocks, flows
 from ...services import monday
+from ...tasks.slack import submissions as slack_submissions
+from ...cache.rq import q_low
+
+import config
 
 log = logging.getLogger('eric')
+
+conf = config.get_config()
 
 
 @slack_app.action("receive_order")
@@ -110,4 +116,15 @@ def remove_order_line_from_order(ack, body, client):
 	meta['order_lines'] = [_ for _ in meta['order_lines'] if str(_['part_id']) != str(part_id)]
 	flow_controller = flows.OrderFlow(client, ack, body, meta)
 	flow_controller.show_order_menu(method='update', view_id=body['view']['previous_view_id'])
+	return True
+
+
+@slack_app.view("order_build")
+def handle_order_submission(body, ack):
+	log.debug("order_menu ran")
+	ack()
+	if conf.CONFIG in ("DEVELOPMENT", "TESTING"):
+		slack_submissions.process_slack_order_submission(json.loads(body['view']['private_metadata']))
+	else:
+		q_low.enqueue(slack_submissions.process_slack_order_submission, json.loads(body['view']['private_metadata']))
 	return True

@@ -46,6 +46,7 @@ def create_app():
 	app.register_blueprint(ai_routes.ai_blogs_bp)
 	app.register_blueprint(monday_routes.sessions.sessions_bp)
 	app.register_blueprint(monday_routes.misc.monday_misc_bp)
+	app.register_blueprint(monday_routes.stock_control.stock_control_bp)
 
 	return app
 

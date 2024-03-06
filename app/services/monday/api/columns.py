@@ -95,10 +95,10 @@ class NumberValue(ValueType):
 
 	@value.setter
 	def value(self, new_value):
-		if isinstance(new_value, int):  # or any other condition you want to check
+		if isinstance(new_value, (int, float)):  # or any other condition you want to check
 			self._value = new_value
 		else:
-			raise ValueError("Invalid value")
+			raise ValueError(f"Invalid value: {new_value} ({type(new_value)})")
 
 	def column_api_data(self, search=None):
 		# prepare self.value for submission here

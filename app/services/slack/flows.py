@@ -616,6 +616,7 @@ class HomeScreenFlow:
 			["Walk In", "walk_from_home"],
 			['Check Stock', 'check_stock'],
 			['Adjust Quote', 'adjust_quote'],
+			['Receive Order', 'receive_order'],
 		]
 		buttons = []
 		for button in button_data:
@@ -748,14 +749,19 @@ class StockFlow(FlowController):
 		return view
 
 	@handle_errors
-	def show_stock_info(self, part_id, method='update'):
-		blocks = builders.EntityInformationViews.view_part(part_id)
+	def show_stock_info(self, part_ids: list, method='update'):
+		blocks = []
+		for part_id in part_ids:
+			part_blocks = builders.EntityInformationViews.view_part(part_id)
+			blocks.extend(part_blocks)
+
 		view = self.get_view(
 			"Parts Info",
 			blocks=blocks,
 			submit='',
 			close='Go Back'
 		)
+
 		self.update_view(view, method=method)
 		self.ack()
 		return view

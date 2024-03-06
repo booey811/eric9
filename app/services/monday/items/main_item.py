@@ -37,6 +37,8 @@ class MainItem(items.BaseItemType):
 		self.imeisn = columns.TextValue("text4")
 		self.passcode = columns.TextValue('text8')
 
+		self.device_deprecated_dropdown = columns.DropdownValue("device0")
+
 		# payment info
 		self.payment_status = columns.StatusValue("payment_status")
 		self.payment_method = columns.StatusValue("payment_method")

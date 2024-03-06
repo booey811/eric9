@@ -541,6 +541,8 @@ class WalkInFlow(RepairViewFlow):
 			main.products_connect = [str(product.id) for product in products]
 			main.imeisn = self.meta['imei_sn']
 			main.passcode = self.meta['pc']
+			main.email = user.email
+			main.phone = user.phone or "No Number Found"
 
 			try:
 				deadline_dt = datetime.datetime.fromtimestamp(self.meta['deadline'])
@@ -583,6 +585,15 @@ class WalkInFlow(RepairViewFlow):
 				note += f"\n\nADDITIONAL NOTES\n{self.meta['additional_notes']}"
 
 			main.add_update(note, main.notes_thread_id.value)
+
+			monday.api.monday_connection.items.change_multiple_column_values(
+				main.BOARD_ID,
+				main.id,
+				{
+					"device0": {"labels": [str(device.name)]}
+				}
+			)
+
 		except Exception as e:
 			notify_admins_of_error(e)
 			raise e

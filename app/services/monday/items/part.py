@@ -132,3 +132,25 @@ class InventoryAdjustmentItem(BaseItemType):
 		self.source_url = columns.LinkURLValue("link2")
 
 		super().__init__(item_id, api_data, search)
+
+
+class OrderItem(BaseItemType):
+	BOARD_ID = 2854362805
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
+		self.app_meta = columns.LongTextValue("long_text")
+		self.order_status = columns.StatusValue("status7")
+
+		super().__init__(item_id, api_data, search)
+
+
+class OrderLineItem(BaseItemType):
+	BOARD_ID = 2854362805
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
+		self.part_id = columns.TextValue("text")
+		self.price = columns.NumberValue("numbers_1")
+		self.quantity = columns.NumberValue("numbers5")
+		self.processing_status = columns.StatusValue("status6")
+
+		super().__init__(item_id, api_data, search)

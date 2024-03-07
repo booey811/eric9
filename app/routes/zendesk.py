@@ -3,7 +3,6 @@ import json
 from flask import Blueprint, request, jsonify
 
 from ..cache.rq import q_high
-from ..services import zendesk
 from ..tasks import sync_platform
 
 import config
@@ -27,7 +26,8 @@ def zendesk_creates_monday_ticket():
 			sync_platform.sync_to_monday(ticket_id)
 		else:
 			q_high.enqueue(
-				sync_platform.sync_to_monday(ticket_id)
+				sync_platform.sync_to_monday,
+				ticket_id
 			)
 	else:
 		raise ValueError(f"Invalid event: {event}")

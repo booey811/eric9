@@ -2,7 +2,7 @@ from zenpy.lib.api_objects import Ticket, CustomField, Comment
 
 from ..services.monday import items
 from ..services.monday.api.exceptions import MondayDataError
-from ..services import zendesk
+from ..services import zendesk, monday
 from ..utilities import notify_admins_of_error
 
 field_ids = zendesk.custom_fields.FIELDS_DICT
@@ -122,7 +122,8 @@ def sync_to_zendesk(main_item_id, ticket_id):
 		if main_item.booking_date.value:
 			try:
 				if not main_item.service.value:
-					raise MondayDataError("Cannot convert Booking Date to string, please select which service the client will be using")
+					raise MondayDataError(
+						"Cannot convert Booking Date to string, please select which service the client will be using")
 				if 'mail' in main_item.service.value.lower():
 					# mail format: on Wednesday 14th February
 					ds = main_item.booking_date.value.strftime("on %A %d %B")
@@ -165,3 +166,159 @@ def sync_to_zendesk(main_item_id, ticket_id):
 		notify_admins_of_error(message)
 
 	return ticket
+
+
+def sync_to_monday(ticket_id, main_id=''):
+	ticket = zendesk.client.tickets(id=ticket_id)
+	user = zendesk.client.users(id=ticket.requester_id)
+
+	if user.organization:
+		name = f"{user.name} ({user.organization.name})"
+	else:
+		name = user.name
+
+	if not main_id:
+		main_item = items.MainItem().create(name=name, reload=True)
+		main_item.notifications_status = 'ON'
+		main_item.ticket_id = str(ticket.id)
+		main_item.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
+		main_item.email = user.email
+		main_item.phone = user.phone or 'No Number Found'
+		ticket.custom_fields.append(CustomField(
+			id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
+			value=str(main_item.id)
+		))
+	else:
+		main_item = items.MainItem(main_id).load_from_api()
+
+	try:
+		# status
+		try:
+			status_tag = [t for t in ticket.tags if 'repair_status-' in t][0]
+			status_index = int(status_tag.split('-')[1])
+			status_label = main_item.convert_dropdown_ids_to_labels([status_index], main_item.main_status.column_id)[0]
+		except IndexError:
+			status_label = "Awaiting Confirmation"
+
+		# client
+		try:
+			client_tag = [t for t in ticket.tags if 'client-' in t][0]
+			client_index = int(client_tag.split('-')[1])
+			client_label = main_item.convert_dropdown_ids_to_labels([client_index], main_item.client.column_id)[0]
+		except IndexError:
+			client_label = "End User"
+
+		# service
+		try:
+			service_tag = [t for t in ticket.tags if 'service-' in t][0]
+			service_index = int(service_tag.split('-')[1])
+			service_label = main_item.convert_dropdown_ids_to_labels([service_index], main_item.service.column_id)[0]
+		except IndexError:
+			service_label = "Unconfirmed"
+
+		# repair type
+		try:
+			repair_tag = [t for t in ticket.tags if 'repair_type-' in t][0]
+			repair_index = int(repair_tag.split('-')[1])
+			repair_label = main_item.convert_dropdown_ids_to_labels([repair_index], main_item.repair_type.column_id)[0]
+		except IndexError:
+			repair_label = "Repair"
+
+		# imeisn
+		imei_field_id = zendesk.custom_fields.FIELDS_DICT['imeisn']
+		imeisn = None
+		for cf in ticket.custom_fields:
+			if cf['id'] == imei_field_id:
+				imeisn = cf['value']
+				break
+
+		# passcode
+		pc_field_id = zendesk.custom_fields.FIELDS_DICT['passcode']
+		passcode = None
+		for cf in ticket.custom_fields:
+			if cf['id'] == pc_field_id:
+				passcode = cf['value']
+				break
+
+		# device id
+		try:
+			device_tag = [t for t in ticket.tags if 'device__' in t][0]
+			device_id = int(device_tag.split('__')[1])
+		except IndexError:
+			device_id = 4028854241  # other device
+
+		# product ids
+		product_ids = [int(t.split('__')[1]) for t in ticket.tags if 'product__' in t]
+
+		def determine_address():
+			# fetch from ticket
+			_notes = ''
+			_street = ''
+			_postcode = ''
+
+			ticket_street = None
+			ticket_post = None
+			ticket_notes = None
+
+			for f in ticket.custom_fields:
+				if f['id'] == 360006582778:  # street
+					ticket_street = cf['value']
+					break
+
+			for f in ticket.custom_fields:
+				if f['id'] == 360006582758:  # postcode
+					ticket_post = cf['value']
+					break
+
+			for f in ticket.custom_fields:
+				if f['id'] == 360006582798:  # address notes
+					ticket_notes = cf['value']
+					break
+
+			# fetch from user
+			requester = ticket.requester
+			requester_street = requester.user_fields['street_address']
+			requester_post = requester.user_fields['post_code']
+			requester_notes = requester.user_fields['company_flat_number']
+
+			org = requester.organization
+			if org:
+				org_street = org.organization_fields['street_address']
+				org_post = org.organization_fields['postcode']
+				org_notes = org.organization_fields['company_flat_number']
+			else:
+				org_street = ""
+				org_post = ""
+				org_notes = ""
+
+			_street = ticket_street or requester_street or org_street
+			_postcode = ticket_post or requester_post or org_post
+			_notes = ticket_notes or requester_notes or org_notes
+
+			return [_notes, _street, _postcode]
+
+		address_notes, address_street, address_postcode = determine_address()
+
+		main_item.main_status = status_label
+		main_item.client = client_label
+		main_item.service = service_label
+		main_item.repair_type = repair_label
+		if imeisn:
+			main_item.imeisn = imeisn
+		if passcode:
+			main_item.passcode = passcode
+		main_item.address_notes = address_notes
+		main_item.address_street = address_street
+		main_item.address_postcode = address_postcode
+		main_item.device_id = device_id
+		main_item.products_connect = product_ids
+
+		main_item.commit()
+		zendesk.client.tickets.update(ticket)
+	except Exception as e:
+		ticket.status = 'open'
+		ticket.comment = Comment(
+			public=False,
+			body=f"Could not sync to Monday: {e}"
+		)
+		raise e

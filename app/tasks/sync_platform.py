@@ -265,10 +265,12 @@ def sync_to_monday(ticket_id, main_id=''):
 			products = monday.items.ProductItem.get(product_ids)
 			description = ""
 			for prod in products:
-				description += str(prod.name.lower().replace(device.name.lower(), "")).strip().capitalize() + ', '
+				description += str(prod.name.lower().replace(device.name.lower(), "").capitalize()).strip() + ', '
 		else:
 			products = []
 			description = "No products connected"
+
+		description.strip()
 
 		if ticket.organization:
 			if ticket.organization.organization_fields['payment_method'] == 'pay_method_xero_invoice':
@@ -342,11 +344,17 @@ def sync_to_monday(ticket_id, main_id=''):
 		if product_ids:
 			main_item.products_connect = product_ids
 
-		main_item.device_deprecated_dropdown = [device.name]
 		main_item.description = description
 
 		main_item.commit()
 		zendesk.client.tickets.update(ticket)
+
+		monday.api.monday_connection.items.change_item_value(
+			board_id=main_item.BOARD_ID,
+			item_id=main_item.id,
+			column_id=main_item.device_deprecated_dropdown.column_id,
+			value={"labels": [str(device.name)]}
+		)
 	except Exception as e:
 		ticket.status = 'open'
 		ticket.comment = Comment(

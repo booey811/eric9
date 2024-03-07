@@ -77,6 +77,7 @@ class MainItem(items.BaseItemType):
 		if reload:
 			self.load_from_api()
 			self._check_update_threads()
+		return self
 
 	def _check_update_threads(self):
 		if self.id:

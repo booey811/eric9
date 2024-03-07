@@ -257,8 +257,23 @@ def sync_to_monday(ticket_id, main_id=''):
 		except IndexError:
 			device_id = 4028854241  # other device
 
+		device = monday.items.DeviceItem(device_id)
+
 		# product ids
 		product_ids = [int(t.split('__')[1]) for t in ticket.tags if 'product__' in t]
+		if product_ids:
+			products = monday.items.ProductItem.get(product_ids)
+			description = ""
+			for prod in products:
+				description += str(prod.name.lower().replace(device.name.lower())).capitalize() + ', '
+		else:
+			products = []
+			description = "No products connected"
+
+		if ticket.organization:
+			if ticket.organization.organization_fields['payment_method'] == 'pay_method_xero_invoice':
+				main_item.pay_method.value = 'Invoiced - Xero'
+				main_item.pay_status.value = 'Corporate - Pay Later'
 
 		def determine_address():
 			# fetch from ticket
@@ -324,7 +339,11 @@ def sync_to_monday(ticket_id, main_id=''):
 		if address_postcode:
 			main_item.address_postcode = address_postcode
 		main_item.device_id = device_id
-		main_item.products_connect = product_ids
+		if product_ids:
+			main_item.products_connect = product_ids
+
+		main_item.device_deprecated_dropdown = [device.name]
+		main_item.description = description
 
 		main_item.commit()
 		zendesk.client.tickets.update(ticket)

@@ -15,8 +15,6 @@ zendesk_bp = Blueprint('zendesk', __name__, url_prefix='/zendesk')
 @zendesk_bp.route('/index', methods=['POST', 'GET'])
 def zendesk_creates_monday_ticket():
 	data = request.get_data().decode()
-	print(data)
-	print(type(data))
 	data = json.loads(data)
 	ticket_id = data['id']
 	event = data['event']

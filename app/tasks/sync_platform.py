@@ -178,16 +178,26 @@ def sync_to_monday(ticket_id, main_id=''):
 		name = user.name
 
 	if not main_id:
-		main_item = items.MainItem().create(name=name, reload=True)
-		main_item.notifications_status = 'ON'
-		main_item.ticket_id = str(ticket.id)
-		main_item.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
-		main_item.email = user.email
-		main_item.phone = user.phone or 'No Number Found'
-		ticket.custom_fields.append(CustomField(
-			id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
-			value=str(main_item.id)
-		))
+		# main_id_from_ticket
+		main_id_from_ticket_field_id = zendesk.custom_fields.FIELDS_DICT['main_item_id']
+		for cf in ticket.custom_fields:
+			if cf['id'] == main_id_from_ticket_field_id:
+				main_id = cf['value']
+				if main_id:
+					main_item = items.MainItem(main_id).load_from_api()
+					break
+
+		if not main_id:
+			main_item = items.MainItem().create(name=name, reload=True)
+			main_item.notifications_status = 'ON'
+			main_item.ticket_id = str(ticket.id)
+			main_item.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
+			main_item.email = user.email
+			main_item.phone = user.phone or 'No Number Found'
+			ticket.custom_fields.append(CustomField(
+				id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
+				value=str(main_item.id)
+			))
 	else:
 		main_item = items.MainItem(main_id).load_from_api()
 

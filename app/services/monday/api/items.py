@@ -177,12 +177,24 @@ class BaseItemType:
 
 		settings = json.loads(column_data['settings_str'])['labels']
 		labels = []
-		for _id in ids_list:
-			try:
-				labels.append(settings[str(_id)])
-			except KeyError:
-				raise MondayDataError(f"Could not find label for ID {_id} in column {column_data['title']}")
-		return labels
+
+		if isinstance(settings, dict):
+			for _id in ids_list:
+				try:
+					labels.append(settings[str(_id)])
+				except KeyError:
+					raise MondayDataError(f"Could not find label for ID {_id} in column {column_data['title']}")
+			return labels
+		elif isinstance(settings, list):
+			for _id in ids_list:
+				try:
+					desired_entry = [label for label in settings if str(label['id']) == str(_id)][0]
+					labels.append(desired_entry['name'])
+				except IndexError:
+					raise MondayDataError(f"Could not find label for ID {_id} in column {column_data['title']}")
+			return labels
+		else:
+			raise MondayDataError(f"Unknown settings type for column {column_data['title']}: {type(settings)}")
 
 
 class BaseCacheableItem(BaseItemType):

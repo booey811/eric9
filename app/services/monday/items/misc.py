@@ -66,7 +66,7 @@ class TypeFormWalkInResponseItem(BaseItemType):
 	email = columns.TextValue('text_1')
 	device_type = columns.StatusValue('device_category')
 	device = columns.TextValue('device6')
-	repair_notes = columns.TextValue('text5')
+	repair_notes = columns.TextValue('text7')
 	push_to_slack = columns.StatusValue('status6')
 
 	def sync_typeform_data(self):
@@ -145,6 +145,9 @@ class TypeFormWalkInResponseItem(BaseItemType):
 		main.service = 'Walk-In'
 		main.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
 		main.commit()
+
+		self.push_to_slack = 'Do Now!'
+		self.commit()
 
 		return self
 

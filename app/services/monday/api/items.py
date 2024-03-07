@@ -179,7 +179,7 @@ class BaseItemType:
 		labels = []
 		for _id in ids_list:
 			try:
-				labels.append(settings[str(_id)])
+				labels.append(settings[int(_id)])
 			except KeyError:
 				raise MondayDataError(f"Could not find label for ID {_id} in column {column_data['title']}")
 		return labels

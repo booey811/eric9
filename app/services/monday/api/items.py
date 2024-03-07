@@ -178,7 +178,10 @@ class BaseItemType:
 		settings = json.loads(column_data['settings_str'])['labels']
 		labels = []
 		for _id in ids_list:
-			labels.append([i['name'] for i in settings if str(i['id']) == str(_id)][0])
+			try:
+				labels.append(settings[str(_id)])
+			except KeyError:
+				raise MondayDataError(f"Could not find label for ID {_id} in column {column_data['title']}")
 		return labels
 
 

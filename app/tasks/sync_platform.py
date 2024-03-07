@@ -309,17 +309,20 @@ def sync_to_monday(ticket_id, main_id=''):
 
 		address_notes, address_street, address_postcode = determine_address()
 
-		main_item.main_status = status_label
-		main_item.client = client_label
-		main_item.service = service_label
-		main_item.repair_type = repair_label
+		main_item.main_status = status_label or "Awaiting Confirmation"
+		main_item.client = client_label or "End User"
+		main_item.service = service_label or 'Unconfirmed'
+		main_item.repair_type = repair_label or "Repair"
 		if imeisn:
 			main_item.imeisn = imeisn
 		if passcode:
 			main_item.passcode = passcode
-		main_item.address_notes = address_notes
-		main_item.address_street = address_street
-		main_item.address_postcode = address_postcode
+		if address_notes:
+			main_item.address_notes = address_notes
+		if address_street:
+			main_item.address_street = address_street
+		if address_postcode:
+			main_item.address_postcode = address_postcode
 		main_item.device_id = device_id
 		main_item.products_connect = product_ids
 

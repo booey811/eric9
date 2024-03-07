@@ -17,9 +17,6 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.tasks import sync_platform
-		from app.tasks.monday import typeform
-		typeform.sync_typeform_response_with_monday(6212761255)
-		# sync_platform.sync_to_monday(25919)
+		pass
 	else:
 		raise Exception(f"Invalid ENV: {env}")

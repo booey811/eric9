@@ -265,7 +265,7 @@ def sync_to_monday(ticket_id, main_id=''):
 			products = monday.items.ProductItem.get(product_ids)
 			description = ""
 			for prod in products:
-				description += str(prod.name.lower().replace(device.name.lower())).capitalize() + ', '
+				description += str(prod.name.lower().replace(device.name.lower(), "")).strip().capitalize() + ', '
 		else:
 			products = []
 			description = "No products connected"

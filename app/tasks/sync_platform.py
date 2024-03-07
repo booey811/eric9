@@ -184,7 +184,6 @@ def sync_to_monday(ticket_id, main_id=''):
 			if cf['id'] == main_id_from_ticket_field_id:
 				main_id = cf['value']
 				if main_id:
-					main_item = items.MainItem(main_id).load_from_api()
 					break
 
 		if not main_id:
@@ -198,6 +197,8 @@ def sync_to_monday(ticket_id, main_id=''):
 				id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
 				value=str(main_item.id)
 			))
+		else:
+			main_item = items.MainItem(main_id).load_from_api()
 	else:
 		main_item = items.MainItem(main_id).load_from_api()
 

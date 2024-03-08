@@ -29,3 +29,11 @@ def show_stock_count_form(ack, body, client):
 	flow_controller = flows.CountsFlow(slack_client=client, ack=ack, body=body, meta=meta)
 	flow_controller.show_stock_count_form(selected_device_type, selected_part_type)
 	return True
+
+
+@slack_app.view("stock_count_form")
+def process_stock_count_form_submission(ack, body, client):
+	log.info('processing stock count form submission')
+	meta = json.loads(body['view']['private_metadata'])
+
+	return True

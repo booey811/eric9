@@ -849,45 +849,51 @@ class CountsFlow(FlowController):
 
 		loading_view = builders.ResultScreenViews.get_loading_screen("Fetching Devices....", modal=True)
 		loading_view['external_id'] = 'loading_screen'
-
 		f = self.ack({
 			"response_action": "push",
 			"view": loading_view
 		})
 
-		all_devices = monday.items.DeviceItem.fetch_all()
-		devices = []
-		part_ids = []
-		for device in all_devices:
-			try:
-				device_type_from_monday = device.device_type.value.lower()
-			except AttributeError:
-				notify_admins_of_error(f"Device {device.id} has no device type: Cannot Add to Count")
-				continue
-
-			if device_type_from_monday == device_type.lower():
-				devices.append(device)
-
-		log.debug(f"Devices for count: {devices}")
-
-		for device in devices:
-			products = device.products
-			for product in products:
+		if device_type.lower() == 'test' and part_type.lower() == 'test':
+			loading_screen = self.client.views_update(
+				external_id='loading_screen',
+				view=builders.ResultScreenViews.get_loading_screen("Fetching TESTS....", modal=True)
+			)
+			parts_data = monday.api.get_api_items(conf.MONDAY_TEST_ITEM_IDS['parts'])
+		else:
+			all_devices = monday.items.DeviceItem.fetch_all()
+			devices = []
+			part_ids = []
+			for device in all_devices:
 				try:
-					part_type_from_monday = product.product_type.value.lower()
+					device_type_from_monday = device.device_type.value.lower()
 				except AttributeError:
-					notify_admins_of_error(f"Product {product.id} has no part type: Cannot Add to Count")
+					notify_admins_of_error(f"Device {device.id} has no device type: Cannot Add to Count")
 					continue
 
-				if part_type_from_monday in part_type.lower():
-					part_ids.extend(product.part_ids)
+				if device_type_from_monday == device_type.lower():
+					devices.append(device)
 
-		loading_screen = self.client.views_update(
-			external_id='loading_screen',
-			view=builders.ResultScreenViews.get_loading_screen("Fetching Parts....", modal=True)
-		)
+			log.debug(f"Devices for count: {devices}")
 
-		parts_data = monday.api.get_api_items(part_ids)
+			for device in devices:
+				products = device.products
+				for product in products:
+					try:
+						part_type_from_monday = product.product_type.value.lower()
+					except AttributeError:
+						notify_admins_of_error(f"Product {product.id} has no part type: Cannot Add to Count")
+						continue
+
+					if part_type_from_monday in part_type.lower():
+						part_ids.extend(product.part_ids)
+
+			loading_screen = self.client.views_update(
+				external_id='loading_screen',
+				view=builders.ResultScreenViews.get_loading_screen("Fetching Parts....", modal=True)
+			)
+
+			parts_data = monday.api.get_api_items(part_ids)
 		all_parts = [monday.items.PartItem(part['id'], part) for part in parts_data]
 		parts_info = []
 		for part in all_parts:

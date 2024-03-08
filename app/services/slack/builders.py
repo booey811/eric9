@@ -7,6 +7,9 @@ from .. import monday
 from ..monday import items
 from ..zendesk import helpers as zendesk_helpers, client as zendesk_client
 from ...cache import get_redis_connection
+import config
+
+conf = config.get_config()
 
 
 class EntityInformationViews:
@@ -813,6 +816,8 @@ class StockCountViews:
 		view_blocks = []
 
 		device_types = ['iPhone', 'iPad', 'Mac', 'Watch', 'MacBook', 'Other']
+		if conf.CONFIG == 'TESTING':
+			device_types.append('Test')
 
 		view_blocks.append(
 			blocks.add.input_block(
@@ -828,6 +833,8 @@ class StockCountViews:
 		)
 
 		part_types = ['Screen/LCD', 'Battery', 'Rear Camera', 'Other']
+		if conf.CONFIG == 'TESTING':
+			part_types.append('Test')
 
 		view_blocks.append(
 			blocks.add.input_block(

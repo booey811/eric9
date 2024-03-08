@@ -617,6 +617,7 @@ class HomeScreenFlow:
 			['Check Stock', 'check_stock'],
 			['Adjust Quote', 'adjust_quote'],
 			['Receive Order', 'receive_order'],
+			['Start Count', 'start_count'],
 		]
 		buttons = []
 		for button in button_data:
@@ -818,6 +819,29 @@ class OrderFlow(FlowController):
 			"price": price,
 			"part_id": part_id
 		}
+
+
+class CountsFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta=None):
+		if not meta:
+			meta = {
+				"count_lines": [],
+			}
+		super().__init__("count", slack_client, ack, body, meta)
+
+	@handle_errors
+	def show_stock_count_entry_point(self):
+		blocks = builders.StockCountViews.stock_count_entry_point()
+		view = self.get_view(
+			"Stock Count",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='stock_count_entry_point'
+		)
+		self.update_view(view, method='open')
+		self.ack()
+		return view
 
 
 

@@ -805,6 +805,46 @@ class QuoteInformationViews:
 		return view_blocks
 
 
+class StockCountViews:
+
+	@staticmethod
+	def stock_count_entry_point():
+		"""show options for generating the subsequent count forms"""
+		view_blocks = []
+
+		device_types = ['iPhone', 'iPad', 'Mac', 'Watch', 'MacBook', 'Other']
+
+		view_blocks.append(
+			blocks.add.input_block(
+				block_title="Select a device type",
+				element=blocks.elements.static_select_element(
+					placeholder="Select a device type",
+					action_id="stock_count_device_type",
+					options=[blocks.objects.option_object(_, _.lower()) for _ in device_types]
+				),
+				block_id="device_type_select",
+				action_id="stock_count_device_type"
+			)
+		)
+
+		part_types = ['Screen/LCD', 'Battery', 'Rear Camera', 'Other']
+
+		view_blocks.append(
+			blocks.add.input_block(
+				block_title="Select a part type",
+				element=blocks.elements.static_select_element(
+					placeholder="Select a part type",
+					action_id="stock_count_part_type",
+					options=[blocks.objects.option_object(_, _.lower()) for _ in part_types]
+				),
+				block_id="part_type_select",
+				action_id="stock_count_part_type"
+			)
+		)
+
+		return view_blocks
+
+
 class UserInformationView:
 
 	@staticmethod

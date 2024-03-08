@@ -97,7 +97,7 @@ class FlowController:
 
 		if self.meta:
 			view['private_metadata'] = json.dumps(self.meta)
-			if conf.SLACK_SHOW_META == 'True':
+			if conf.SLACK_SHOW_META == 'True' and self.flow != 'count':
 				blocks.append(s_blocks.add.simple_text_display(f"*MetaData* ({len(view['private_metadata'])} chars)",
 															   block_id=helpers.generate_unique_block_id()))
 				blocks.append(
@@ -834,16 +834,83 @@ class CountsFlow(FlowController):
 	def show_stock_count_entry_point(self):
 		blocks = builders.StockCountViews.stock_count_entry_point()
 		view = self.get_view(
-			"Stock Count",
+			"Generate Stock Count",
 			blocks=blocks,
 			close='Cancel',
+			submit="Generate",
 			callback_id='stock_count_entry_point'
 		)
 		self.update_view(view, method='open')
 		self.ack()
 		return view
 
+	@handle_errors
+	def show_stock_count_form(self, device_type, part_type):
 
+		loading_view = builders.ResultScreenViews.get_loading_screen("Fetching Devices....", modal=True)
+		loading_view['external_id'] = 'loading_screen'
+
+		f = self.ack({
+			"response_action": "push",
+			"view": loading_view
+		})
+
+		all_devices = monday.items.DeviceItem.fetch_all()
+		devices = []
+		part_ids = []
+		for device in all_devices:
+			try:
+				device_type_from_monday = device.device_type.value.lower()
+			except AttributeError:
+				notify_admins_of_error(f"Device {device.id} has no device type: Cannot Add to Count")
+				continue
+
+			if device_type_from_monday == device_type.lower():
+				devices.append(device)
+
+		log.debug(f"Devices for count: {devices}")
+
+		for device in devices:
+			products = device.products
+			for product in products:
+				try:
+					part_type_from_monday = product.product_type.value.lower()
+				except AttributeError:
+					notify_admins_of_error(f"Product {product.id} has no part type: Cannot Add to Count")
+					continue
+
+				if part_type_from_monday in part_type.lower():
+					part_ids.extend(product.part_ids)
+
+		loading_screen = self.client.views_update(
+			external_id='loading_screen',
+			view=builders.ResultScreenViews.get_loading_screen("Fetching Parts....", modal=True)
+		)
+
+		parts_data = monday.api.get_api_items(part_ids)
+		all_parts = [monday.items.PartItem(part['id'], part) for part in parts_data]
+		parts_info = []
+		for part in all_parts:
+			parts_info.append({
+				"part_id": str(part.id),
+				"counted": 0,
+				"expected": int(part.stock_level.value),
+				"name": part.name
+			})
+			self.meta['count_lines'].append({
+				"part_id": str(part.id),
+				"counted": 0
+			})
+
+		blocks = builders.StockCountViews.stock_count_form(parts_info)
+		view = self.get_view(
+			"Stock Count",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='stock_count_form'
+		)
+		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+		return view
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

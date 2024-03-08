@@ -844,6 +844,28 @@ class StockCountViews:
 
 		return view_blocks
 
+	@staticmethod
+	def stock_count_form(count_lines):
+		view_blocks = []
+
+		count_lines = sorted(count_lines, key=lambda x: x['name'])
+
+		for line in count_lines:
+			if line['counted']:
+				initial = line['counted']
+			else:
+				initial = None
+			view_blocks.append(blocks.add.input_block(
+				block_title=f"{line['name']} ({line['expected']} expected)",
+				element=blocks.elements.text_input_element(
+					placeholder=0,
+					action_id=f"stock_count__{line['part_id']}",
+					initial_value=initial
+				)
+			))
+
+		return view_blocks
+
 
 class UserInformationView:
 

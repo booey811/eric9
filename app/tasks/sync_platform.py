@@ -392,7 +392,7 @@ def sync_to_external_corporate_boards(main_id):
 
 		if main_item.corp_item_id.value:
 			corporate_repair_class = items.corporate.get_corporate_repair_class_by_board_id(
-				main_item.corporate_board_id.value
+				main_item.corp_item_id.value
 			)
 			if not corporate_repair_class:
 				raise ValueError(f"Could not find corporate repair board for {main_item.corporate_board_id.value}")

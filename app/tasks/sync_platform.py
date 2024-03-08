@@ -390,13 +390,22 @@ def sync_to_external_corporate_boards(main_id):
 	try:
 		main_item = items.MainItem(main_id).load_from_api()
 
+		if not main_item.ticket_id.value:
+			raise ValueError(f"{str(main_item)} does not have a ticket_id")
+
+		ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
+		corp_repair_board_id = ticket.organization.organization_fields['corporate_repair_board_id']
+		if not corp_repair_board_id:
+			# no corporate repairs board setup - ignore
+			return False
+
 		if main_item.corp_item_id.value:
 			corporate_repair_class = items.corporate.get_corporate_repair_class_by_board_id(
-				main_item.corp_item_id.value
+				corp_repair_board_id
 			)
 			if not corporate_repair_class:
 				raise ValueError(f"Could not find corporate repair board for {main_item.corp_item_id.value}")
-			corporate_repair_item = corporate_repair_class(main_item.corp_item_id.value).load_from_api()
+			corporate_repair_item = corporate_repair_class.get_from_ticket_id(main_item.ticket_id.value)
 		else:
 			return False
 

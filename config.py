@@ -82,6 +82,22 @@ class Config(object):
 	UNDER_REPAIR_GROUP_ID = "new_group22081"
 	TODAYS_REPAIRS_GROUP_ID = "new_group70029"
 
+	MONDAY_TEST_ITEM_IDS = {
+		"parts": [
+			2101356466,  # TEST BATTERY PART ITEM
+			2109687361,  # TEST PART ITEM
+			3607830355,  # TEST SCREEN PART ITEM
+		],
+		"devices": [
+			3926445975,  # Test device
+		],
+		"products": [
+			3331258333,  # TEST BATTEY PRODUCT
+			3607829530,  # TEST GLASS TOUCH PRODUCT
+			3607829981,  # TEST DISPLAY PRODUCT
+		]
+	}
+
 	# MONDAY KEYS
 	MONDAY_KEYS = {
 		"system": os.environ["MON_SYSTEM"],

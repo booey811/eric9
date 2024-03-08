@@ -168,7 +168,7 @@ def sync_to_zendesk(main_item_id, ticket_id):
 	return ticket
 
 
-def sync_to_monday(ticket_id, main_id=''):
+def sync_to_monday(ticket_id):
 	ticket = zendesk.client.tickets(id=ticket_id)
 	user = zendesk.client.users(id=ticket.requester_id)
 
@@ -177,30 +177,46 @@ def sync_to_monday(ticket_id, main_id=''):
 	else:
 		name = user.name
 
-	if not main_id:
-		# main_id_from_ticket
-		main_id_from_ticket_field_id = zendesk.custom_fields.FIELDS_DICT['main_item_id']
-		for cf in ticket.custom_fields:
-			if cf['id'] == main_id_from_ticket_field_id:
-				main_id = cf['value']
-				if main_id:
-					break
+	main_id = None
+	# main_id_from_ticket
+	main_id_from_ticket_field_id = zendesk.custom_fields.FIELDS_DICT['main_item_id']
+	for cf in ticket.custom_fields:
+		if cf['id'] == main_id_from_ticket_field_id:
+			main_id = cf['value']
+			if main_id:
+				break
 
-		if not main_id:
-			main_item = items.MainItem().create(name=name, reload=True)
-			main_item.notifications_status = 'ON'
-			main_item.ticket_id = str(ticket.id)
-			main_item.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
-			main_item.email = user.email
-			main_item.phone = user.phone or 'No Number Found'
-			ticket.custom_fields.append(CustomField(
-				id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
-				value=str(main_item.id)
-			))
-		else:
-			main_item = items.MainItem(main_id).load_from_api()
+	if not main_id:
+		main_item = items.MainItem().create(name=name, reload=True)
+		main_item.notifications_status = 'ON'
+		main_item.ticket_id = str(ticket.id)
+		main_item.ticket_url = [str(ticket.id), f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}"]
+		main_item.email = user.email
+		main_item.phone = user.phone or 'No Number Found'
+		ticket.custom_fields.append(CustomField(
+			id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
+			value=str(main_item.id)
+		))
 	else:
 		main_item = items.MainItem(main_id).load_from_api()
+
+	corporate_repair_item = None
+	try:
+		if ticket.requester.organization:
+			corporate_repair_class = items.corporate.get_corporate_repair_class_by_board_id(
+				user.organization.organization_fields['corporate_repair_board_id']
+			)
+			if main_item.corp_item_id.value:
+				corporate_repair_item = corporate_repair_class(main_item.corp_item_id.value).load_from_api()
+			else:
+				corporate_repair_item = corporate_repair_class()
+				corporate_repair_item.main_board_connect = [main_item.id]
+				corporate_repair_item.ticket_id = str(ticket_id)
+				corporate_repair_item.create(name=name)
+				main_item.corp_item_id = corporate_repair_item.id
+	except Exception as e:
+		notify_admins_of_error(f"Could not fetch corporate repair board: {e}")
+		corporate_repair_item = None
 
 	try:
 		# status
@@ -268,15 +284,14 @@ def sync_to_monday(ticket_id, main_id=''):
 			for prod in products:
 				description += str(prod.name.lower().replace(device.name.lower(), "").capitalize()).strip() + ', '
 		else:
-			products = []
 			description = "No products connected"
 
 		description.strip()
 
 		if ticket.organization:
 			if ticket.organization.organization_fields['payment_method'] == 'pay_method_xero_invoice':
-				main_item.pay_method.value = 'Invoiced - Xero'
-				main_item.pay_status.value = 'Corporate - Pay Later'
+				main_item.payment_method.value = 'Invoiced - Xero'
+				main_item.payment_status.value = 'Corporate - Pay Later'
 
 		def determine_address():
 			# fetch from ticket
@@ -356,6 +371,10 @@ def sync_to_monday(ticket_id, main_id=''):
 			column_id=main_item.device_deprecated_dropdown.column_id,
 			value={"labels": [str(device.name)]}
 		)
+
+		if corporate_repair_item:
+			corporate_repair_item.sync_changes_from_main(main_item.id)
+
 	except Exception as e:
 		ticket.status = 'open'
 		ticket.comment = Comment(

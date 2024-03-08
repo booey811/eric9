@@ -206,6 +206,8 @@ def sync_to_monday(ticket_id):
 			corporate_repair_class = items.corporate.get_corporate_repair_class_by_board_id(
 				user.organization.organization_fields['corporate_repair_board_id']
 			)
+			if not corporate_repair_class:
+				raise ValueError(f"Could not find corporate repair board for {user.organization.name}")
 			if main_item.corp_item_id.value:
 				corporate_repair_item = corporate_repair_class(main_item.corp_item_id.value).load_from_api()
 			else:

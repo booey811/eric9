@@ -384,3 +384,26 @@ def sync_to_monday(ticket_id):
 			body=f"Could not sync to Monday: {e}"
 		)
 		raise e
+
+
+def sync_to_external_corporate_boards(main_id):
+	try:
+		main_item = items.MainItem(main_id).load_from_api()
+
+		if main_item.corp_item_id.value:
+			corporate_repair_class = items.corporate.get_corporate_repair_class_by_board_id(
+				main_item.corporate_board_id.value
+			)
+			if not corporate_repair_class:
+				raise ValueError(f"Could not find corporate repair board for {main_item.corporate_board_id.value}")
+			corporate_repair_item = corporate_repair_class(main_item.corp_item_id.value).load_from_api()
+		else:
+			return False
+
+		if corporate_repair_item:
+			corporate_repair_item.sync_changes_from_main(main_id)
+		else:
+			raise ValueError(f"Could not find corporate repair item for main item {main_id}")
+	except Exception as e:
+		notify_admins_of_error(f"Could not sync to external corporate boards: {e}")
+		raise e

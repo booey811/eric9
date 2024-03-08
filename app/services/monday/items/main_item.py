@@ -65,6 +65,8 @@ class MainItem(items.BaseItemType):
 		self.address_street = columns.TextValue('passcode')
 		self.address_notes = columns.TextValue('dup__of_passcode')
 
+		# customer info
+		self.corp_item_id = columns.TextValue("text7")
 
 		# properties
 		self._products = None
@@ -157,7 +159,6 @@ class MainItem(items.BaseItemType):
 			else:
 				self._products = []
 		return self._products
-
 
 	def get_phase_model(self) -> repair_phases.RepairPhaseModel:
 		"""collects all products related to this main item and returns the longest available phase model"""

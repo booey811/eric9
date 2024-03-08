@@ -273,7 +273,7 @@ def sync_to_monday(ticket_id):
 		try:
 			device_tag = [t for t in ticket.tags if 'device__' in t][0]
 			device_id = int(device_tag.split('__')[1])
-		except IndexError:
+		except (ValueError, IndexError):
 			device_id = 4028854241  # other device
 
 		device = monday.items.DeviceItem(device_id)

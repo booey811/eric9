@@ -395,7 +395,7 @@ def sync_to_external_corporate_boards(main_id):
 				main_item.corp_item_id.value
 			)
 			if not corporate_repair_class:
-				raise ValueError(f"Could not find corporate repair board for {main_item.corporate_board_id.value}")
+				raise ValueError(f"Could not find corporate repair board for {main_item.corp_item_id.value}")
 			corporate_repair_item = corporate_repair_class(main_item.corp_item_id.value).load_from_api()
 		else:
 			return False

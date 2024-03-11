@@ -85,7 +85,7 @@ def process_slack_stock_count(metadata, view=''):
 				notify_admins_of_error(f"Error creating count line item: {e}")
 				count_line_item.add_update(f"Error creating count line item: {e}")
 				raise e
-		count_item.count_status = "Complete"
+		count_item.count_status = "Counted"
 		count_item.commit()
 	except Exception as e:
 		notify_admins_of_error(f"Error processing stock count: {e}")

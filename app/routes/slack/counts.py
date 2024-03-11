@@ -40,7 +40,7 @@ def show_stock_count_form(ack, body, client):
 
 
 @slack_app.view("stock_count_form")
-def process_stock_count_form_submission(ack, body, client):
+def process_stock_count_form_submission(ack, body):
 	log.info('processing stock count form submission')
 	meta = json.loads(body['view']['private_metadata'])
 	try:
@@ -65,6 +65,7 @@ def process_stock_count_form_submission(ack, body, client):
 		raise SlackRoutingError("Error processing stock count form submission")
 
 	exceptions.save_metadata(meta, "count_form_submission_error")
+	ack()
 	if conf.CONFIG in ("DEVELOPMENT", "TESTING"):
 		process_slack_stock_count(meta)
 	else:
@@ -74,6 +75,4 @@ def process_stock_count_form_submission(ack, body, client):
 				"metadata": meta,
 			}
 		)
-	return True
-
 	return True

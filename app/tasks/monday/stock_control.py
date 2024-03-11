@@ -36,3 +36,30 @@ def process_complete_order_item(order_item_id):
 		order_item.commit()
 		raise e
 
+
+def process_completed_count_item(count_item_id):
+	count_item = monday.items.counts.CountItem(count_item_id)
+	line_item_data = monday.api.get_api_items(count_item.subitem_ids.value)
+	line_items = [monday.items.counts.CountLineItem(_['id'], _).load_from_api(_) for _ in line_item_data]
+
+	try:
+		for line in line_items:
+			try:
+				part = monday.items.PartItem(line.part_id.value)
+				part.set_stock_level(
+					desired_quantity=line.counted.value,
+					source_item=line,
+					movement_type="Stock Count",
+				)
+				part.commit()
+			except Exception as e:
+				notify_admins_of_error(f"Could Not Process Count Line {line}: {e}")
+				raise e
+			line.adjustment_status = "Complete"
+			line.commit()
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Complete Count Processing: {e}")
+		count_item.count_status = "Error"
+		count_item.commit()
+		raise e
+	return count_item

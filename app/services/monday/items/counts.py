@@ -12,6 +12,8 @@ class CountItem(BaseItemType):
 		self.view_data = columns.LongTextValue("long_text6")
 		self.count_status = columns.StatusValue("status")
 
+		self.subitem_ids = columns.ConnectBoards("subitems")
+
 		super().__init__(item_id, api_data, search, cache_data)
 
 

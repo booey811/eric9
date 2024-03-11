@@ -863,7 +863,7 @@ class StockCountViews:
 			else:
 				initial = None
 			view_blocks.append(blocks.add.input_block(
-				block_title=f"{line['name']} ({line['expected']} expected)",
+				block_title=f"{line['name']} ({line['expected']})",
 				element=blocks.elements.text_input_element(
 					placeholder=0,
 					action_id=f"stock_count__{line['part_id']}",

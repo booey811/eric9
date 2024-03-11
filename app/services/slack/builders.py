@@ -868,7 +868,8 @@ class StockCountViews:
 					placeholder=0,
 					action_id=f"stock_count__{line['part_id']}",
 					initial_value=initial
-				)
+				),
+				block_id=f"stock_count__{line['part_id']}",
 			))
 
 		return view_blocks

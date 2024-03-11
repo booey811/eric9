@@ -53,3 +53,45 @@ def process_slack_order_submission(metadata):
 
 	return order_item
 
+
+def process_slack_stock_count(metadata, view=''):
+
+	name = f"Stock Count: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+	count_item = monday.items.counts.CountItem().create(name)
+
+	if view:
+		count_item.view_data = json.dumps(view)
+
+	count_item.app_meta = json.dumps(metadata)
+	count_item.commit()
+
+	try:
+
+		for count_line in metadata['count_lines']:
+			part = monday.items.part.PartItem(count_line['part_id'])
+			count_line_item = monday.api.monday_connection.items.create_subitem(count_item.id, part.name)
+			count_line_item = monday.items.counts.CountLineItem(count_line_item['data']['create_subitem']['id'])
+			try:
+				try:
+					count_line_item.supply_price = round(part.supply_price.value, 2)
+				except TypeError:
+					pass
+				count_line_item.part_id = count_line['part_id']
+				count_line_item.counted = int(count_line['counted'])
+				count_line_item.expected = int(part.stock_level.value)
+
+				count_line_item.commit()
+			except Exception as e:
+				notify_admins_of_error(f"Error creating count line item: {e}")
+				count_line_item.add_update(f"Error creating count line item: {e}")
+				raise e
+		count_item.count_status = "Complete"
+		count_item.commit()
+	except Exception as e:
+		notify_admins_of_error(f"Error processing stock count: {e}")
+		count_item.add_update(f"Error processing stock count: {e}")
+		count_item.count_status = "Error"
+		count_item.commit()
+		raise e
+	return count_item
+

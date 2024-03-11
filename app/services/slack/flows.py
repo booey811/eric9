@@ -894,7 +894,14 @@ class CountsFlow(FlowController):
 			)
 
 			parts_data = monday.api.get_api_items(part_ids)
-		all_parts = [monday.items.PartItem(part['id'], part) for part in parts_data]
+
+		existing_ids = set()
+		all_parts = []
+		for d in parts_data:
+			if str(d['id']) in existing_ids:
+				continue
+			all_parts.append(monday.items.PartItem(d['id'], d))
+			existing_ids.add(str(d['id']))
 		parts_info = []
 		for part in all_parts:
 			parts_info.append({

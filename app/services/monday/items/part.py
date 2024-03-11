@@ -9,6 +9,7 @@ class PartItem(BaseCacheableItem):
 	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.stock_level = columns.NumberValue("quantity")
 		self.products_connect = columns.ConnectBoards("link_to_products___pricing")
+		self.supply_price = columns.NumberValue("supply_price")
 
 		self._product_ids = None
 

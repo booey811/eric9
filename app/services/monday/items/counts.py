@@ -17,6 +17,8 @@ class CountItem(BaseItemType):
 
 class CountLineItem(BaseItemType):
 
+	BOARD_ID = 2885485385
+
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 
 		self.part_id = columns.TextValue("text")

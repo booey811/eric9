@@ -143,9 +143,9 @@ def transfer_web_booking(web_booking_item_id):
 		)
 
 	if len(woo_commerce_product_ids) != len(woo_commerce_product_data.json()):
-		log.warning = f"{web_booking} could not find all products in {web_booking.model.woo_commerce_order_id} in Woo Commerce"
+		log.warning = f"{web_booking} could not find all products in {web_booking.woo_commerce_order_id.value} in Woo Commerce"
 		notify_admins_of_error(
-			f"{web_booking} could not find all products in {web_booking.model.woo_commerce_order_id} in Woo Commerce"
+			f"{web_booking} could not find all products in {web_booking.woo_commerce_order_id.value} in Woo Commerce"
 		)
 
 	woo_commerce_product_data = woo_commerce_product_data.json()
@@ -241,7 +241,7 @@ def transfer_web_booking(web_booking_item_id):
 	elif len(user_search) == 1:
 		user = next(user_search)
 	else:
-		raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {web_booking.model.email}")
+		raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {web_booking.email.value}")
 
 	booking_text = f"Website Notes:\n" + web_booking.booking_notes.value
 

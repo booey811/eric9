@@ -57,13 +57,12 @@ def process_woo_order():
 	log.debug('Processing WooCommerce Order')
 	try:
 		webhook = request.get_data()
-		print(webhook)
 		data = webhook.decode('utf-8')
-		print(data)
 		data = json.loads(data)
-		print(data)
 
-		item = monday.items.misc.WebBookingItem(data)
+		item = monday.items.misc.WebBookingItem()
+		print(data['id'])
+		print(type(data['id']))
 		item.woo_commerce_order_id = int(data['id'])
 		item.create(data['event']['body']['first_name']['billing'])
 	except Exception as e:

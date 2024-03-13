@@ -60,6 +60,7 @@ def process_woo_order():
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	try:
+		data = json.loads(data)
 		item = monday.items.misc.WebBookingItem()
 		item.woo_commerce_order_id = str(data['id'])
 		item.create(data['billing']['first_name'])

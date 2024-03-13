@@ -6,6 +6,7 @@ from ...cache.rq import q_low
 from ...services import monday
 from ...tasks.monday import web_bookings
 from ...tasks import sync_platform
+from ...utilities import notify_admins_of_error
 import config
 
 conf = config.get_config()
@@ -52,6 +53,7 @@ def sync_item_with_external_services():
 
 	return jsonify({'message': 'OK'}), 200
 
+
 @monday_misc_bp.route('/add-woocommerce-order-to-monday', methods=['POST'])
 def process_woo_order():
 	log.debug('Processing WooCommerce Order')
@@ -61,11 +63,10 @@ def process_woo_order():
 		data = json.loads(data)
 
 		item = monday.items.misc.WebBookingItem()
-		print(data['id'])
-		print(type(data['id']))
-		item.woo_commerce_order_id = int(data['id'])
+		item.woo_commerce_order_id = str(data['id'])
 		item.create(data['event']['body']['first_name']['billing'])
 	except Exception as e:
 		log.error(f"Error processing WooCommerce Order: {e}")
+		notify_admins_of_error(f"Error processing WooCommerce Order: {e}")
 
 	return jsonify({'message': 'OK'}), 200

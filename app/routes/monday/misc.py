@@ -51,3 +51,19 @@ def sync_item_with_external_services():
 		)
 
 	return jsonify({'message': 'OK'}), 200
+
+@monday_misc_bp.route('/add-woocommerce-order-to-monday', methods=['POST'])
+def process_woo_order():
+	log.debug('Processing WooCommerce Order')
+	webhook = request.get_data()
+	print(webhook)
+	data = webhook.decode('utf-8')
+	print(data)
+	data = json.loads(data)
+	print(data)
+
+	item = monday.items.misc.WebBookingItem(data)
+	item.woo_commerce_order_id = int(data['id'])
+	item.create(data['event']['body']['first_name']['billing'])
+
+	return jsonify({'message': 'OK'}), 200

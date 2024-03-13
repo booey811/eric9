@@ -57,16 +57,14 @@ def sync_item_with_external_services():
 @monday_misc_bp.route('/add-woocommerce-order-to-monday', methods=['POST'])
 def process_woo_order():
 	log.debug('Processing WooCommerce Order')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
 	try:
-		webhook = request.get_data()
-		data = webhook.decode('utf-8')
-		data = json.loads(data)
-
 		item = monday.items.misc.WebBookingItem()
 		item.woo_commerce_order_id = str(data['id'])
-		item.create(data['event']['body']['first_name']['billing'])
+		item.create(data['billing']['first_name'])
 	except Exception as e:
 		log.error(f"Error processing WooCommerce Order: {e}")
-		notify_admins_of_error(f"Error processing WooCommerce Order: {e}")
+		notify_admins_of_error(f"Error processing WooCommerce Order: {e}\n\n{type(data)}\n{data}")
 
 	return jsonify({'message': 'OK'}), 200

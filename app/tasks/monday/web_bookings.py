@@ -119,239 +119,248 @@ def transfer_web_booking(web_booking_item_id):
 		return True
 
 	booking_item = monday.items.misc.WebBookingItem(web_booking_item_id).load_from_api()
-	order_id = booking_item.woo_commerce_order_id.value
-	main = monday.items.MainItem()
-
-	# extract Woo Commerce order data
-	woo_order_data = woocommerce.woo.get(f"orders/{order_id}")
-
-	if woo_order_data.status_code != 200:
-		notify_admins_of_error(
-			f"Could not find order {order_id} in Woo Commerce\n\n{woo_order_data.text}")
-		raise WebBookingTransferError(
-			f"Could not find order {order_id} in Woo Commerce")
-
-	woo_order_data = woo_order_data.json()
 
 	try:
-		booking_item.add_update(json.dumps(woo_order_data, indent=4))
-	except Exception as e:
-		notify_admins_of_error(f"Could not Dump Order details to Wb Booking Item ({str(booking_item)})\n\n\{str(e)}")
+		order_id = booking_item.woo_commerce_order_id.value
+		main = monday.items.MainItem()
 
-	name = woo_order_data['billing']['first_name']
-	email = woo_order_data['billing']['email']
-	phone = woo_order_data['billing']['phone']
-	try:
-		booking_date = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'booking_date'][0]['value']
-		booking_date = parse(booking_date)
-	except IndexError:
-		booking_date = None
+		# extract Woo Commerce order data
+		woo_order_data = woocommerce.woo.get(f"orders/{order_id}")
 
-	try:
-		point_of_collection = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'point_of_collection'][0]['value']
-	except IndexError:
-		point_of_collection = None
+		if woo_order_data.status_code != 200:
+			notify_admins_of_error(
+				f"Could not find order {order_id} in Woo Commerce\n\n{woo_order_data.text}")
+			raise WebBookingTransferError(
+				f"Could not find order {order_id} in Woo Commerce")
 
-	address_notes = woo_order_data['billing']['address_1']
-	address_street = woo_order_data['billing']['address_2']
-	address_postcode = woo_order_data['billing']['postcode']
-	payment_method = woo_order_data['payment_method_title']
+		woo_order_data = woo_order_data.json()
 
-	if 'cash' in payment_method.lower():
-		payment_method = 'Cash'
-	elif 'stripe' in payment_method.lower():
-		payment_method = 'Stripe Payment'
-	elif 'paypal' in payment_method.lower():
-		payment_method = 'PayPal Payment'
-	else:
-		payment_method = 'Other'
+		# try:
+		# 	booking_item.add_update(json.dumps(woo_order_data, indent=4))
+		# except Exception as e:
+		# 	notify_admins_of_error(f"Could not Dump Order details to Wb Booking Item ({str(booking_item)})\n\n\{str(e)}")
 
-	if woo_order_data['transaction_id']:
-		payment_status = 'Confirmed'
-	else:
-		payment_status = 'Not Taken'
-
-	woo_commerce_product_ids = [str(line['product_id']) for line in woo_order_data['line_items']]
-	woo_commerce_product_data = woocommerce.woo.get(
-		f"products/",
-		params={
-			'include': ','.join(woo_commerce_product_ids)
-		}
-	)
-
-	if woo_commerce_product_data.status_code != 200:
-		notify_admins_of_error(
-			f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
-		)
-		raise WebBookingTransferError(
-			f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
-		)
-
-	if len(woo_commerce_product_ids) != len(woo_commerce_product_data.json()):
-		log.warning = f"Could not find all products in {order_id} in Woo Commerce"
-		notify_admins_of_error(
-			f"Could not find all products in {order_id} in Woo Commerce"
-		)
-
-	woo_commerce_product_data = woo_commerce_product_data.json()
-
-	service_products = []
-	repair_products = []
-
-	for wp in woo_commerce_product_data:
-		log.debug("WooProduct: " + str(wp))
-		category_id = str(wp['categories'][0]['id'])
-		if category_id == '582':
-			service_products.append(wp)
-		else:
-			repair_products.append(wp)
-
-	if len(service_products) != 1:
-		notify_admins_of_error(
-			f"Could not find a service product: {woo_commerce_product_data}"
-		)
-		service = 'Unconfirmed'
-	elif 'national courier' in service_products[0]['name'].lower():
-		service = 'Mail-In'
-	elif 'london courier' in service_products[0]['name'].lower():
-		service = 'Stuart Courier'
-	elif 'walk' in service_products[0]['name'].lower():
-		service = 'Walk-In'
-	else:
-		raise WebBookingTransferError(f'{str(order_id)} could not determine service type')
-
-	main.service = service
-
-	search_results = []
-
-	try:
-		for _ in repair_products:
-			try:
-				results = monday.items.ProductItem(search=True).search_board_for_items(
-					'woo_commerce_product_id',
-					str(_['id'])
-				)
-				result = results[0]
-				search_results.append(monday.items.ProductItem(result['id'], result))
-			except IndexError:
-				log.error(f"Could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")
-
-	except Exception as e:
-		notify_admins_of_error(f"Could Not Fetch Products for Web Booking: {e}")
-
-	if len(search_results) != len(repair_products):
-		notify_admins_of_error(
-			f"Could not find all products in {order_id} in Eric")
-
-	products = search_results
-	main.products_connect = [str(_.id) for _ in products]
-
-	repair_type = 'Repair'
-	for p in products:
-		if 'diagnostic' in p.name.lower():
-			repair_type = 'Diagnostic'
-			break
-
-	main.repair_type = repair_type
-
-	device_ids = [p.device_id for p in products if p.device_id is not None]
-	device_id = device_ids[0] if device_ids else None
-	if device_id:
-		d_id = device_id
-		device_data = app.services.monday.api.client.get_api_items([d_id])[0]
-		device = monday.items.DeviceItem(device_data['id'], device_data)
-		email_subject = f"Your {device.name} Repair"
-	else:
-		device_id = 4028854241  # Other Device
-		email_subject = "Your Repair with iCorrect"
-
-	main.device_id = int(device_id)
-
-	# create zendesk ticket
-	user_search = zendesk.helpers.search_zendesk(str(woo_order_data['billing']['email']))
-	if not user_search:
-		# no user found, create user
-		log.debug(f"No User Found, creating")
+		name = woo_order_data['billing']['first_name']
+		email = woo_order_data['billing']['email']
+		phone = woo_order_data['billing']['phone']
 		try:
-			user = zendesk.helpers.create_user(
-				name,
-				email,
-				phone,
+			booking_date = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'booking_date'][0]['value']
+			booking_date = parse(booking_date)
+		except IndexError:
+			booking_date = None
+
+		try:
+			point_of_collection = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'point_of_collection'][0]['value']
+		except IndexError:
+			point_of_collection = None
+
+		address_notes = woo_order_data['billing']['address_1']
+		address_street = woo_order_data['billing']['address_2']
+		address_postcode = woo_order_data['billing']['postcode']
+		payment_method = woo_order_data['payment_method_title']
+
+		if 'cash' in payment_method.lower():
+			payment_method = 'Cash'
+		elif 'stripe' in payment_method.lower():
+			payment_method = 'Stripe Payment'
+		elif 'paypal' in payment_method.lower():
+			payment_method = 'PayPal Payment'
+		else:
+			payment_method = 'Other'
+
+		if woo_order_data['transaction_id']:
+			payment_status = 'Confirmed'
+		else:
+			payment_status = 'Not Taken'
+
+		woo_commerce_product_ids = [str(line['product_id']) for line in woo_order_data['line_items']]
+		woo_commerce_product_data = woocommerce.woo.get(
+			f"products/",
+			params={
+				'include': ','.join(woo_commerce_product_ids)
+			}
+		)
+
+		if woo_commerce_product_data.status_code != 200:
+			notify_admins_of_error(
+				f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
 			)
-		except APIException as e:
-			log.debug(f"Could not create user: {e}")
-			notify_admins_of_error("Could not create user: " + str(e))
-			raise WebBookingTransferError(f"Could not create user: {e}")
+			raise WebBookingTransferError(
+				f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
+			)
 
-	elif len(user_search) == 1:
-		user = next(user_search)
-	else:
-		raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {email}")
+		if len(woo_commerce_product_ids) != len(woo_commerce_product_data.json()):
+			log.warning = f"Could not find all products in {order_id} in Woo Commerce"
+			notify_admins_of_error(
+				f"Could not find all products in {order_id} in Woo Commerce"
+			)
 
-	booking_text = f"Website Notes:\n" + woo_order_data['customer_note']
+		woo_commerce_product_data = woo_commerce_product_data.json()
 
-	def determine_ticket_tags():
+		service_products = []
+		repair_products = []
 
-		tag_results = [
-			"web_booking",
-			f"device__{device_id}",
+		for wp in woo_commerce_product_data:
+			log.debug("WooProduct: " + str(wp))
+			category_id = str(wp['categories'][0]['id'])
+			if category_id == '582':
+				service_products.append(wp)
+			else:
+				repair_products.append(wp)
+
+		if len(service_products) != 1:
+			notify_admins_of_error(
+				f"Could not find a service product: {woo_commerce_product_data}"
+			)
+			service = 'Unconfirmed'
+		elif 'national courier' in service_products[0]['name'].lower():
+			service = 'Mail-In'
+		elif 'london courier' in service_products[0]['name'].lower():
+			service = 'Stuart Courier'
+		elif 'walk' in service_products[0]['name'].lower():
+			service = 'Walk-In'
+		else:
+			raise WebBookingTransferError(f'{str(order_id)} could not determine service type')
+
+		main.service = service
+
+		search_results = []
+
+		try:
+			for _ in repair_products:
+				try:
+					results = monday.items.ProductItem(search=True).search_board_for_items(
+						'woo_commerce_product_id',
+						str(_['id'])
+					)
+					result = results[0]
+					search_results.append(monday.items.ProductItem(result['id'], result))
+				except IndexError:
+					log.error(f"Could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")
+
+		except Exception as e:
+			notify_admins_of_error(f"Could Not Fetch Products for Web Booking: {e}")
+
+		if len(search_results) != len(repair_products):
+			notify_admins_of_error(
+				f"Could not find all products in {order_id} in Eric")
+
+		products = search_results
+		main.products_connect = [str(_.id) for _ in products]
+
+		repair_type = 'Repair'
+		for p in products:
+			if 'diagnostic' in p.name.lower():
+				repair_type = 'Diagnostic'
+				break
+
+		main.repair_type = repair_type
+
+		device_ids = [p.device_id for p in products if p.device_id is not None]
+		device_id = device_ids[0] if device_ids else None
+		if device_id:
+			d_id = device_id
+			device_data = app.services.monday.api.client.get_api_items([d_id])[0]
+			device = monday.items.DeviceItem(device_data['id'], device_data)
+			email_subject = f"Your {device.name} Repair"
+		else:
+			device_id = 4028854241  # Other Device
+			email_subject = "Your Repair with iCorrect"
+
+		main.device_id = int(device_id)
+
+		# create zendesk ticket
+		user_search = zendesk.helpers.search_zendesk(str(woo_order_data['billing']['email']))
+		if not user_search:
+			# no user found, create user
+			log.debug(f"No User Found, creating")
+			try:
+				user = zendesk.helpers.create_user(
+					name,
+					email,
+					phone,
+				)
+			except APIException as e:
+				log.debug(f"Could not create user: {e}")
+				notify_admins_of_error("Could not create user: " + str(e))
+				raise WebBookingTransferError(f"Could not create user: {e}")
+
+		elif len(user_search) == 1:
+			user = next(user_search)
+		else:
+			raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {email}")
+
+		booking_text = f"Website Notes:\n" + woo_order_data['customer_note']
+
+		def determine_ticket_tags():
+
+			tag_results = [
+				"web_booking",
+				f"device__{device_id}",
+			]
+
+			for prod in products:
+				tag_results.append("product__" + str(prod.id))
+
+			return tag_results
+
+		ticket = Ticket(
+			subject=email_subject,
+			description=email_subject,
+			comment=Comment(
+				body=booking_text,
+				public=False
+			),
+			requester_id=user.id,
+		)
+
+		ticket = zendesk.client.tickets.create(ticket).ticket
+
+		main.email = email
+		main.phone = phone
+		main.ticket_id = str(ticket.id)
+		main.ticket_url = [
+			str(ticket.id),
+			f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}",
 		]
+		main.description = "; ".join([f"{p.name}(£{p.price})" for p in products])
 
-		for prod in products:
-			tag_results.append("product__" + str(prod.id))
+		if point_of_collection:
+			main.point_of_collection = point_of_collection
+		if address_notes:
+			main.address_notes = address_notes
+		if address_street:
+			main.address_street = address_street
+		if address_postcode:
+			main.address_postcode = address_postcode
+		if booking_date:
+			main.booking_date = booking_date
+		if payment_status:
+			main.payment_status = payment_status
+		if payment_method:
+			main.payment_method = payment_method
 
-		return tag_results
+		main.client = 'End User'
+		main.main_status = 'Awaiting Confirmation'
+		main.notifications_status = 'ON'
 
-	ticket = Ticket(
-		subject=email_subject,
-		description=email_subject,
-		comment=Comment(
-			body=booking_text,
-			public=False
-		),
-		requester_id=user.id,
-	)
+		main.create(name)
 
-	ticket = zendesk.client.tickets.create(ticket).ticket
+		main.add_update(booking_text, main.notes_thread_id.value)
+		main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
 
-	main.email = email
-	main.phone = phone
-	main.ticket_id = str(ticket.id)
-	main.ticket_url = [
-		str(ticket.id),
-		f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}",
-	]
-	main.description = "; ".join([f"{p.name}(£{p.price})" for p in products])
+		sync_to_zendesk(main.id, ticket.id)
 
-	if point_of_collection:
-		main.point_of_collection = point_of_collection
-	if address_notes:
-		main.address_notes = address_notes
-	if address_street:
-		main.address_street = address_street
-	if address_postcode:
-		main.address_postcode = address_postcode
-	if booking_date:
-		main.booking_date = booking_date
-	if payment_status:
-		main.payment_status = payment_status
-	if payment_method:
-		main.payment_method = payment_method
+		send_confirmation_email()
 
-	main.client = 'End User'
-	main.main_status = 'Awaiting Confirmation'
-	main.notifications_status = 'ON'
+		booking_item.transfer_status = 'Complete'
+	except Exception as e:
+		log.error(e)
+		notify_admins_of_error(f"Error transferring web booking: {e}")
+		booking_item.transfer_status = 'Error'
 
-	main.create(name)
-
-	main.add_update(booking_text, main.notes_thread_id.value)
-	main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
-
-	sync_to_zendesk(main.id, ticket.id)
-
-	send_confirmation_email()
-
-	return main
+	booking_item.commit()
+	return booking_item
 
 
 def transfer_type_form_booking(type_form_booking_item_id):

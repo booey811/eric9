@@ -14,6 +14,8 @@ from ...zendesk import helpers, client as zendesk_client, custom_fields
 class WebBookingItem(BaseItemType):
 	BOARD_ID = 973467694
 
+	transfer_status = columns.StatusValue("status_18")
+
 	woo_commerce_order_id = columns.TextValue('order_id')
 
 	pay_status = columns.StatusValue("payment_status")

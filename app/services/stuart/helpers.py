@@ -5,15 +5,16 @@ from zenpy.lib.api_objects import CustomField
 
 import config
 from ...services import monday
+from . import client, exceptions
 
 conf = config.get_config()
 
 
 def generate_address_string(address_notes, address_street, address_postcode):
 	if address_notes:
-		return f"{address_notes}, {address_street}, {address_postcode}"
+		return f"{address_notes}, {address_street}, London {address_postcode}"
 	else:
-		return f"{address_street}, {address_postcode}"
+		return f"{address_street}, London {address_postcode}"
 
 
 def generate_job_data(main_board_item: monday.items.MainItem, direction):
@@ -21,6 +22,13 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 		time = main_board_item.booking_date.value.isoformat()
 	else:
 		time = None
+
+	phone = main_board_item.phone.value
+	if not phone:
+		raise exceptions.AddressError(f"Phone Number Required")
+	if not str(main_board_item.phone.value).isdigit():
+		raise exceptions.AddressError(f"Invalid Phone Number: {phone}")
+
 
 	icorrect_contact = {
 		"firstname": conf.ICORRECT_ADDRESS_INFO['collection_contact'].split()[0],
@@ -31,7 +39,7 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 	}
 	client_contact = {
 		"firstname": main_board_item.name,
-		"phone": main_board_item.phone.value,
+		"phone": phone,
 		"email": main_board_item.email.value,
 	}
 
@@ -46,14 +54,13 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 		)
 		collect_comment = main_board_item.address_notes.value or "No Collection Notes"
 		collect_contact = client_contact
-		deliver_address = "iCorrect, 12 Margaret Street, W1W8JQ"
+		deliver_address = "12 Margaret Street, London W1W8JQ"
 		deliver_comment = "Please deliver to the reception"
 		deliver_contact = icorrect_contact
 	elif direction == 'outgoing':
-		collect_address = "iCorrect, 12 Margaret Street, W1W8JQ"
+		collect_address = "12 Margaret Street, London W1W8JQ"
 		collect_comment = "Please collect from the reception"
 		collect_contact = icorrect_contact
-
 		deliver_address = generate_address_string(
 			main_board_item.address_notes.value,
 			main_board_item.address_street.value,
@@ -63,6 +70,9 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 		deliver_contact = client_contact
 	else:
 		raise ValueError(f"Invalid Direction: {direction}")
+
+	for add in [collect_address, deliver_address]:
+		client.validate_address(add)
 
 	basic = {
 		"job": {

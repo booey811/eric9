@@ -2,6 +2,7 @@ import logging
 import datetime
 import time
 from dateutil.parser import parse
+import json
 
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import Ticket, Comment, User
@@ -20,7 +21,7 @@ log = logging.getLogger('eric')
 
 
 def transfer_web_booking(web_booking_item_id):
-	def check_booking_date():
+	def send_confirmation_email():
 		"""checks booking date to see if it is a day we are open. First check will be weekend, the another check will
 		occur that checks if the date is within a public holiday (hard coded)"""
 
@@ -110,9 +111,15 @@ def transfer_web_booking(web_booking_item_id):
 			if booking_date.hour > 13:  # booking date is after 1pm
 				raise CannotAllowBooking('collection_in_afternoon', ticket)
 
+		# all checks have passed - send a confirmation email
+		macro_id = 23336093706001
+		r = zendesk.client.tickets.show_macro_effect(ticket, macro_id)
+		zendesk.client.tickets.update(r.ticket)
+
 		return True
 
-	order_id = monday.items.misc.WebBookingItem(web_booking_item_id).load_from_api().woo_commerce_order_id.value
+	booking_item = monday.items.misc.WebBookingItem(web_booking_item_id).load_from_api()
+	order_id = booking_item.woo_commerce_order_id.value
 	main = monday.items.MainItem()
 
 	# extract Woo Commerce order data
@@ -125,6 +132,12 @@ def transfer_web_booking(web_booking_item_id):
 			f"Could not find order {order_id} in Woo Commerce")
 
 	woo_order_data = woo_order_data.json()
+
+	try:
+		booking_item.add_update(json.dumps(woo_order_data, indent=4))
+	except Exception as e:
+		notify_admins_of_error(f"Could not Dump Order details to Wb Booking Item ({str(booking_item)})\n\n\{str(e)}")
+
 	name = woo_order_data['billing']['first_name']
 	email = woo_order_data['billing']['email']
 	phone = woo_order_data['billing']['phone']
@@ -336,7 +349,7 @@ def transfer_web_booking(web_booking_item_id):
 
 	sync_to_zendesk(main.id, ticket.id)
 
-	check_booking_date()
+	send_confirmation_email()
 
 	return main
 

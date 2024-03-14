@@ -18,7 +18,7 @@ class VCCPRepairItem(CorporateRepairItem):
 			"ticket_id": columns.TextValue("text4"),
 			"imeisn": columns.TextValue("text"),
 			"device_name": columns.TextValue("text9"),
-			"description": columns.LongTextValue("long_text"),
+			"description": columns.TextValue("repair_summary"),
 			"cost": columns.NumberValue("numbers"),
 			"main_board_connect": columns.ConnectBoards("connect_boards")
 		}

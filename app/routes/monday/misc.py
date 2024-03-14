@@ -67,5 +67,8 @@ def process_woo_order():
 	except Exception as e:
 		log.error(f"Error processing WooCommerce Order: {e}")
 		notify_admins_of_error(f"Error processing WooCommerce Order: {e}\n\n{type(data)}\n{data}")
+		return jsonify({'message': 'OK'}), 200
+
+	item.add_update(json.dumps(data, indent=4))
 
 	return jsonify({'message': 'OK'}), 200

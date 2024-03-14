@@ -1,6 +1,7 @@
 import logging
 import datetime
 import time
+from dateutil.parser import parse
 
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import Ticket, Comment, User
@@ -19,7 +20,7 @@ log = logging.getLogger('eric')
 
 
 def transfer_web_booking(web_booking_item_id):
-	def check_booking_date(booking_date: datetime.datetime, zen_ticket):
+	def check_booking_date():
 		"""checks booking date to see if it is a day we are open. First check will be weekend, the another check will
 		occur that checks if the date is within a public holiday (hard coded)"""
 
@@ -67,7 +68,7 @@ def transfer_web_booking(web_booking_item_id):
 		# check for weekend
 		if date.isoweekday() > 5:  # 4 == Friday, 5 == Saturday, 6 == Sunday
 			# we are not open on selected date as it's a weekend, raise error
-			raise CannotAllowBooking('weekend', zen_ticket)
+			raise CannotAllowBooking('weekend', ticket)
 		else:
 			# continue to next check
 			pass
@@ -76,7 +77,7 @@ def transfer_web_booking(web_booking_item_id):
 		for holiday in conf.PUBLIC_HOLIDAYS:
 			if holiday == date:
 				# date is a public holiday, raise error
-				raise CannotAllowBooking('bank_holiday', zen_ticket)
+				raise CannotAllowBooking('bank_holiday', ticket)
 			else:
 				# date is not a public holiday, proceed as normal
 				pass
@@ -85,7 +86,7 @@ def transfer_web_booking(web_booking_item_id):
 		for holiday in conf.ICORRECT_HOLIDAYS:
 			if holiday == date:
 				# date is a date that we are closed for
-				raise CannotAllowBooking('icorrect_holiday', zen_ticket)
+				raise CannotAllowBooking('icorrect_holiday', ticket)
 			else:
 				# proceed as normal
 				pass
@@ -96,35 +97,66 @@ def transfer_web_booking(web_booking_item_id):
 			# check for same-day RM booking
 			today = datetime.datetime.today().date()
 			if today == booking_date:
-				raise CannotAllowBooking('same_day_mail_in', zen_ticket)
+				raise CannotAllowBooking('same_day_mail_in', ticket)
 
 			# check for post-8pm booking for the following day
 			now = datetime.datetime.now()
 			cutoff = 19
 			date_diff = date - now.date()
 			if now.hour > cutoff and date_diff.days == 1:  # after 8pm, booking date is tomorrow
-				raise CannotAllowBooking('booking_is_tomorrow', zen_ticket)
+				raise CannotAllowBooking('booking_is_tomorrow', ticket)
 
 			# check whether collection is booked for the afternoon
 			if booking_date.hour > 13:  # booking date is after 1pm
-				raise CannotAllowBooking('collection_in_afternoon', zen_ticket)
+				raise CannotAllowBooking('collection_in_afternoon', ticket)
 
 		return True
 
-	item = get_api_items([web_booking_item_id])[0]
-	web_booking = monday.items.misc.WebBookingItem(item['id'], item)
+	order_id = monday.items.misc.WebBookingItem(web_booking_item_id).load_from_api().woo_commerce_order_id.value
 	main = monday.items.MainItem()
 
 	# extract Woo Commerce order data
-	woo_order_data = woocommerce.woo.get(f"orders/{web_booking.woo_commerce_order_id.value}")
+	woo_order_data = woocommerce.woo.get(f"orders/{order_id}")
 
 	if woo_order_data.status_code != 200:
 		notify_admins_of_error(
-			f"{web_booking} could not find order {web_booking.woo_commerce_order_id} in Woo Commerce")
+			f"Could not find order {order_id} in Woo Commerce\n\n{woo_order_data.text}")
 		raise WebBookingTransferError(
-			f"{web_booking} could not find order {web_booking.woo_commerce_order_id} in Woo Commerce")
+			f"Could not find order {order_id} in Woo Commerce")
 
 	woo_order_data = woo_order_data.json()
+	name = woo_order_data['billing']['first_name']
+	email = woo_order_data['billing']['email']
+	phone = woo_order_data['billing']['phone']
+	try:
+		booking_date = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'booking_date'][0]['value']
+		booking_date = parse(booking_date)
+	except IndexError:
+		booking_date = None
+
+	try:
+		point_of_collection = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'point_of_collection'][0]['value']
+	except IndexError:
+		point_of_collection = None
+
+	address_notes = woo_order_data['billing']['address_1']
+	address_street = woo_order_data['billing']['address_2']
+	address_postcode = woo_order_data['billing']['postcode']
+	payment_method = woo_order_data['payment_method_title']
+
+	if 'cash' in payment_method.lower():
+		payment_method = 'Cash'
+	elif 'stripe' in payment_method.lower():
+		payment_method = 'Stripe Payment'
+	elif 'paypal' in payment_method.lower():
+		payment_method = 'PayPal Payment'
+	else:
+		payment_method = 'Other'
+
+	if woo_order_data['transaction_id']:
+		payment_status = 'Confirmed'
+	else:
+		payment_status = 'Not Taken'
 
 	woo_commerce_product_ids = [str(line['product_id']) for line in woo_order_data['line_items']]
 	woo_commerce_product_data = woocommerce.woo.get(
@@ -136,16 +168,16 @@ def transfer_web_booking(web_booking_item_id):
 
 	if woo_commerce_product_data.status_code != 200:
 		notify_admins_of_error(
-			f"{web_booking} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
+			f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
 		)
 		raise WebBookingTransferError(
-			f"{web_booking} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
+			f"{order_id} failed to retrieve anything from Woo Commerce: {woo_commerce_product_data.text}"
 		)
 
 	if len(woo_commerce_product_ids) != len(woo_commerce_product_data.json()):
-		log.warning = f"{web_booking} could not find all products in {web_booking.woo_commerce_order_id.value} in Woo Commerce"
+		log.warning = f"Could not find all products in {order_id} in Woo Commerce"
 		notify_admins_of_error(
-			f"{web_booking} could not find all products in {web_booking.woo_commerce_order_id.value} in Woo Commerce"
+			f"Could not find all products in {order_id} in Woo Commerce"
 		)
 
 	woo_commerce_product_data = woo_commerce_product_data.json()
@@ -163,7 +195,7 @@ def transfer_web_booking(web_booking_item_id):
 
 	if len(service_products) != 1:
 		notify_admins_of_error(
-			f"{web_booking} could not find a service product: {woo_commerce_product_data}"
+			f"Could not find a service product: {woo_commerce_product_data}"
 		)
 		service = 'Unconfirmed'
 	elif 'national courier' in service_products[0]['name'].lower():
@@ -173,7 +205,7 @@ def transfer_web_booking(web_booking_item_id):
 	elif 'walk' in service_products[0]['name'].lower():
 		service = 'Walk-In'
 	else:
-		raise WebBookingTransferError(f'{str(web_booking)} could not determine service type')
+		raise WebBookingTransferError(f'{str(order_id)} could not determine service type')
 
 	main.service = service
 
@@ -189,14 +221,14 @@ def transfer_web_booking(web_booking_item_id):
 				result = results[0]
 				search_results.append(monday.items.ProductItem(result['id'], result))
 			except IndexError:
-				log.error(f"{web_booking} could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")
+				log.error(f"Could not find Woo product in Eric: {str(_['name'])}({str(_['id'])})")
 
 	except Exception as e:
 		notify_admins_of_error(f"Could Not Fetch Products for Web Booking: {e}")
 
 	if len(search_results) != len(repair_products):
 		notify_admins_of_error(
-			f"{web_booking} could not find all products in {web_booking.woo_commerce_order_id} in Eric")
+			f"Could not find all products in {order_id} in Eric")
 
 	products = search_results
 	main.products_connect = [str(_.id) for _ in products]
@@ -223,15 +255,15 @@ def transfer_web_booking(web_booking_item_id):
 	main.device_id = int(device_id)
 
 	# create zendesk ticket
-	user_search = zendesk.helpers.search_zendesk(str(web_booking.email.value))
+	user_search = zendesk.helpers.search_zendesk(str(woo_order_data['billing']['email']))
 	if not user_search:
 		# no user found, create user
 		log.debug(f"No User Found, creating")
 		try:
 			user = zendesk.helpers.create_user(
-				web_booking.name,
-				web_booking.email.value,
-				web_booking.phone.value
+				name,
+				email,
+				phone,
 			)
 		except APIException as e:
 			log.debug(f"Could not create user: {e}")
@@ -241,9 +273,9 @@ def transfer_web_booking(web_booking_item_id):
 	elif len(user_search) == 1:
 		user = next(user_search)
 	else:
-		raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {web_booking.email.value}")
+		raise WebBookingTransferError(f"Multiple users found ({len(search_results)}) for {email}")
 
-	booking_text = f"Website Notes:\n" + web_booking.booking_notes.value
+	booking_text = f"Website Notes:\n" + woo_order_data['customer_note']
 
 	def determine_ticket_tags():
 
@@ -269,8 +301,8 @@ def transfer_web_booking(web_booking_item_id):
 
 	ticket = zendesk.client.tickets.create(ticket).ticket
 
-	main.email = web_booking.email.value
-	main.phone = web_booking.phone.value
+	main.email = email
+	main.phone = phone
 	main.ticket_id = str(ticket.id)
 	main.ticket_url = [
 		str(ticket.id),
@@ -278,26 +310,33 @@ def transfer_web_booking(web_booking_item_id):
 	]
 	main.description = "; ".join([f"{p.name}(£{p.price})" for p in products])
 
-	main.point_of_collection = web_booking.point_of_collection.value
-	main.address_notes = web_booking.address_notes.value
-	main.address_street = web_booking.address_street.value
-	main.address_postcode = web_booking.address_postcode.value
-	main.booking_date = web_booking.booking_date.value
-	main.payment_status = web_booking.pay_status.value
-	main.payment_method = web_booking.pay_method.value
+	if point_of_collection:
+		main.point_of_collection = point_of_collection
+	if address_notes:
+		main.address_notes = address_notes
+	if address_street:
+		main.address_street = address_street
+	if address_postcode:
+		main.address_postcode = address_postcode
+	if booking_date:
+		main.booking_date = booking_date
+	if payment_status:
+		main.payment_status = payment_status
+	if payment_method:
+		main.payment_method = payment_method
 
 	main.client = 'End User'
 	main.main_status = 'Awaiting Confirmation'
 	main.notifications_status = 'ON'
 
-	main.create(web_booking.name)
+	main.create(name)
 
 	main.add_update(booking_text, main.notes_thread_id.value)
 	main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
 
 	sync_to_zendesk(main.id, ticket.id)
 
-	check_booking_date(web_booking.booking_date.value, ticket)
+	check_booking_date()
 
 	return main
 

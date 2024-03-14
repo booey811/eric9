@@ -123,6 +123,10 @@ class Config(object):
 
 	]  # list of lists, all objects are dates that signify start and end times
 
+	STUART_ENV = "sandbox"
+	STUART_CLIENT_ID = os.environ['STUART_ID_SAND']
+	STUART_CLIENT_SECRET = os.environ['STUART_SECRET_SAND']
+
 	def get_vars(self):
 		return (
 			f"CONFIG: {self.CONFIG}",
@@ -142,6 +146,10 @@ class ProductionConfig(Config):
 	APP_URL = "https://eric9-c2d6de2066d6.herokuapp.com"
 
 	REDIS_URL = os.environ.get('REDIS_URL')
+
+	STUART_ENV = 'production'
+	STUART_CLIENT_ID = os.environ['STUART_ID_PROD']
+	STUART_CLIENT_SECRET = os.environ['STUART_SECRET_PROD']
 
 
 class DevelopmentConfig(Config):

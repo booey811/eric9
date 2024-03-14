@@ -7,3 +7,7 @@ class StuartAPIError(EricError):
 
 class StuartAuthenticationError(EricError):
 	pass
+
+
+class AddressError(EricError):
+	pass

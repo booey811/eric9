@@ -142,6 +142,8 @@ class BaseItemType:
 			self.id = new_item['data']['create_item']['id']
 			return self
 		except Exception as e:
+			log.error("Error creating item", exc_info=True)
+			log.error("Staged changes: " + str(self.staged_changes))
 			raise MondayAPIError(f"Error calling monday API: {e}")
 
 	def add_update(self, body, thread_id=None):

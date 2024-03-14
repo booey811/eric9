@@ -127,6 +127,12 @@ class Config(object):
 	STUART_CLIENT_ID = os.environ['STUART_ID_SAND']
 	STUART_CLIENT_SECRET = os.environ['STUART_SECRET_SAND']
 
+	ICORRECT_ADDRESS_INFO = {
+		"address": "12 Margaret Street",
+		"postcode": "W1W 8JQ",
+		"collection_contact": "Kae Aziz",
+	}
+
 	def get_vars(self):
 		return (
 			f"CONFIG: {self.CONFIG}",

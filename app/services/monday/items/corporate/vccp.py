@@ -20,5 +20,6 @@ class VCCPRepairItem(CorporateRepairItem):
 			"device_name": columns.TextValue("text9"),
 			"description": columns.TextValue("repair_summary"),
 			"cost": columns.NumberValue("numbers"),
-			"main_board_connect": columns.ConnectBoards("connect_boards")
+			"main_board_connect": columns.ConnectBoards("connect_boards"),
+			"courier_cost_inc_vat": columns.NumberValue("numbers4"),
 		}

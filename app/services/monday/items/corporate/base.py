@@ -23,6 +23,7 @@ class CorporateRepairItem(BaseItemType):
 		self.description = None
 		self.cost = None
 		self.main_board_connect = None
+		self.courier_cost_inc_vat = None
 
 		self._account_item = None
 
@@ -101,6 +102,20 @@ class CorporateRepairItem(BaseItemType):
 		self.commit()
 		return self
 
+	def include_courier_costs(self, courier_dump_item):
+
+		# get the courier cost
+		cost = courier_dump_item.cost_inc_vat.value
+
+		current_spend = self.courier_cost_inc_vat.value
+		if current_spend:
+			cost += current_spend
+
+		self.courier_cost_inc_vat = cost
+		self.commit()
+
+		return self
+
 
 class PrototypeCorporateRepairItem(CorporateRepairItem):
 	"""Test class for corporate repair items"""
@@ -126,5 +141,3 @@ class PrototypeCorporateRepairItem(CorporateRepairItem):
 			"cost": columns.NumberValue("numbers"),
 			"main_board_connect": columns.ConnectBoards("connect_boards")
 		}
-
-

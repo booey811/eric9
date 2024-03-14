@@ -66,6 +66,9 @@ class MainItem(items.BaseItemType):
 		self.address_notes = columns.TextValue('dup__of_passcode')
 		self.company_name = columns.TextValue("text15")
 
+		self.be_courier_collection = columns.StatusValue("be_courier_collection")
+		self.be_courier_return = columns.StatusValue("be_courier_return")
+
 		# customer info
 		self.corp_item_id = columns.TextValue("text7")
 

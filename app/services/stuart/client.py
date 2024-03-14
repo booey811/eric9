@@ -60,7 +60,7 @@ def create_job(job_data):
 	return send_request(
 		url=url,
 		method="POST",
-		data=job_data,
+		data=json.dumps(job_data),
 		headers=headers
 	)
 
@@ -73,7 +73,7 @@ def send_request(url, method, headers, data=None, params=None):
 		pass
 	elif response.status_code == 401:
 		# Re-authenticate
-		authenticate()
+		authenticate(headers)
 		response = requests.request(method=method, url=url, data=data, headers=headers, params=params)
 		if response.status_code == 401:
 			# If still unauthorized, raise a custom error
@@ -85,7 +85,7 @@ def send_request(url, method, headers, data=None, params=None):
 	return response
 
 
-def authenticate():
+def authenticate(request_headers: dict = None):
 	"""Authenticate with the Stuart API and store the token."""
 	url = BASE_URL + "/oauth/token"
 	headers = {'Content-Type': "application/x-www-form-urlencoded"}
@@ -99,6 +99,8 @@ def authenticate():
 	if result.status_code == 200:
 		token = json.loads(result.text)['access_token']
 		get_redis_connection().set("stuart_token", token)
+		if request_headers:
+			request_headers["Authorization"] = f"Bearer {token}"
 	else:
 		raise StuartAPIError(f"Stuart Auth Error ({result.status_code}): {result.text}")
 	return result

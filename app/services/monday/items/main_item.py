@@ -64,6 +64,7 @@ class MainItem(items.BaseItemType):
 		self.address_postcode = columns.TextValue("text93")
 		self.address_street = columns.TextValue('passcode')
 		self.address_notes = columns.TextValue('dup__of_passcode')
+		self.company_name = columns.TextValue("text15")
 
 		# customer info
 		self.corp_item_id = columns.TextValue("text7")

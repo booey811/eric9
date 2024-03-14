@@ -10,7 +10,7 @@ from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...cache.rq import q_low, q_high
 from ...tasks.monday import web_bookings, sessions
-from ...tasks import notifications
+from ...tasks import notifications, stuart
 
 log = logging.getLogger('eric')
 
@@ -173,4 +173,32 @@ def handle_main_status_adjustment():
 			}
 		)
 
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route('/book-collection', methods=["POST"])
+@monday_challenge
+def book_courier_collection():
+	log.debug('Booking Courier Collection')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_high.enqueue(
+		stuart.book_courier(data['pulseId'], 'incoming')
+	)
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route('/book-return', methods=["POST"])
+@monday_challenge
+def book_courier_return():
+	log.debug('Booking Courier Return')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_high.enqueue(
+		stuart.book_courier(data['pulseId'], 'outgoing')
+	)
 	return jsonify({'message': 'OK'}), 200

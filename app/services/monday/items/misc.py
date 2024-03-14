@@ -304,3 +304,33 @@ class PreCheckItem(BaseCacheableItem):
 			return labels
 		else:
 			return result_ids
+
+
+class CourierDataDumpItem(BaseItemType):
+	BOARD_ID = 1031579094
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.job_id = columns.TextValue("stuart_job_id")
+		self.booking_time = columns.DateValue("booking_time6")
+		self.allocation_time = columns.DateValue("hour3")
+		self.collection_time = columns.DateValue("collection_time4")
+		self.delivery_time = columns.DateValue("delivery_time")
+
+		self.cost_inc_vat = columns.NumberValue("cost__ex_vat_")
+		self.cost_ex_vat = columns.NumberValue("numbers2")
+		self.vat = columns.NumberValue("vat")
+
+		self.collection_postcode = columns.TextValue("collection_postcode5")
+		self.delivery_postcode = columns.TextValue("delivery_postcode")
+
+		self.distance = columns.NumberValue("distance")
+		self.tracking_url = columns.LinkURLValue("tracking_url")
+
+		self.main_item_id = columns.TextValue("text6")
+
+		self.job_status = columns.StatusValue("status")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+

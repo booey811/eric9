@@ -1,11 +1,13 @@
+import logging
 import requests
 import json
 
 import config
-from .exceptions import StuartAPIError, StuartAuthenticationError, AddressError
+from .exceptions import StuartAPIError, StuartAuthenticationError, AddressError, JobValidationError
 from ...cache import get_redis_connection
 
 conf = config.get_config()
+log = logging.getLogger('eric')
 
 
 def get_auth_header():
@@ -100,3 +102,25 @@ def authenticate():
 	else:
 		raise StuartAPIError(f"Stuart Auth Error ({result.status_code}): {result.text}")
 	return result
+
+
+def validate_job_data(job_data):
+	"""Validate the job data before sending it to the Stuart API."""
+	url = BASE_URL + "/v2/jobs/validate"
+	headers = {
+		"Content-Type": "application/json"
+	}
+	headers.update(get_auth_header())
+	log.debug(f"Validating Stuart Job Data: {job_data}")
+	response = send_request(
+		url=url,
+		method="POST",
+		data=json.dumps(job_data),
+		headers=headers
+	)
+	if response.status_code == 200:
+		return json.loads(response.text)
+	elif response.status_code == 422:
+		raise JobValidationError(f"Cannot Geocode Address: {response.text}")
+	else:
+		raise StuartAPIError(f"Stuart Job Validation Error: {response.text}")

@@ -2,19 +2,51 @@ import requests
 import json
 
 import config
-from .exceptions import StuartAPIError, StuartAuthenticationError
+from .exceptions import StuartAPIError, StuartAuthenticationError, AddressError
 from ...cache import get_redis_connection
 
 conf = config.get_config()
 
-HEADERS = {
 
-}
+def get_auth_header():
+	return {
+		"Authorization": f"Bearer {get_redis_connection().get('stuart_token').decode()}"
+	}
+
 
 if conf.STUART_ENV == 'production':
 	BASE_URL = "https://api.stuart.com"
 else:
 	BASE_URL = "https://api.sandbox.stuart.com"
+
+
+def validate_address(address_string, phone=''):
+	url = BASE_URL + "/v2/addresses/validate"
+	headers = {
+		'Content-Type': "application/json",
+	}
+
+	headers.update(get_auth_header())
+
+	if not phone:
+		phone = '02070998517'
+
+	params = {
+		"address": address_string,
+		"phone": phone,
+		"type": "picking",
+	}
+	response = send_request(
+		url=url,
+		method="GET",
+		params=params,
+		headers=headers
+	)
+
+	if response.status_code == 200:
+		return json.loads(response.text)
+	else:
+		raise AddressError(f"Stuart Address Validation Error: {response.text}")
 
 
 def create_job(job_data):
@@ -31,16 +63,16 @@ def create_job(job_data):
 	)
 
 
-def send_request(url, method, headers, data=None):
+def send_request(url, method, headers, data=None, params=None):
 	"""Send a request to the Stuart API and handle the response, re-authenticating if necessary."""
-	response = requests.request(method=method, url=url, data=data, headers=headers)
+	response = requests.request(method=method, url=url, data=data, headers=headers, params=params)
 	if response.status_code == 200:
 		# let it flow through
 		pass
 	elif response.status_code == 401:
 		# Re-authenticate
 		authenticate()
-		response = requests.request(method=method, url=url, data=data, headers=headers)
+		response = requests.request(method=method, url=url, data=data, headers=headers, params=params)
 		if response.status_code == 401:
 			# If still unauthorized, raise a custom error
 			raise StuartAuthenticationError("Re-authentication failed. Please check your credentials.")

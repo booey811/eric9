@@ -170,6 +170,8 @@ def transfer_web_booking(web_booking_item_id):
 
 		if woo_order_data['transaction_id']:
 			payment_status = 'Confirmed'
+			if 'cash' in payment_method.lower():
+				payment_status = 'Pay In Store - Pending'
 		else:
 			payment_status = 'Not Taken'
 

@@ -11,3 +11,7 @@ class StuartAuthenticationError(EricError):
 
 class AddressError(EricError):
 	pass
+
+
+class JobValidationError(EricError):
+	pass

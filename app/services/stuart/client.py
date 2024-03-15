@@ -11,8 +11,16 @@ log = logging.getLogger('eric')
 
 
 def get_auth_header():
+
+	token_from_redis = get_redis_connection().get('stuart_token')
+	if token_from_redis:
+		token = token_from_redis.decode()
+	else:
+		authenticate()
+		token = get_redis_connection().get('stuart_token').decode()
+
 	return {
-		"Authorization": f"Bearer {get_redis_connection().get('stuart_token').decode()}"
+		"Authorization": f"Bearer {token}"
 	}
 
 

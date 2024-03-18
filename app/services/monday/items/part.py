@@ -125,6 +125,7 @@ class InventoryAdjustmentItem(BaseItemType):
 		self.quantity_after = columns.NumberValue("quantity_after")
 		self.movement_type = columns.StatusValue("movement_type")
 		self.movement_direction = columns.StatusValue("dup__of_movement_type")
+		self.void_status = columns.StatusValue("status7")
 
 		self.part_id = columns.TextValue("text4")
 		self.part_url = columns.LinkURLValue("part_url")
@@ -133,6 +134,21 @@ class InventoryAdjustmentItem(BaseItemType):
 		self.source_url = columns.LinkURLValue("link2")
 
 		super().__init__(item_id, api_data, search)
+
+
+	def void_self(self):
+		part = PartItem(self.part_id.value)
+
+		difference = -int(self.difference.value)
+
+		part.adjust_stock_level(
+			difference,
+			source_item=self,
+			movement_type='Void Resolution'
+		)
+
+		self.void_status = "Voided"
+		self.commit()
 
 
 class OrderItem(BaseItemType):

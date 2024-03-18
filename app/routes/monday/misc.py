@@ -2,9 +2,9 @@ import logging
 from flask import Blueprint, jsonify, request
 import json
 
-from ...cache.rq import q_low
+from ...cache.rq import q_low, q_high
 from ...services import monday
-from ...tasks.monday import web_bookings
+from ...tasks.monday import web_bookings, product_management
 from ...tasks import sync_platform
 from ...utilities import notify_admins_of_error
 import config
@@ -70,5 +70,32 @@ def process_woo_order():
 		return jsonify({'message': 'OK'}), 200
 
 	item.add_update(json.dumps(data, indent=4))
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_misc_bp.route('/adjust-web-price', methods=["POST"])
+def adjust_web_price():
+	log.debug('Processing WooCommerce Order')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	product_id = data.get('pulseId')
+	new_price = data['value']['value']
+	old_price = data.get('previousValue')
+	if old_price:
+		old_price = old_price.get_value('value')
+	user_id = data.get('userId')
+
+	q_high.enqueue(
+		product_management.adjust_web_price,
+		kwargs={
+			"product_id": product_id,
+			"new_price": new_price,
+			"old_price": old_price,
+			"user_id": user_id
+		}
+	)
 
 	return jsonify({'message': 'OK'}), 200

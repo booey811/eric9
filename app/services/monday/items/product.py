@@ -18,6 +18,7 @@ class ProductItem(BaseCacheableItem):
 
 		self.required_minutes = columns.NumberValue("numbers7")
 		self.woo_commerce_product_id = columns.TextValue("text3")
+		self.price_sync_status = columns.StatusValue("status6")
 
 		self.product_type = columns.StatusValue("status3")
 

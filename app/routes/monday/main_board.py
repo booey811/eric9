@@ -177,7 +177,7 @@ def handle_main_status_adjustment():
 		q_low.enqueue(
 			monday.stock_control.update_stock_checkouts,
 			kwargs={
-				"main_id": data['pulseID'],
+				"main_id": data['pulseId'],
 				"create_sc_item": True
 			}
 		)
@@ -214,7 +214,7 @@ def book_courier_return():
 
 
 @main_board_bp.route('/repair-parts-adjustment')
-@monday.monday_challenge
+@monday_challenge
 def handle_changing_of_parts_used_data():
 	log.debug('Handling adjustment in parts used columns')
 	webhook = request.get_data()

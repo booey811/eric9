@@ -9,7 +9,7 @@ from ...services import monday
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...cache.rq import q_low, q_high
-from ...tasks.monday import web_bookings, sessions
+from ...tasks.monday import web_bookings, sessions, misc
 from ...tasks import notifications, stuart
 
 log = logging.getLogger('eric')
@@ -201,4 +201,20 @@ def book_courier_return():
 	q_high.enqueue(
 		stuart.book_courier(data['pulseId'], 'outgoing')
 	)
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route("/handle-imei-change")
+@monday_challenge
+def handle_imei_change():
+	log.debug('Booking Courier Return')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_high.enqueue(
+		misc.handle_imei_change,
+		data['pulseId']
+	)
+
 	return jsonify({'message': 'OK'}), 200

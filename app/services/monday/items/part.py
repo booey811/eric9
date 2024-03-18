@@ -1,5 +1,5 @@
 from ..api.items import BaseCacheableItem, BaseItemType
-from ..api import columns, get_api_items
+from ..api import columns, get_api_items, monday_connection, exceptions
 from ....utilities import notify_admins_of_error
 
 
@@ -135,7 +135,6 @@ class InventoryAdjustmentItem(BaseItemType):
 
 		super().__init__(item_id, api_data, search)
 
-
 	def void_self(self):
 		part = PartItem(self.part_id.value)
 
@@ -198,3 +197,69 @@ class StockCheckoutLineItem(BaseItemType):
 		self.quantity = columns.NumberValue("numbers3")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class RepairMapItem(BaseItemType):
+	BOARD_ID = 984924063
+
+	@classmethod
+	def fetch_by_deprecated_column_numbers(cls, device_no, parts_used_no, colour_no):
+		dual_val = f"{device_no}-{parts_used_no}"
+		combined_val = f"{device_no}-{parts_used_no}-{colour_no}"
+
+		results = monday_connection.items.fetch_items_by_column_value(
+			board_id=cls.BOARD_ID,
+			column_id="dual_only_id",  # dual ID columns
+			value=dual_val
+		)
+
+		if results.get('error_code'):
+			notify_admins_of_error(f"Could Not Find Repair Map: {results}")
+			raise exceptions.MondayAPIError(results.get('error_message'))
+		else:
+			results = results['data']['items_page_by_column_values']['items']
+
+		if len(results) != 1:
+			results = monday_connection.items.fetch_items_by_column_value(
+				board_id=cls.BOARD_ID,
+				column_id="combined_id",  # combined ID column
+				value=combined_val
+			)
+			if results.get('error_code'):
+				notify_admins_of_error(f"Could Not Find Repair Map: {results}")
+				raise exceptions.MondayAPIError(results.get('error_message'))
+			else:
+				results = results['data']['items_page_by_column_values']['items']
+
+			if len(results) != 1:
+				results = monday_connection.items.fetch_items_by_column_value(
+					board_id=cls.BOARD_ID,
+					column_id="combined_id",  # combined ID column
+					value=dual_val
+				)
+				if results.get('error_code'):
+					notify_admins_of_error(f"Could Not Find Repair Map: {results}")
+					raise exceptions.MondayAPIError(results.get('error_message'))
+				else:
+					results = results['data']['items_page_by_column_values']['items']
+
+			if not results:
+				return None
+
+		items = [cls(_['id'], _) for _ in results]
+		try:
+			return items[0]
+		except IndexError:
+			return None
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+		self.part_ids = columns.ConnectBoards("connect_boards5")
+
+		self.device_col_number = columns.NumberValue("device_id")
+		self.parts_used_col_number = columns.NumberValue("repair_id")
+		self.colour_col_number = columns.NumberValue("colour_id")
+
+		self.combined_id = columns.TextValue("combined_id")
+		self.dual_id = columns.TextValue("dual_only_id")
+
+		super().__init__(item_id, api_data, search)

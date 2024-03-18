@@ -40,7 +40,6 @@ class WebBookingItem(BaseItemType):
 
 
 class WebEnquiryItem(BaseItemType):
-
 	BOARD_ID = 863729294
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -215,7 +214,6 @@ class RepairProfitModelItem(BaseItemType):
 
 
 class PreCheckSet(BaseCacheableItem):
-
 	BOARD_ID = 4347106321
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -256,7 +254,6 @@ class PreCheckSet(BaseCacheableItem):
 
 
 class PreCheckItem(BaseCacheableItem):
-
 	BOARD_ID = 4455646189
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -310,7 +307,6 @@ class CourierDataDumpItem(BaseItemType):
 	BOARD_ID = 1031579094
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.job_id = columns.TextValue("stuart_job_id")
 		self.booking_time = columns.DateValue("booking_time6")
 		self.allocation_time = columns.DateValue("hour3")
@@ -334,3 +330,21 @@ class CourierDataDumpItem(BaseItemType):
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 
+class SickWDataItem(BaseItemType):
+
+	BOARD_ID = 5808954740
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.imeisn = columns.TextValue("text")
+		self.model_description = columns.TextValue("text5")
+		self.model = columns.TextValue("text0")
+		self.serial = columns.TextValue("text8")
+		self.fetched_data = columns.TextValue("long_text")
+
+		self.model_matches_connect = columns.ConnectBoards("connect_boards")
+		self.model_description_matches_connect = columns.ConnectBoards("board_relation")
+		self.main_board_connect = columns.ConnectBoards("connect_boards9")
+
+		self.main_item_id = columns.TextValue("text7")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)

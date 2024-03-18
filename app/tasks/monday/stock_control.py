@@ -27,6 +27,15 @@ def update_stock_checkouts(main_id):
 		else:
 			checkout_controller = monday.items.part.StockCheckoutControlItem(main_item.stock_checkout_id.value)
 
+		lines = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in
+				 monday.api.get_api_items(checkout_controller.checkout_line_ids.value)]
+
+		for line in lines:
+			if line.inventory_movement_id.value:
+				mov_item = monday.items.part.InventoryAdjustmentItem(line.inventory_movement_id.value)
+				mov_item.void_self()
+			monday.api.monday_connection.items.delete_item_by_id(line.id)
+
 		repair_id_lists = main_item.generate_repair_map_value_list()
 
 		map_items = []
@@ -84,6 +93,43 @@ def update_stock_checkouts(main_id):
 		checkout_controller.commit()
 		checkout_controller.add_update(f"Could not setup Stock Checkout: {e}")
 		raise e
+
+
+def process_stock_checkout(stock_checkout_id):
+	checkout_controller = monday.items.part.StockCheckoutControlItem(stock_checkout_id).load_from_api()
+	try:
+		lines = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in monday.api.get_api_items(checkout_controller.checkout_line_ids.value)]
+
+		for line in lines:
+			if not line.part_id.value:
+				notify_admins_of_error(f"Cannot Checkout Stock, Need Part ID: {line}")
+				checkout_controller.checkout_status = "Error"
+				checkout_controller.add_update(f"Cannot Checkout Stock, Need Part ID: {line}")
+				checkout_controller.commit()
+				raise ValueError(f"Cannot Checkout Stock, Need Part ID: {line}")
+			elif line.line_checkout_status.value == 'Complete':
+				message = f"Detected a complete line Item, please regenerate Controller Item: {line}"
+				notify_admins_of_error(message)
+				checkout_controller.add_update(message)
+				checkout_controller.checkout_status = "Error"
+				checkout_controller.commit()
+				raise monday.api.exceptions.MondayDataError(message)
+			part = monday.items.PartItem.get([line.part_id.value])[0]
+			mov_item = part.adjust_stock_level(-1, line, 'iCorrect Repairs')
+			line.inventory_movement_id = str(mov_item.id)
+			line.line_checkout_status = "Complete"
+			line.parts_cost = part.supply_price.value
+			line.commit()
+	except Exception as e:
+		message = f"Could Not Checkout Stock Controller {e}"
+		notify_admins_of_error(e)
+		checkout_controller.checkout_status = 'Error'
+		checkout_controller.add_update(message)
+		checkout_controller.commit()
+		raise e
+	return checkout_controller
+
+	return checkout_controller
 
 
 def process_complete_order_item(order_item_id):

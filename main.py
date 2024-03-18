@@ -17,6 +17,8 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		pass
+		from app.tasks.monday import stock_control
+		stock_control.update_stock_checkouts(4819915342)
+		stock_control.process_stock_checkout(6278365602)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

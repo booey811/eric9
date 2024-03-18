@@ -1,9 +1,10 @@
 import logging
+import json
 
-from ..api import items, columns
+from ..api import items, columns, boards
 from ..api.client import get_api_items
 from .product import ProductItem
-from .part import PartItem
+from .part import PartItem, RepairMapItem
 from . import repair_phases
 from ....utilities import notify_admins_of_error
 
@@ -37,7 +38,11 @@ class MainItem(items.BaseItemType):
 		self.imeisn = columns.TextValue("text4")
 		self.passcode = columns.TextValue('text8')
 
+		self.stock_checkout_id = columns.TextValue("text766")
+
 		self.device_deprecated_dropdown = columns.DropdownValue("device0")
+		self.parts_used_dropdown = columns.DropdownValue("repair")
+		self.device_colour = columns.StatusValue("status8")
 
 		# payment info
 		self.payment_status = columns.StatusValue("payment_status")
@@ -175,6 +180,34 @@ class MainItem(items.BaseItemType):
 			phase_models = [p.get_phase_model() for p in prods]
 			return max(phase_models, key=lambda x: x.get_total_minutes_required())
 
+	def generate_repair_map_value_list(self):
+		"""creates a list of lists of combined IDS and Dual IDs for use in Repair Map searching"""
+		try:
+			main_board = boards.get_board(self.BOARD_ID)
+			device_no = self.device_deprecated_dropdown.value[0]
+			colour_label = self.device_colour.value
+			colour_col_settings = json.loads([c for c in main_board['columns'] if c['id'] == str(self.device_colour.column_id)][0]['settings_str'])
+			colour_no = None
+			for _id, _label in colour_col_settings['labels'].items():
+				if str(_label) == str(colour_label):
+					colour_no = _id
+					break
+
+			results = []
+
+			for pu_id in self.parts_used_dropdown.value:
+				pu_text = self.convert_dropdown_ids_to_labels([pu_id], self.parts_used_dropdown.column_id)[0]
+				if pu_text in RepairMapItem.REPAIRS_WITH_COLOUR:
+					combined_id = f"{device_no}-{pu_id}-{colour_no}"
+				else:
+					combined_id = f"{device_no}-{pu_id}"
+				dual_id = f"{device_no}-{pu_id}"
+
+				results.append([combined_id, dual_id])
+			return results
+		except Exception as e:
+			notify_admins_of_error(f"Could Not Generate Repair Map ID List from {self}")
+			raise e
 
 class PropertyTestItem(items.BaseItemType):
 	BOARD_ID = 349212843

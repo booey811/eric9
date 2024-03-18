@@ -95,6 +95,6 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 	}
 
 	if time and direction == 'incoming':
-		basic['pickup_at'] = time
+		basic["job"]['pickup_at'] = time
 
 	return basic

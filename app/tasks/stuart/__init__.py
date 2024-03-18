@@ -27,17 +27,17 @@ def book_courier(main_id, direction):
 			main_item.be_courier_collection = 'Booking Complete'
 		elif direction == 'outgoing':
 			main_item.be_courier_return = 'Booking Complete'
-			try:
-				ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
-				custom_field_id = zendesk.custom_fields.FIELDS_DICT['tracking_link']
-				ticket.custom_fields.append(CustomField(
-					id=int(custom_field_id),
-					value=str(response['deliveries'][0]['tracking_url'])
-				))
-				zendesk.client.tickets.update(ticket)
-			except Exception as e:
-				main_item.add_update(f"Courier Booked, but could not update ticket with tracking link: {e}", main_item.error_thread_id)
-				raise e
+		try:
+			ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
+			custom_field_id = zendesk.custom_fields.FIELDS_DICT['tracking_link']
+			ticket.custom_fields.append(CustomField(
+				id=int(custom_field_id),
+				value=str(response['deliveries'][0]['tracking_url'])
+			))
+			zendesk.client.tickets.update(ticket)
+		except Exception as e:
+			main_item.add_update(f"Courier Booked, but could not update ticket with tracking link: {e}", main_item.error_thread_id)
+			raise e
 		main_item.commit()
 
 	except Exception as e:

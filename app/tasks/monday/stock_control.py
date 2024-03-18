@@ -1,5 +1,89 @@
+import json
+
 from ...services import monday
 from ...utilities import notify_admins_of_error
+
+
+def update_stock_checkouts(main_id):
+	main_item = monday.items.MainItem(main_id).load_from_api()
+	try:
+		if not main_item.stock_checkout_id.value:
+			# make one
+			checkout_controller = monday.items.part.StockCheckoutControlItem().create(main_item.name)
+			main_item.stock_checkout_id = str(checkout_controller.id)
+			main_item.commit()
+		else:
+			checkout_controller = monday.items.part.StockCheckoutControlItem(main_item.stock_checkout_id.value)
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Begin Stock Checkout Process: {e}")
+		raise e
+
+	try:
+		if not main_item.stock_checkout_id.value:
+			# make one
+			checkout_controller = monday.items.part.StockCheckoutControlItem().create(main_item.name)
+			main_item.stock_checkout_id = str(checkout_controller.id)
+			main_item.commit()
+		else:
+			checkout_controller = monday.items.part.StockCheckoutControlItem(main_item.stock_checkout_id.value)
+
+		repair_id_lists = main_item.generate_repair_map_value_list()
+
+		map_items = []
+		for combined_id, dual_id in repair_id_lists:
+			comb_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(combined_id)
+			if comb_id_result:
+				map_items.append(comb_id_result[0])
+			else:
+				dual_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(dual_id)
+				if dual_id_result:
+					map_items.append(dual_id_result[0])
+				else:
+					# need to create
+					blank = monday.items.part.RepairMapItem()
+					blank.combined_id = str(combined_id)
+					blank.dual_id = str(dual_id)
+
+					d_id, pu_id = dual_id.split("-")
+					pu_text = main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[0]
+					device_text = \
+					main_item.convert_dropdown_ids_to_labels([d_id], main_item.device_deprecated_dropdown.column_id)[0]
+					name = f"{device_text} {pu_text}"
+					if main_item.device_colour.value and main_item.device_colour.value != 'Not Selected':
+						name = f"{device_text} {pu_text} {main_item.device_colour.value}"
+
+					map_items.append(blank.create(name))
+
+		missing_part_ids = []
+		for map_item in map_items:
+			if not map_item.part_ids.value:
+				missing_part_ids.append(map_item)
+
+		if missing_part_ids:
+			raise monday.api.exceptions.MondayDataError(f"No Parts Attached to RepairMaps: {missing_part_ids}")
+
+		part_ids = [_.part_ids.value[0] for _ in map_items]
+		parts_data = monday.api.get_api_items(part_ids)
+		parts = [monday.items.PartItem(_['id'], _) for _ in parts_data]
+		for part in parts:
+			i = monday.api.monday_connection.items.create_subitem(
+				checkout_controller.id,
+				part.name,
+			)
+			i = monday.items.part.StockCheckoutLineItem(i['data']['create_subitem']['id'], i['data']['create_subitem'])
+			i.part_id = str(part.id)
+			i.commit()
+
+		checkout_controller.checkout_status = "Change Detected"
+		checkout_controller.commit()
+		return checkout_controller
+
+	except Exception as e:
+		notify_admins_of_error(e)
+		checkout_controller.checkout_status = "Error"
+		checkout_controller.commit()
+		checkout_controller.add_update(f"Could not setup Stock Checkout: {e}")
+		raise e
 
 
 def process_complete_order_item(order_item_id):

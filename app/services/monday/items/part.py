@@ -194,7 +194,6 @@ class StockCheckoutLineItem(BaseItemType):
 		self.parts_cost = columns.NumberValue("numbers")
 		self.part_id = columns.TextValue("text")
 		self.inventory_movement_id = columns.TextValue("text1")
-		self.quantity = columns.NumberValue("numbers3")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
@@ -202,15 +201,59 @@ class StockCheckoutLineItem(BaseItemType):
 class RepairMapItem(BaseItemType):
 	BOARD_ID = 984924063
 
+	REPAIRS_WITH_COLOUR = (
+		'TrackPad',
+		'Charging Port',
+		'Headphone Jack',
+		'Home Button',
+		'Front Screen Universal',
+		'Rear Glass',
+		'Front Screen (LG)',
+		'Front Screen (Tosh)',
+		'Rear Housing',
+		'TEST Screen',
+		'Front Screen',
+		'After Market OLED'
+	)
+
 	@classmethod
-	def fetch_by_deprecated_column_numbers(cls, device_no, parts_used_no, colour_no):
-		dual_val = f"{device_no}-{parts_used_no}"
-		combined_val = f"{device_no}-{parts_used_no}-{colour_no}"
+	def fetch_by_combined_ids(cls, combined=None, dual=None):
+		if (not dual and not combined) or (combined and dual):
+			raise ValueError("Use Combined or Dual IDs, not both")
+
+		if combined:
+			search_col_id = "combined_id"
+			search_val = combined
+		elif dual:
+			search_col_id = "dual_id"
+			search_val = dual
+		else:
+			raise ValueError("Impossible Input")
 
 		results = monday_connection.items.fetch_items_by_column_value(
 			board_id=cls.BOARD_ID,
-			column_id="dual_only_id",  # dual ID columns
-			value=dual_val
+			column_id=search_col_id,
+			value=search_val
+		)
+
+		if results.get('error_message'):
+			raise exceptions.MondayAPIError(results.get("error_message"))
+
+		else:
+			return [cls(_['id'], _) for _ in results['data']['items_page_by_column_values']['items']]
+
+	@classmethod
+	def fetch_by_deprecated_column_numbers(cls, device_no, parts_used_no, colour_no, has_colour):
+		dual_val = f"{device_no}-{parts_used_no}"
+		if has_colour:
+			combined_val = f"{device_no}-{parts_used_no}-{colour_no}"
+		else:
+			combined_val = dual_val
+
+		results = monday_connection.items.fetch_items_by_column_value(
+			board_id=cls.BOARD_ID,
+			column_id="combined_id",  # dual ID columns
+			value=combined_val
 		)
 
 		if results.get('error_code'):
@@ -222,8 +265,8 @@ class RepairMapItem(BaseItemType):
 		if len(results) != 1:
 			results = monday_connection.items.fetch_items_by_column_value(
 				board_id=cls.BOARD_ID,
-				column_id="combined_id",  # combined ID column
-				value=combined_val
+				column_id="dual_only_id",  # combined ID column
+				value=dual_val
 			)
 			if results.get('error_code'):
 				notify_admins_of_error(f"Could Not Find Repair Map: {results}")
@@ -231,17 +274,17 @@ class RepairMapItem(BaseItemType):
 			else:
 				results = results['data']['items_page_by_column_values']['items']
 
-			if len(results) != 1:
-				results = monday_connection.items.fetch_items_by_column_value(
-					board_id=cls.BOARD_ID,
-					column_id="combined_id",  # combined ID column
-					value=dual_val
-				)
-				if results.get('error_code'):
-					notify_admins_of_error(f"Could Not Find Repair Map: {results}")
-					raise exceptions.MondayAPIError(results.get('error_message'))
-				else:
-					results = results['data']['items_page_by_column_values']['items']
+		if len(results) != 1:
+			results = monday_connection.items.fetch_items_by_column_value(
+				board_id=cls.BOARD_ID,
+				column_id="combined_id",  # combined ID column
+				value=dual_val
+			)
+			if results.get('error_code'):
+				notify_admins_of_error(f"Could Not Find Repair Map: {results}")
+				raise exceptions.MondayAPIError(results.get('error_message'))
+			else:
+				results = results['data']['items_page_by_column_values']['items']
 
 			if not results:
 				return None
@@ -255,9 +298,9 @@ class RepairMapItem(BaseItemType):
 	def __init__(self, item_id=None, api_data=None, search=False):
 		self.part_ids = columns.ConnectBoards("connect_boards5")
 
-		self.device_col_number = columns.NumberValue("device_id")
-		self.parts_used_col_number = columns.NumberValue("repair_id")
-		self.colour_col_number = columns.NumberValue("colour_id")
+		self.device_col_number = columns.TextValue("device_id")
+		self.parts_used_col_number = columns.TextValue("repair_id")
+		self.colour_col_number = columns.TextValue("colour_id")
 
 		self.combined_id = columns.TextValue("combined_id")
 		self.dual_id = columns.TextValue("dual_only_id")

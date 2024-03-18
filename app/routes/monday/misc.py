@@ -75,6 +75,7 @@ def process_woo_order():
 
 
 @monday_misc_bp.route('/adjust-web-price', methods=["POST"])
+@monday.monday_challenge
 def adjust_web_price():
 	log.debug('Processing WooCommerce Order')
 	webhook = request.get_data()

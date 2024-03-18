@@ -17,7 +17,6 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.tasks.monday import product_management
-		product_management.adjust_web_price(2489440001, 80)
+		pass
 	else:
 		raise Exception(f"Invalid ENV: {env}")

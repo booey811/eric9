@@ -86,7 +86,7 @@ def adjust_web_price():
 	new_price = data['value']['value']
 	old_price = data.get('previousValue')
 	if old_price:
-		old_price = old_price.get_value('value')
+		old_price = old_price.get('value')
 	user_id = data.get('userId')
 
 	q_high.enqueue(

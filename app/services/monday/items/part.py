@@ -166,6 +166,8 @@ class StockCheckoutControlItem(BaseItemType):
 		self.repair_status = columns.StatusValue("status47")
 		self.checkout_status = columns.StatusValue("status4")
 
+		self.checkout_line_ids = columns.ConnectBoards("subitems")
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 

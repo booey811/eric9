@@ -156,3 +156,27 @@ class OrderLineItem(BaseItemType):
 		self.processing_status = columns.StatusValue("status6")
 
 		super().__init__(item_id, api_data, search)
+
+
+class StockCheckoutControlItem(BaseItemType):
+	BOARD_ID = 6267736041
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
+		self.main_item_id = columns.TextValue("text")
+		self.repair_status = columns.StatusValue("status47")
+		self.checkout_status = columns.StatusValue("status4")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class StockCheckoutLineItem(BaseItemType):
+	BOARD_ID = 6267766059
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
+		self.line_checkout_status = columns.StatusValue("status0")
+		self.parts_cost = columns.NumberValue("numbers")
+		self.part_id = columns.TextValue("text")
+		self.inventory_movement_id = columns.TextValue("text1")
+		self.quantity = columns.NumberValue("numbers3")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)

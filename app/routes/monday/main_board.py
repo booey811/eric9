@@ -10,7 +10,7 @@ from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...cache.rq import q_low, q_high
 from ...tasks.monday import web_bookings, sessions
-from ...tasks import notifications, stuart
+from ...tasks import notifications, stuart, monday
 
 log = logging.getLogger('eric')
 
@@ -173,6 +173,15 @@ def handle_main_status_adjustment():
 			}
 		)
 
+	if new_label == 'Repaired':
+		q_low.enqueue(
+			monday.stock_control.update_stock_checkouts,
+			kwargs={
+				"main_id": data['pulseID'],
+				"create_sc_item": True
+			}
+		)
+
 	return jsonify({'message': 'OK'}), 200
 
 
@@ -202,3 +211,22 @@ def book_courier_return():
 		stuart.book_courier(data['pulseId'], 'outgoing')
 	)
 	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route('/repair-parts-adjustment')
+@monday.monday_challenge
+def handle_changing_of_parts_used_data():
+	log.debug('Handling adjustment in parts used columns')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_low.enqueue(
+		monday.stock_control.update_stock_checkouts,
+		kwargs={
+			"main_id": data['pulseID'],
+			"create_sc_item": False
+		}
+	)
+
+	return jsonify({'status': 'ok'}), 200

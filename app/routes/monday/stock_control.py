@@ -38,3 +38,5 @@ def process_completed_count():
 		data['pulseId']
 	)
 	return jsonify({'status': 'ok'}), 200
+
+

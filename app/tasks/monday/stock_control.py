@@ -1,13 +1,16 @@
 import json
 
+from ...cache.rq import q_low
 from ...services import monday
 from ...utilities import notify_admins_of_error
 
 
-def update_stock_checkouts(main_id):
+def update_stock_checkouts(main_id, create_sc_item=False):
 	main_item = monday.items.MainItem(main_id).load_from_api()
 	try:
 		if not main_item.stock_checkout_id.value:
+			if not create_sc_item:
+				return False
 			# make one
 			checkout_controller = monday.items.part.StockCheckoutControlItem().create(main_item.name)
 			main_item.stock_checkout_id = str(checkout_controller.id)
@@ -83,8 +86,11 @@ def update_stock_checkouts(main_id):
 			i.part_id = str(part.id)
 			i.commit()
 
-		checkout_controller.checkout_status = "Change Detected"
 		checkout_controller.commit()
+		q_low.enqueue(
+			process_stock_checkout,
+			checkout_controller.id
+		)
 		return checkout_controller
 
 	except Exception as e:

@@ -17,9 +17,7 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		pass
-		from app.services import stuart
-		from app.tasks.stuart import book_courier
-		book_courier(6276128077, 'incoming')
+		from app.tasks.monday import product_management
+		product_management.adjust_web_price(2489440001, 80)
 	else:
 		raise Exception(f"Invalid ENV: {env}")

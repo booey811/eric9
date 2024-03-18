@@ -17,9 +17,9 @@ if __name__ == '__main__':
 	elif env == 'testing':
 		eric.run()
 	elif env == 'development':
-		from app.services.monday import api
-		i = api.get_api_items([6223483200])[0]
-		si = api.get_api_items([6223575653])[0]
-		main = api.get_api_items([6223483200])[0]
+		pass
+		from app.services import stuart
+		from app.tasks.stuart import book_courier
+		book_courier(6276128077, 'incoming')
 	else:
 		raise Exception(f"Invalid ENV: {env}")

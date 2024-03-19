@@ -3,6 +3,8 @@ import logging
 import json
 
 from flask import Blueprint, request, jsonify
+from rq.job import Job
+from rq.exceptions import NoSuchJobError
 
 from ...services.monday import monday_challenge, items
 from ...services import monday
@@ -211,25 +213,6 @@ def book_courier_return():
 		stuart.book_courier(data['pulseId'], 'outgoing')
 	)
 	return jsonify({'message': 'OK'}), 200
-
-
-@main_board_bp.route('/repair-parts-adjustment')
-@monday_challenge
-def handle_changing_of_parts_used_data():
-	log.debug('Handling adjustment in parts used columns')
-	webhook = request.get_data()
-	data = webhook.decode('utf-8')
-	data = json.loads(data)['event']
-
-	q_low.enqueue(
-		monday.stock_control.update_stock_checkouts,
-		kwargs={
-			"main_id": data['pulseID'],
-			"create_sc_item": False
-		}
-	)
-
-	return jsonify({'status': 'ok'}), 200
 
 
 @main_board_bp.route("/handle-imei-change")

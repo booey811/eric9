@@ -396,6 +396,10 @@ def sync_to_external_corporate_boards(main_id):
 			raise ValueError(f"{str(main_item)} does not have a ticket_id")
 
 		ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
+		if not ticket.organization:
+			# no organization - ignore
+			return False
+
 		corp_repair_board_id = ticket.organization.organization_fields['corporate_repair_board_id']
 		if not corp_repair_board_id:
 			# no corporate repairs board setup - ignore

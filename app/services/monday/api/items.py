@@ -112,20 +112,26 @@ class BaseItemType:
 		self.staged_changes = {}
 		return self
 
-	def commit(self, name=None):
+	def commit(self, name=None, reload=False):
 		# commit changes to the API
 		if not self.id and not name:
 			raise IncompleteItemError(self, "Item ID (of an existing item) or name param must be provided")
 		elif not self.id and name:
 			self.create(name)
 		try:
-			return conn.items.change_multiple_column_values(
+			conn.items.change_multiple_column_values(
 				board_id=self.BOARD_ID,
 				item_id=self.id,
 				column_values=self.staged_changes
 			)
 		except Exception as e:
 			raise MondayAPIError(f"Error calling monday API: {e}")
+
+		if reload:
+			api_data = get_api_items([self.id])[0]
+			self.load_from_api(api_data)
+
+		return self
 
 	def create(self, name):
 		# create a new item in the API

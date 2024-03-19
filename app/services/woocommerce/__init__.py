@@ -27,3 +27,7 @@ def adjust_price(product_id: str, new_price: str, name: str = ''):
         return res.json()
     else:
         raise Exception(f"Woo Commerce Product Update Failed: {res.json()}")
+
+
+def get_order_json(order_id):
+    return woo.get(f"orders/{order_id}").json()

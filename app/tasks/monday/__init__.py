@@ -1,1 +1,1 @@
-from . import sessions, stock_control
+from . import sessions, stock_control, sales

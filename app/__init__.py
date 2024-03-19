@@ -48,6 +48,7 @@ def create_app():
 	app.register_blueprint(monday_routes.misc.monday_misc_bp)
 	app.register_blueprint(monday_routes.stock_control.stock_control_bp)
 	app.register_blueprint(zendesk_routes.zendesk_bp)
+	app.register_blueprint(monday_routes.financial.monday_sales_bp)
 
 	return app
 

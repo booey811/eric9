@@ -182,7 +182,6 @@ def handle_main_status_adjustment():
 			monday.sales.create_or_update_sale,
 			kwargs={
 				"main_id": data['pulseId'],
-				"create_sc_item": False
 			}
 		)
 		q_low.enqueue(

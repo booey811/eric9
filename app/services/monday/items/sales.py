@@ -12,6 +12,8 @@ class SaleControllerItem(BaseItemType):
 
 		self.processing_status = columns.StatusValue("status4")
 
+		self.invoicing_status = columns.StatusValue("status1")
+
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		super().__init__(item_id, api_data, search, cache_data)

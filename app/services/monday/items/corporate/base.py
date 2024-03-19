@@ -12,6 +12,22 @@ from .....utilities import notify_admins_of_error
 class CorporateAccountItem(BaseItemType):
 	BOARD_ID = 1973442389
 
+	@classmethod
+	def get_by_short_code(cls, short_code):
+		search = cls().search_board_for_items('short_code', short_code)
+		if len(search) == 1:
+			return cls(search[0]['id'], search[0])
+		elif len(search) > 1:
+			raise ValueError(f"Multiple Corporate Account Items found for short_code {short_code}")
+		else:
+			raise ValueError(f"No Corporate Account Item found for short_code {short_code}")
+
+	def __init__(self, item_id=None, api_data=None, search=None):
+
+		self.short_code = columns.TextValue("text0")
+
+		super().__init__(item_id, api_data, search)
+
 
 class CorporateRepairItem(BaseItemType):
 	"""Base class for corporate board items. contains all required methods for enacting the various base processes"""

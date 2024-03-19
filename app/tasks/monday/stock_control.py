@@ -14,6 +14,7 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 			# make one
 			checkout_controller = monday.items.part.StockCheckoutControlItem()
 			checkout_controller.main_item_id = str(main_item.id)
+			checkout_controller.main_item_connect = [int(main_item.id)]
 			checkout_controller.create(main_item.name)
 			main_item.stock_checkout_id = str(checkout_controller.id)
 			main_item.commit(reload=True)

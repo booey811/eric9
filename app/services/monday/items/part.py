@@ -178,6 +178,7 @@ class StockCheckoutControlItem(BaseItemType):
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
 		self.main_item_id = columns.TextValue("text")
+		self.main_item_connect = columns.ConnectBoards("connect_boards")
 		self.repair_status = columns.StatusValue("status47")
 		self.checkout_status = columns.StatusValue("status4")
 

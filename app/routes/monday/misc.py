@@ -4,7 +4,7 @@ import json
 
 from ...cache.rq import q_low, q_high
 from ...services import monday
-from ...tasks.monday import web_bookings, product_management
+from ...tasks.monday import web_bookings, product_management, sales
 from ...tasks import sync_platform
 from ...utilities import notify_admins_of_error
 import config
@@ -97,6 +97,29 @@ def adjust_web_price():
 			"old_price": old_price,
 			"user_id": user_id
 		}
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_misc_bp.route('/convert-to-new-sales', methods=["POST"])
+@monday.monday_challenge
+def convert_financial_item_to_sales():
+	log.debug('Converting old financial item to new sales item')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+	financial_id = data['pulseId']
+
+	financial_data = monday.api.get_api_items([int(financial_id)])[0]
+
+	main_id_col = [c for c in financial_data['column_values'] if c['id'] == "mainboard_id6"][0]
+
+	main_id = main_id_col['text']
+
+	q_low.enqueue(
+		sales.create_or_update_sale,
+		main_id
 	)
 
 	return jsonify({'message': 'OK'}), 200

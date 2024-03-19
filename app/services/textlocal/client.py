@@ -50,6 +50,8 @@ class NoNumberAvailable(Exception):
 
 def attempt_to_deliver_text_message(main_id):
 	main_item = monday.items.MainItem(main_id).load_from_api()
+	if main_item.notifications_status.value == "OFF":
+		return "Notifications turned off"
 	try:
 		return texter.send_text_notification(main_item)
 	except Exception as e:

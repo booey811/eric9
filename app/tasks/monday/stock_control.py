@@ -16,12 +16,24 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 			checkout_controller.main_item_id = str(main_item.id)
 			checkout_controller.create(main_item.name)
 			main_item.stock_checkout_id = str(checkout_controller.id)
-			main_item.commit()
+			main_item.commit(reload=True)
 		else:
 			checkout_controller = monday.items.part.StockCheckoutControlItem(main_item.stock_checkout_id.value)
 	except Exception as e:
 		notify_admins_of_error(f"Could Not Begin Stock Checkout Process: {e}")
 		raise e
+
+	if not main_item.parts_used_dropdown.value:
+		checkout_controller.checkout_status = "Error"
+		checkout_controller.commit()
+		checkout_controller.add_update("No Parts Selected")
+		return False
+
+	if not main_item.device_deprecated_dropdown.value:
+		checkout_controller.checkout_status = "Error"
+		checkout_controller.commit()
+		checkout_controller.add_update("No Device Selected")
+		return False
 
 	try:
 		if not main_item.stock_checkout_id.value:
@@ -74,7 +86,10 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 				missing_part_ids.append(map_item)
 
 		if missing_part_ids:
-			raise monday.api.exceptions.MondayDataError(f"No Parts Attached to RepairMaps: {missing_part_ids}")
+			urls = [
+				f"https://icorrect.monday.com/boards/{monday.items.part.PartItem.BOARD_ID}/pulses/{_.id}" for _ in missing_part_ids
+			]
+			raise monday.api.exceptions.MondayDataError(f"No Parts Attached to {len(missing_part_ids)} RepairMaps: {urls}")
 
 		part_ids = [_.part_ids.value[0] for _ in map_items]
 		parts_data = monday.api.get_api_items(part_ids)

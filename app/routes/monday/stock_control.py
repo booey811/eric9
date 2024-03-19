@@ -40,3 +40,20 @@ def process_completed_count():
 	return jsonify({'status': 'ok'}), 200
 
 
+@stock_control_bp.route("/stock-checkout-adjustment", methods=['POST'])
+@monday.monday_challenge
+def checkout_repair_stock():
+	log.debug('Checking out repair stock')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	sc_item_id = data['pulseId']
+	sc_item = monday.items.part.StockCheckoutControlItem(sc_item_id)
+	main_id = sc_item.main_item_id.value
+	if main_id:
+		q_low.enqueue(
+			stock_tasks.update_stock_checkouts,
+			main_id
+		)
+	return jsonify({'status': 'ok'}), 200

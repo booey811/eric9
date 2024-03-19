@@ -18,7 +18,7 @@ def re_process_sales_item():
 	sales_control_id = data['pulseId']
 	api_data = monday.api.get_api_items([sales_control_id])[0]
 
-	main_id = api_data['column_values']['text']['text']
+	main_id = [c for c in api_data['column_values'] if c['id'] == 'text'][0]['text']
 
 	q_high.enqueue(
 		sales_tasks.create_or_update_sale,

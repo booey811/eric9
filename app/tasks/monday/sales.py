@@ -14,7 +14,7 @@ def create_or_update_sale(main_id):
 		sale_controller.main_item_connect = [int(main_id)]
 		sale_controller.create(main_item.name)
 	else:
-		sale_controller = monday.items.sales.SaleControllerItem(search[0].id, search[0])
+		sale_controller = monday.items.sales.SaleControllerItem(search[0]['id'], search[0])
 	try:
 		# remove old sale lines
 		current_sale_line_ids = sale_controller.subitem_ids.value or []

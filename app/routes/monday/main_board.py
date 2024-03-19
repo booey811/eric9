@@ -176,6 +176,13 @@ def handle_main_status_adjustment():
 		)
 
 	if new_label == 'Repaired':
+		q_high.enqueue(
+			monday.sales.create_or_update_sale,
+			kwargs={
+				"main_id": data['pulseId'],
+				"create_sc_item": False
+			}
+		)
 		q_low.enqueue(
 			monday.stock_control.update_stock_checkouts,
 			kwargs={

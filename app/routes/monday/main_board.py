@@ -7,7 +7,7 @@ from rq.job import Job
 from rq.exceptions import NoSuchJobError
 
 from ...services.monday import monday_challenge, items
-from ...services import monday
+from ...services import monday, textlocal
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...cache.rq import q_low, q_high
@@ -142,8 +142,10 @@ def handle_main_status_adjustment():
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
 
-	log.debug(data)
-
+	q_high.enqueue(
+		textlocal.client.attempt_to_deliver_text_message,
+		data['pulseId']
+	)
 	q_high.enqueue(
 		notifications.notify_zendesk.send_macro,
 		data['pulseId']

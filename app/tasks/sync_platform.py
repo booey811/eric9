@@ -197,6 +197,8 @@ def sync_to_monday(ticket_id):
 			id=zendesk.custom_fields.FIELDS_DICT['main_item_id'],
 			value=str(main_item.id)
 		))
+		main_item.commit(reload=True)
+		main_item = main_item.load_from_api()
 	else:
 		main_item = items.MainItem(main_id).load_from_api()
 

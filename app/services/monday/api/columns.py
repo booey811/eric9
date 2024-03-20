@@ -367,7 +367,11 @@ class ConnectBoards(ValueType):
 
 	def load_column_value(self, column_data: dict):
 		super().load_column_value(column_data)
-		value_data = column_data['value']
+		try:
+			value_data = column_data['value']
+		except KeyError:
+			raise InvalidColumnData(column_data, 'value')
+
 		if value_data is None:
 			# connected boards column is empty
 			linked_ids = []

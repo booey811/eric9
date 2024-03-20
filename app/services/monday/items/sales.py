@@ -1,5 +1,6 @@
 from ..api.items import BaseItemType
 from ..api import columns
+from . import MainItem
 
 
 class SaleControllerItem(BaseItemType):
@@ -19,12 +20,21 @@ class SaleControllerItem(BaseItemType):
 
 		super().__init__(item_id, api_data, search, cache_data)
 
-	def create_invoice_item(self) -> "InvoiceControllerItem":
+	def create_invoice_item(self, main_item=None) -> "InvoiceControllerItem" or None:
 		# create the invoice item
 
 		if self.invoice_item_id.value or self.invoice_item_connect.value:
 			# invoice item already exists
 			return InvoiceControllerItem(self.invoice_item_id.value)
+
+		if not main_item:
+			main_item = MainItem(self.main_item_id.value).load_from_api()
+
+		if main_item.client.value != "Corporate":
+			# Not a corporate sale, no invoice needed
+			self.invoicing_status = "Not Corporate"
+			self.commit()
+			return None
 
 		invoice_item = InvoiceControllerItem()
 		invoice_item.sales_item_id = str(self.id)

@@ -1,4 +1,5 @@
-from ...services import monday
+from ...errors import EricError
+from ...services import monday, zendesk
 from ...utilities import notify_admins_of_error
 
 
@@ -64,6 +65,9 @@ def create_or_update_sale(main_id):
 				)
 		sale_controller.processing_status = "Complete"
 		sale_controller.commit()
+
+		sale_controller.create_invoice_item()
+
 		return sale_controller
 
 	except Exception as e:
@@ -72,3 +76,48 @@ def create_or_update_sale(main_id):
 		sale_controller.commit()
 		sale_controller.add_update(f"Error creating or updating sale: {e}")
 		raise e
+
+
+def generate_invoice_item_data(invoice_item_id, main_item=None, sale_item=None):
+	sale_item = monday.items.sales.SaleControllerItem(sale_item_id).load_from_api()
+	try:
+		main_item = monday.items.MainItem(sale_item.main_item_id.value).load_from_api()
+
+		ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
+		organization = ticket.organization
+
+		if sale_item.company_short_code.value:
+			corp_item = monday.items.corporate.base.CorporateAccountItem.get_by_short_code(
+				sale_item.company_short_code.value)
+		elif organization:
+			corp_item_id = organization.organization_fields['corporateboard_id']
+			corp_item = monday.items.corporate.base.CorporateAccountItem(int(corp_item_id)).load_from_api()
+		else:
+			raise InvoiceDetailsError(
+				f"{ticket.id}: No organization found on ticket and no short code on sale item: Cannot Find Account Item"
+			)
+
+
+
+	# create the invoice
+	# logical route info:
+	# monthly invoicing; check for a draft, add to it if found, else create a new one
+	# pay per repair; create a new invoice
+
+	except InvoiceDetailsError as e:
+		notify_admins_of_error(f"Invoice Details Error: {e}")
+		sale_item.invoicing_status = "Missing Info"
+		sale_item.commit()
+		sale_item.add_update(f"Invoice Details Error: {e}")
+		raise e
+
+	except Exception as e:
+		notify_admins_of_error(f"Error creating invoice: {e}")
+		sale_item.invoicing_status = "Error"
+		sale_item.commit()
+		sale_item.add_update(f"Error creating invoice: {e}")
+		raise e
+
+
+class InvoiceDetailsError(EricError):
+	pass

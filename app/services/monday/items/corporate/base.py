@@ -5,7 +5,7 @@ from zenpy.lib.api_objects import Ticket
 
 from ...api.items import BaseItemType
 from ...api import columns
-from .....services import zendesk, monday
+from .....services import zendesk, monday, xero
 from .....utilities import notify_admins_of_error
 
 
@@ -24,9 +24,61 @@ class CorporateAccountItem(BaseItemType):
 
 	def __init__(self, item_id=None, api_data=None, search=None):
 
-		self.short_code = columns.TextValue("text0")
+		self.repair_board_id = columns.TextValue("text6")
+
+		self.zen_org_id = columns.TextValue("text9")
+		self.xero_contact_id = columns.TextValue("text")
+
+		self.current_invoice_id = columns.TextValue("text1")
+
+		self.invoicing_style = columns.StatusValue("status7")
+
+		self.req_po = columns.CheckBoxValue("checkbox6")
+		self.req_cost_code = columns.CheckBoxValue("checkbox_1")
+		self.req_username = columns.CheckBoxValue("checkbox_2")
+
+		self.global_po = columns.TextValue("text2")
+
+		self.inv_ref_start = columns.TextValue("text3")
+		self.inv_ref_end = columns.TextValue("text12")
+
+		self.courier_price = columns.NumberValue("numbers9")
 
 		super().__init__(item_id, api_data, search)
+
+	def get_current_invoice(self):
+		"""Get the current invoice for this account"""
+
+		if self.invoicing_style.value == "Pay Per Repair":
+			# we will create and return a new invoice item
+			pass
+		elif self.invoicing_style.value in ("Monthly Payments", "Batch"):
+			# get and return a draft invoice item
+			xero_invoices = xero.client.get_invoices_for_contact_id(self.xero_contact_id.value, filter_status="DRAFT")
+			if len(xero_invoices) == 1:
+				search_results = monday.items.sales.InvoiceControllerItem().search_board_for_items(
+					'invoice_id', str(xero_invoices[0]['InvoiceID'])
+				)
+				if len(search_results) == 1:
+					return monday.items.sales.InvoiceControllerItem(search_results[0]['id'], search_results[0])
+				else:
+					notify_admins_of_error(f"{str(self)} could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
+					raise ValueError(f"Could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
+			elif len(xero_invoices) > 1:
+				raise ValueError(f"Multiple Draft Invoices found for contact_id {self.xero_contact_id.value}")
+			elif len(xero_invoices) == 0:
+				# we will create and return an invoice item
+				pass
+			else:
+				raise RuntimeError("Mathematically Impossible Error")
+		else:
+			raise ModuleNotFoundError(f"{str(self)}has invalid invoicing style: {self.invoicing_style.value}")
+
+		# create and return a new invoice item
+		invoice_item = monday.items.sales.InvoiceControllerItem()
+		invoice_item.corporate_account_connect = [int(self.id)]
+		invoice_item.corporate_account_item_id = str(self.id)
+		return invoice_item
 
 
 class CorporateRepairItem(BaseItemType):

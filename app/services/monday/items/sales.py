@@ -1,3 +1,6 @@
+from ....errors import EricError
+from ....utilities import notify_admins_of_error
+from ... import zendesk, monday
 from ..api.items import BaseItemType
 from ..api import columns
 from . import MainItem
@@ -15,6 +18,9 @@ class SaleControllerItem(BaseItemType):
 		self.invoicing_status = columns.StatusValue("status1")
 		self.invoice_item_id = columns.TextValue("text70")
 		self.invoice_item_connect = columns.ConnectBoards("connect_boards9")
+
+		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")
+		self.price_override = columns.NumberValue("numbers7")
 
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
@@ -35,6 +41,19 @@ class SaleControllerItem(BaseItemType):
 			self.invoicing_status = "Not Corporate"
 			self.commit()
 			return None
+
+		if self.corporate_account_connect.value:
+			corp_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_connect.value[0])
+		else:
+			ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
+			organization = ticket.organization
+			if organization:
+				corp_item_id = organization.organization_fields['corporateboard_id']
+				corp_item = monday.items.corporate.base.CorporateAccountItem(int(corp_item_id)).load_from_api()
+			else:
+				raise InvoicingError(
+					f"{ticket.id}: No organization found on ticket and no Corp Account Item Linked: Cannot Find Account Item"
+				)
 
 		invoice_item = InvoiceControllerItem()
 		invoice_item.sales_item_id = str(self.id)
@@ -66,19 +85,40 @@ class InvoiceControllerItem(BaseItemType):
 	BOARD_ID = 6287948446
 
 	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
-		self.main_item_id = columns.TextValue("text")
-		self.main_item_connect = columns.ConnectBoards("connect_boards")
-
 		self.sales_item_id = columns.TextValue("text5")
 		self.sales_item_connect = columns.ConnectBoards("connect_boards_1")
 
-		self.processing_status = columns.StatusValue("status4")
+		self.corporate_account_item_id = columns.TextValue("text9")
+		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")
+
+		self.invoice_id = columns.TextValue("text8")
+		self.invoice_number = columns.TextValue("text0")
 
 		self.generation_status = columns.StatusValue("status1")
+		self.xero_sync_status = columns.StatusValue("status4")
+
+		self.invoice_status = columns.StatusValue("status58")
 
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		super().__init__(item_id, api_data, search, cache_data)
+
+	def add_invoice_line(self, item_name, description, total_price, line_type) -> "InvoiceLineItem":
+		blank = InvoiceLineItem()
+		blank.line_description = description
+		blank.price_inc_vat = total_price
+		blank.line_type = line_type
+		try:
+			r = monday.api.monday_connection.items.create_subitem(
+				parent_item_id=int(self.id),
+				subitem_name=item_name,
+				column_values=blank.staged_changes
+			)['data']
+		except KeyError as e:
+			notify_admins_of_error(f"Error creating invoice line item: {e}")
+			raise InvoiceDataError(f"Error creating invoice line item on Monday: {e}")
+
+		return InvoiceLineItem(r['create_subitem']['id'], r['create_subitem'])
 
 
 class InvoiceLineItem(BaseItemType):
@@ -90,4 +130,16 @@ class InvoiceLineItem(BaseItemType):
 		self.line_item_id = columns.TextValue("text")
 		self.line_description = columns.LongTextValue("line_description")
 
+		self.source_item_id = columns.TextValue("text1")
+		self.source_item_connect = columns.ConnectBoards('connect_boards4')
+
 		super().__init__(item_id, api_data, search, cache_data)
+
+
+class InvoicingError(EricError):
+	def __init__(self, message):
+		super().__init__(message)
+
+
+class InvoiceDataError(InvoicingError):
+	pass

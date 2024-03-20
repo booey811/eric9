@@ -80,6 +80,10 @@ class SaleControllerItem(BaseItemType):
 				self.invoicing_status = "Pushed to Invoicing"
 				self.commit()
 				return self
+			elif self.processing_status.value != "Complete":
+				self.invoicing_status = "Missing Info"
+				self.commit()
+				return self
 			else:
 				corp_item = self.get_corporate_account_item()
 				invoice_item = corp_item.get_current_invoice()

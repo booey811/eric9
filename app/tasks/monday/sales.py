@@ -16,6 +16,9 @@ def create_or_update_sale(main_id):
 		sale_controller.create(main_item.name)
 	else:
 		sale_controller = monday.items.sales.SaleControllerItem(search[0]['id'], search[0])
+		if sale_controller.invoicing_status.value == "Pushed to Invoicing":
+			sale_controller.add_update("Already pushed to invoicing, this sale cannot be edited.")
+			return sale_controller
 	try:
 		# remove old sale lines
 		current_sale_line_ids = sale_controller.subitem_ids.value or []

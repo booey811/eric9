@@ -79,11 +79,13 @@ def get_contact(contact_id):
 
 
 @with_retries
-def get_invoices_for_contact_id(contact_id):
+def get_invoices_for_contact_id(contact_id, filter_status=None):
 	""""returns list of invoices for a given contact"""
 	url = _BASE_URL + f"/2.0/Invoices"
 
 	body = {"ContactIDs": contact_id}
+	if filter_status:
+		body['Statuses'] = filter_status
 
 	result = requests.get(url=url, headers=get_headers(), params=body)
 

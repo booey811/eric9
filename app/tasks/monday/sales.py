@@ -76,8 +76,6 @@ def create_or_update_sale(main_id):
 		sale_controller.processing_status = "Complete"
 		sale_controller.commit()
 
-		sale_controller.create_invoice_item()
-
 		return sale_controller
 
 	except Exception as e:

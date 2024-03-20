@@ -28,5 +28,6 @@ def print_quote_to_zendesk(main_id):
 		public=False,
 		body=body
 	)
+	ticket.status = "open"
 	zendesk.client.tickets.update(ticket)
 	return body

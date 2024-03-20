@@ -7,6 +7,7 @@ from ...api.items import BaseItemType
 from ...api import columns
 from .....services import zendesk, monday, xero
 from .....utilities import notify_admins_of_error
+from ..sales import InvoiceDataError
 
 
 class CorporateAccountItem(BaseItemType):
@@ -80,6 +81,19 @@ class CorporateAccountItem(BaseItemType):
 		invoice_item.corporate_account_item_id = str(self.id)
 		return invoice_item
 
+	def apply_account_specific_description(self, sale_item, description):
+
+		if self.req_cost_code.value:
+			if not sale_item.cost_code.value:
+				raise InvoiceDataError(f"{str(sale_item)} requires a cost code")
+			description += f"\nCost Code: {sale_item.cost_code.value}"
+
+		if self.req_username:
+			if not sale_item.username.value:
+				raise InvoiceDataError(f"{str(sale_item)} requires a username")
+			description += f"\nUsername: {sale_item.username.value}"
+
+		return description
 
 class CorporateRepairItem(BaseItemType):
 	"""Base class for corporate board items. contains all required methods for enacting the various base processes"""

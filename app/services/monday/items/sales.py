@@ -23,6 +23,9 @@ class SaleControllerItem(BaseItemType):
 		self.corporate_account_item_id = columns.TextValue("text00")
 		self.price_override = columns.NumberValue("numbers7")
 
+		self.cost_centre = columns.TextValue("text3")
+		self.username = columns.TextValue("text9")
+
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		# properties
@@ -106,6 +109,8 @@ class SaleControllerItem(BaseItemType):
 						repair_description += f'{custom.name}, '
 
 				repair_description = repair_description[:-2]
+
+				corp_item.apply_account_specific_description(self, repair_description)
 
 				name = self.name
 				if self.price_override.value:

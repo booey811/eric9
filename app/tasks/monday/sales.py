@@ -31,7 +31,7 @@ def create_or_update_sale(main_id):
 		sale_controller.add_update(f"Error removing old sale lines: {e}")
 		raise e
 
-	if main_item.client == "Warranty":
+	if main_item.client.value == "Warranty":
 		sale_controller.processing_status = "Warranty"
 		sale_controller.commit()
 		return sale_controller

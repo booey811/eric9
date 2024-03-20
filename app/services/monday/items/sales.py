@@ -96,6 +96,15 @@ class SaleControllerItem(BaseItemType):
 				for repair in repairs:
 					repair_total += int(repair.price_inc_vat.value)
 					repair_description += f'{repair.name.replace(device.name, "")}, '
+
+				custom_ids = main_item.custom_quote_connect.value
+				if custom_ids:
+					custom_data = monday.api.get_api_items(custom_ids)
+					custom_items = [monday.items.misc.CustomQuoteLineItem(d['id'], d) for d in custom_data]
+					for custom in custom_items:
+						repair_total += int(custom.price.value)
+						repair_description += f'{custom.name}, '
+
 				repair_description = repair_description[:-2]
 
 				name = self.name

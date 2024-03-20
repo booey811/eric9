@@ -79,15 +79,12 @@ def create_or_update_sale(main_id):
 
 
 def generate_invoice_from_sale(sale_item_id):
-
-	sale_item = monday.items.sales.SaleControllerItem(sale_item_id).load_from_api()
 	try:
-		pass
+		sale_item = monday.items.sales.SaleControllerItem(sale_item_id).load_from_api()
+		sale_item.add_to_invoice_item()
 	except Exception as e:
-		sale_item.invoicing_status = "Error"
-		sale_item.commit()
-		sale_item.add_update(f"Error creating invoice: {e}")
-
+		notify_admins_of_error(f"Task: Error generating invoice from sale: {e}")
+		raise e
 
 
 def generate_invoice_item_data(invoice_item_id, main_item=None, sale_item=None):

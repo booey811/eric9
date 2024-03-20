@@ -28,7 +28,7 @@ def re_process_sales_item():
 	return jsonify({'message': 'OK'}), 200
 
 
-@monday_sales_bp.route("/generate_invoice", methods=["POST"])
+@monday_sales_bp.route("/generate-invoice-item", methods=["POST"])
 @monday.monday_challenge
 def generate_invoice():
 	webhook = request.get_data()
@@ -38,7 +38,7 @@ def generate_invoice():
 	sale_item_id = data['pulseId']
 
 	q_high.enqueue(
-		sales_tasks.create_invoice,
+		sales_tasks.generate_invoice_from_sale,
 		sale_item_id
 	)
 

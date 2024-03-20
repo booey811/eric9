@@ -16,58 +16,81 @@ class SaleControllerItem(BaseItemType):
 		self.processing_status = columns.StatusValue("status4")
 
 		self.invoicing_status = columns.StatusValue("status1")
-		self.invoice_item_id = columns.TextValue("text70")
-		self.invoice_item_connect = columns.ConnectBoards("connect_boards9")
+		self.invoice_line_item_id = columns.TextValue("text018")
+		self.invoice_line_item_connect = columns.ConnectBoards("board_relation")
 
 		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")
+		self.corporate_account_item_id = columns.TextValue("text00")
 		self.price_override = columns.NumberValue("numbers7")
 
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
+		# properties
+		self._main_item = None
+		self._corporate_account_item = None
+
 		super().__init__(item_id, api_data, search, cache_data)
 
-	def create_invoice_item(self, main_item=None) -> "InvoiceControllerItem" or None:
-		# create the invoice item
+	def get_main_item(self) -> MainItem:
+		if not self._main_item:
+			main_id = self.main_item_id.value
+			self._main_item = MainItem(main_id).load_from_api()
+		return self._main_item
 
-		if self.invoice_item_id.value or self.invoice_item_connect.value:
-			# invoice item already exists
-			return InvoiceControllerItem(self.invoice_item_id.value)
-
-		if not main_item:
-			main_item = MainItem(self.main_item_id.value).load_from_api()
-
-		if main_item.client.value != "Corporate":
-			# Not a corporate sale, no invoice needed
-			self.invoicing_status = "Not Corporate"
-			self.commit()
-			return None
-
-		if self.corporate_account_connect.value:
-			corp_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_connect.value[0])
-		else:
-			ticket = zendesk.client.tickets(id=int(main_item.ticket_id.value))
-			organization = ticket.organization
-			if organization:
-				corp_item_id = organization.organization_fields['corporateboard_id']
-				corp_item = monday.items.corporate.base.CorporateAccountItem(int(corp_item_id)).load_from_api()
+	def get_corporate_account_item(self) -> "monday.items.corporate.base.CorporateAccountItem":
+		if not self._corporate_account_item:
+			if self.corporate_account_connect.value:
+				if not self.corporate_account_item_id.value:
+					self.corporate_account_item_id.value = str(self.corporate_account_connect.value[0])
+					self.commit()
+				i = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_connect.value[0])
 			else:
-				raise InvoicingError(
-					f"{ticket.id}: No organization found on ticket and no Corp Account Item Linked: Cannot Find Account Item"
-				)
+				if not self.get_main_item().ticket_id.value:
+					raise InvoiceDataError("No ticket found for sale item, please assign a Corporate Account Link")
+				ticket = zendesk.client.tickets(id=int(self.get_main_item().ticket_id.value))
+				organization = ticket.organization
+				if not organization:
+					raise InvoiceDataError("No organization found for ticket, please assign a Corporate Account Link")
+				corporate_account_item_id = organization['organization_fields']['monday_corporate_id']
+				if not corporate_account_item_id:
+					raise InvoiceDataError(f"No corporate account reference found for {organization['name']}, please assign a Corporate Account Link")
+				self.corporate_account_item_id.value = str(corporate_account_item_id)
+				self.corporate_account_connect.value = [int(corporate_account_item_id)]
+				self.commit()
+				i = monday.items.corporate.base.CorporateAccountItem(corporate_account_item_id)
+			self._corporate_account_item = i
+		return self._corporate_account_item
 
-		invoice_item = InvoiceControllerItem()
-		invoice_item.sales_item_id = str(self.id)
-		invoice_item.sales_item_connect = [int(self.id)]
-		invoice_item.main_item_id = str(self.main_item_id.value)
-		invoice_item.main_item_connect = [int(self.main_item_id.value)]
-		invoice_item.create(self.name)
 
-		self.invoice_item_id = str(invoice_item.id)
-		self.invoice_item_connect = [int(invoice_item.id)]
-		self.invoicing_status = "Pushed to Invoicing"
-		self.commit()
 
-		return invoice_item
+
+	def add_to_invoice(self):
+		main_item = MainItem(self.main_item_id.value)
+		try:
+			if main_item.client.value == "End User":
+				self.invoicing_status = "Not Corporate"
+				self.commit()
+				return self
+			elif main_item.client.value == "Warranty":
+				self.invoicing_status = "Warranty"
+				self.commit()
+				return self
+			else:
+
+				device = monday.items.device.DeviceItem(main_item.device_id.value)
+				repairs = [monday.items.sales.SaleLineItem(item_id=item_id) for item_id in self.subitem_ids.value]
+				repair_total = 0
+				repair_description = device.name
+				for repair in repairs:
+					repair_total += int(repair.price_inc_vat.value)
+					repair_description += f'{repair.name.replace(device.name, "")}, '
+				repair_description = repair_description[:-2]
+		except Exception as e:
+			pass
+
+
+
+
 
 
 class SaleLineItem(BaseItemType):
@@ -79,7 +102,6 @@ class SaleLineItem(BaseItemType):
 		self.price_inc_vat = columns.NumberValue("numbers")
 
 		super().__init__(item_id, api_data, search, cache_data)
-
 
 class InvoiceControllerItem(BaseItemType):
 	BOARD_ID = 6287948446

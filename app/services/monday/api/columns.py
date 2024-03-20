@@ -565,6 +565,34 @@ class DropdownValue(ValueType):
 		return self.value
 
 
+class CheckBoxValue(ValueType):
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, value):
+		if isinstance(value, bool):
+			self._value = value
+		else:
+			raise ValueError(f"Invalid value: {value}, must be bool")
+
+	def column_api_data(self, search=None):
+		if search:
+			val = search
+		else:
+			val = self.value
+		return {self.column_id: {'checked': val}}
+
+	def load_column_value(self, column_data: dict):
+		super().load_column_value(column_data)
+		value_data = json.loads(column_data['value'])
+
+		self.value = value_data['checked']
+		return self.value
+
+
 class InvalidColumnData(MondayDataError):
 
 	def __init__(self, column_data: dict, key: str):

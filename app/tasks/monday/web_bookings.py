@@ -144,7 +144,7 @@ def transfer_web_booking(web_booking_item_id):
 		email = woo_order_data['billing']['email']
 		phone = woo_order_data['billing']['phone']
 		try:
-			booking_date = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'booking_date'][0]['value']
+			booking_date = [_ for _ in woo_order_data['meta_data'] if _['key'] == 'booking_time'][0]['value']
 			booking_date = parse(booking_date)
 		except IndexError:
 			booking_date = None

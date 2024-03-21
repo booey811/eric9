@@ -103,10 +103,13 @@ class NumberValue(ValueType):
 	def column_api_data(self, search=None):
 		# prepare self.value for submission here
 		if search:
-			value = int(search)
+			value = search
 		else:
-			value = int(self.value)
-		return {self.column_id: value}
+			value = self.value
+		if isinstance(value, (int, float)):
+			return {self.column_id: value}
+		else:
+			raise ValueError(f"Invalid value: {value} ({type(value)})")
 
 	def load_column_value(self, column_data: dict):
 		super().load_column_value(column_data)
@@ -119,9 +122,9 @@ class NumberValue(ValueType):
 			# api has fetched a None value, indicating an emtpy column
 			value = 0
 		elif isinstance(value, str):
-			value = int(float(value))
+			value = float(value)
 		else:
-			value = int(value)
+			value = float(value)
 
 		log.debug("Loaded column value: %s", value)
 		self.value = value

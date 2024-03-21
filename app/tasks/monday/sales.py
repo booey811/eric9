@@ -6,7 +6,7 @@ from ...services import monday, zendesk
 from ...utilities import notify_admins_of_error
 
 
-def create_or_update_sale(main_id, date_added: datetime.datetime = None):
+def create_or_update_sale(main_id):
 	# get the main item
 	main_item = monday.items.MainItem(main_id)
 
@@ -80,11 +80,8 @@ def create_or_update_sale(main_id, date_added: datetime.datetime = None):
 					column_values=blank_line.staged_changes
 				)
 		sale_controller.processing_status = "Complete"
-		if date_added:
-			if isinstance(date_added, str):
-				sale_controller.date_added = parse(date_added)
-			elif isinstance(date_added, (datetime.datetime, datetime.date)):
-				sale_controller.date_added = date_added
+		if main_item.repaired_date.value:
+			sale_controller.date_added = main_item.repaired_date.value
 		sale_controller.commit()
 
 		return sale_controller

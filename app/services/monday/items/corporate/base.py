@@ -1,5 +1,7 @@
 import abc
-from typing import Type
+import datetime
+import calendar
+from dateutil.parser import parse
 
 from zenpy.lib.api_objects import Ticket
 
@@ -62,8 +64,12 @@ class CorporateAccountItem(BaseItemType):
 				)
 				if len(search_results) == 1:
 					return monday.items.sales.InvoiceControllerItem(search_results[0]['id'], search_results[0])
+				elif len(search_results) == 0:
+					# create and return an invoice item
+					pass
 				else:
-					notify_admins_of_error(f"{str(self)} could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
+					notify_admins_of_error(
+						f"{str(self)} could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
 					raise ValueError(f"Could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
 			elif len(xero_invoices) > 1:
 				raise ValueError(f"Multiple Draft Invoices found for contact_id {self.xero_contact_id.value}")
@@ -79,6 +85,15 @@ class CorporateAccountItem(BaseItemType):
 		invoice_item = monday.items.sales.InvoiceControllerItem()
 		invoice_item.corporate_account_connect = [int(self.id)]
 		invoice_item.corporate_account_item_id = str(self.id)
+
+		xero_invoice = self.create_blank_xero_invoice()
+
+		invoice_item.invoice_id = xero_invoice['InvoiceID']
+		invoice_item.invoice_number = xero_invoice['InvoiceNumber']
+		invoice_item.invoice_status = "DRAFT"
+		f_date = parse(xero_invoice['DateString']).strftime("%a %d %b")
+		invoice_item.create(f"{self.name}: {f_date}")
+
 		return invoice_item
 
 	def apply_account_specific_description(self, sale_item, description):
@@ -94,6 +109,34 @@ class CorporateAccountItem(BaseItemType):
 			description += f"\nUsername: {sale_item.username.value}"
 
 		return description
+
+	def create_blank_xero_invoice(self):
+		"""Create a new invoice for this account"""
+		basic = {
+			"Type": "ACCREC",
+			"Contact": {
+				"ContactID": self.xero_contact_id.value
+			},
+			"LineItems": [
+				xero.client.make_line_item(
+					'Placeholder',
+					1,
+					0
+				)
+			]
+		}
+		now = datetime.datetime.now()
+
+		if self.invoicing_style.value == "Monthly Payments":
+			_, last_day = calendar.monthrange(now.year, now.month)
+			dt = datetime.date(now.year, now.month, last_day)
+		else:
+			dt = now
+
+		basic['Date'] = dt.strftime("%Y-%m-%d")
+
+		return xero.client.update_invoice(basic)
+
 
 class CorporateRepairItem(BaseItemType):
 	"""Base class for corporate board items. contains all required methods for enacting the various base processes"""

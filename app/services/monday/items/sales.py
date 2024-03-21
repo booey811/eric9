@@ -58,7 +58,8 @@ class SaleControllerItem(BaseItemType):
 					raise InvoiceDataError("No organization found for ticket, please assign a Corporate Account Link")
 				corporate_account_item_id = organization.organization_fields['monday_corporate_id']
 				if not corporate_account_item_id:
-					raise InvoiceDataError(f"No corporate account reference found for {organization['name']}, please assign a Corporate Account Link")
+					raise InvoiceDataError(
+						f"No corporate account reference found for {organization['name']}, please assign a Corporate Account Link")
 				i = monday.items.corporate.base.CorporateAccountItem(corporate_account_item_id)
 			self._corporate_account_item = i
 			self.corporate_account_item_id = str(self._corporate_account_item.id)
@@ -92,8 +93,6 @@ class SaleControllerItem(BaseItemType):
 			else:
 				corp_item = self.get_corporate_account_item()
 				invoice_item = corp_item.get_current_invoice()
-				if not invoice_item.id:
-					invoice_item.create(corp_item.name)
 				device = monday.items.device.DeviceItem(main_item.device_id)
 				repairs = [monday.items.sales.SaleLineItem(item_id=item_id) for item_id in self.subitem_ids.value]
 				repair_total = 0
@@ -178,6 +177,7 @@ class SaleLineItem(BaseItemType):
 
 		super().__init__(item_id, api_data, search, cache_data)
 
+
 class InvoiceControllerItem(BaseItemType):
 	BOARD_ID = 6287948446
 
@@ -191,7 +191,6 @@ class InvoiceControllerItem(BaseItemType):
 		self.invoice_id = columns.TextValue("text8")
 		self.invoice_number = columns.TextValue("text0")
 
-		self.generation_status = columns.StatusValue("status1")
 		self.xero_sync_status = columns.StatusValue("status4")
 
 		self.invoice_status = columns.StatusValue("status58")
@@ -208,7 +207,8 @@ class InvoiceControllerItem(BaseItemType):
 		blank.price_inc_vat = total_price
 		blank.line_type = line_type
 		blank.source_item_id = str(source_item.id)
-		blank.source_item_url = [str(source_item.name), f"https://icorrect.monday.com/boards/{source_item.BOARD_ID}/pulses/{source_item.id}"]
+		blank.source_item_url = [str(source_item.name),
+								 f"https://icorrect.monday.com/boards/{source_item.BOARD_ID}/pulses/{source_item.id}"]
 		r = monday.api.monday_connection.items.create_subitem(
 			parent_item_id=int(self.id),
 			subitem_name=item_name,

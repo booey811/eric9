@@ -110,8 +110,11 @@ class SaleControllerItem(BaseItemType):
 						repair_description += f'{custom.name}, '
 
 				repair_description = repair_description[:-2]
+				repair_description += "\nIMEI/SN: " + main_item.imeisn.value
+				repair_description += "\nRepair Date: " + self.date_added.value.strftime("%d/%m/%Y")
+				repair_description += "\nRequested By: " + main_item.name
 
-				corp_item.apply_account_specific_description(self, repair_description)
+				repair_description = corp_item.apply_account_specific_description(self, repair_description)
 
 				name = self.name
 				if self.price_override.value:
@@ -182,8 +185,6 @@ class InvoiceControllerItem(BaseItemType):
 	BOARD_ID = 6287948446
 
 	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
-		self.sales_item_id = columns.TextValue("text5")
-		self.sales_item_connect = columns.ConnectBoards("connect_boards_1")
 
 		self.corporate_account_item_id = columns.TextValue("text9")
 		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")

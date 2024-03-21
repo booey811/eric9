@@ -30,7 +30,7 @@ def re_process_sales_item():
 
 @monday_sales_bp.route("/generate-invoice-item", methods=["POST"])
 @monday.monday_challenge
-def generate_invoice():
+def add_line_to_invoice_item():
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
@@ -40,6 +40,23 @@ def generate_invoice():
 	q_high.enqueue(
 		sales_tasks.generate_invoice_from_sale,
 		sale_item_id
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_sales_bp.route("/sync-invoice-to-xero", methods=["POST"])
+@monday.monday_challenge
+def sync_invoice_to_xero():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	invoice_item_id = data['pulseId']
+
+	q_high.enqueue(
+		sales_tasks.sync_invoice_data_to_xero,
+		invoice_item_id
 	)
 
 	return jsonify({'message': 'OK'}), 200

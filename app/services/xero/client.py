@@ -79,15 +79,19 @@ def get_contact(contact_id):
 
 
 @with_retries
-def get_invoices_for_contact_id(contact_id, filter_status=None):
-	""""returns list of invoices for a given contact"""
+def get_invoices_for_contact_id(contact_id=None, filter_status=None):
+	""""returns list of invoices"""
 	url = _BASE_URL + f"/2.0/Invoices"
-
-	body = {"ContactIDs": contact_id}
+	body = {}
+	if contact_id:
+		body = {"ContactIDs": contact_id}
 	if filter_status:
 		body['Statuses'] = filter_status
 
-	result = requests.get(url=url, headers=get_headers(), params=body)
+	if body:
+		result = requests.get(url=url, headers=get_headers(), params=body)
+	else:
+		result = requests.get(url=url, headers=get_headers())
 
 	if result.status_code == 200:
 		return json.loads(result.text)['Invoices']

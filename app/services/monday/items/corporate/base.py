@@ -101,7 +101,7 @@ class CorporateAccountItem(BaseItemType):
 		if self.req_cost_code.value:
 			if not sale_item.cost_centre.value:
 				raise InvoiceDataError(f"{str(sale_item)} requires a cost code")
-			description += f"\nCost Code: {sale_item.cost_code.value}"
+			description += f"\nCost Code: {sale_item.cost_centre.value}"
 
 		if self.req_username:
 			if not sale_item.username.value:

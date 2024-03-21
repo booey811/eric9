@@ -166,6 +166,7 @@ def make_line_item(description, quantity, unit_amount, account_code=203, tax_typ
 		"UnitAmount": unit_amount,
 		"AccountCode": account_code,
 		"TaxType": tax_type,
+		"LineAmountTypes": "Exclusive",
 	}
 
 

@@ -1,4 +1,5 @@
 import datetime
+from dateutil.parser import parse
 
 from ...errors import EricError
 from ...services import monday, zendesk
@@ -80,7 +81,10 @@ def create_or_update_sale(main_id, date_added: datetime.datetime = None):
 				)
 		sale_controller.processing_status = "Complete"
 		if date_added:
-			sale_controller.date_added = date_added
+			if isinstance(date_added, str):
+				sale_controller.date_added = parse(date_added)
+			elif isinstance(date_added, (datetime.datetime, datetime.date)):
+				sale_controller.date_added = date_added
 		sale_controller.commit()
 
 		return sale_controller

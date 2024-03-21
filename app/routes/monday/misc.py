@@ -118,11 +118,14 @@ def convert_financial_item_to_sales():
 	date_col = [c for c in financial_data['column_values'] if c['id'] == "date3"][0]
 
 	main_id = main_id_col['text']
-	date_added = parse(date_col['text'])
+	date_added = date_col['text']
 
 	q_low.enqueue(
 		sales.create_or_update_sale,
-		(main_id, date_added)
+		kwargs={
+			"main_id": main_id,
+			"date_added": date_added
+		}
 	)
 
 	return jsonify({'message': 'OK'}), 200

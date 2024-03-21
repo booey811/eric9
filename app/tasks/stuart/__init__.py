@@ -57,7 +57,9 @@ def log_job_data(booking_data, stuart_response, main_item):
 	try:
 		log_item = monday.items.misc.CourierDataDumpItem()
 
-		log_item.job_id = str(stuart_response['id'])
+		job_id = str(stuart_response.get('id'))
+		if job_id:
+			log_item.job_id = job_id
 		# if main_item.booking_date.value:
 		# 	log_item.booking_time = main_item.booking_date.value
 		# else:

@@ -36,7 +36,7 @@ def create_or_update_sale(main_id):
 		sale_controller.commit()
 		return sale_controller
 
-	if not main_item.products:
+	if not main_item.products and not main_item.custom_quote_connect.value:
 		sale_controller.processing_status = "No Products"
 		sale_controller.commit()
 		return sale_controller

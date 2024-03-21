@@ -225,15 +225,22 @@ class InvoiceControllerItem(BaseItemType):
 	def sync_to_xero(self):
 
 		if not self.invoice_id.value:
-			self.xero_sync_status = "Error"
-			self.commit()
-			self.add_update("Cannot Sync to Xero: No Invoice ID")
+			# we will need to create the invoice in xero
+			corp_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_item_id.value)
+			xero_data = {
+				"Type": "ACCREC",
+				"Contact": {
+					"ContactID": str(corp_item.xero_contact_id.value)
+				},
+				"LineItems": []
+			}
+		else:
+			xero_data = xero.client.get_invoice_by_id(self.invoice_id.value)
 
-		xero_data = xero.client.get_invoice_by_id(self.invoice_id.value)
 		if not xero_data:
 			self.xero_sync_status = "Error"
 			self.commit()
-			self.add_update("Cannot Sync to Xero: Invoice Not Found")
+			self.add_update(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} Not Found")
 
 		inv_lines_from_monday = [monday.items.sales.InvoiceLineItem(item_id=item_id) for item_id in
 								 self.subitem_ids.value]
@@ -250,13 +257,15 @@ class InvoiceControllerItem(BaseItemType):
 					unit_amount=round(line.price_inc_vat.value / 1.2, 2),
 				)
 			)
-
 		xero_invoice = xero.client.update_invoice(xero_data)
 		for line_item in xero_invoice['LineItems']:
 			for line in inv_lines_from_monday:
 				if line.line_description.value == line_item['Description']:
 					line.line_item_id = line_item['LineItemID']
 					line.commit()
+
+		self.invoice_id = xero_invoice['InvoiceID']
+		self.invoice_number = xero_invoice['InvoiceNumber']
 
 		self.xero_sync_status = "Synced"
 		self.commit()

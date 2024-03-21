@@ -57,42 +57,36 @@ class CorporateAccountItem(BaseItemType):
 			pass
 		elif self.invoicing_style.value in ("Monthly Payments", "Batch"):
 			# get and return a draft invoice item
-			xero_invoices = xero.client.get_invoices_for_contact_id(self.xero_contact_id.value, filter_status="DRAFT")
-			if len(xero_invoices) == 1:
-				search_results = monday.items.sales.InvoiceControllerItem().search_board_for_items(
-					'invoice_id', str(xero_invoices[0]['InvoiceID'])
-				)
-				if len(search_results) == 1:
-					return monday.items.sales.InvoiceControllerItem(search_results[0]['id'], search_results[0])
-				elif len(search_results) == 0:
-					# create and return an invoice item
-					pass
-				else:
-					notify_admins_of_error(
-						f"{str(self)} could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
-					raise ValueError(f"Could Not Find Invoice Item for Invoice {xero_invoices[0]['InvoiceID']}")
-			elif len(xero_invoices) > 1:
-				raise ValueError(f"Multiple Draft Invoices found for contact_id {self.xero_contact_id.value}")
-			elif len(xero_invoices) == 0:
-				# we will create and return an invoice item
+			search = monday.items.sales.InvoiceControllerItem(search=True).search_board_for_items(
+				'corporate_account_item_id', str(self.id)
+			)
+			all_inv_items = [monday.items.sales.InvoiceControllerItem(i['id'], i) for i in search]
+			draft_items = [i for i in all_inv_items if i.invoice_status.value == "DRAFT"]
+			if not draft_items:
+				# create and return an invoice item
 				pass
+			elif len(draft_items) == 1:
+				return draft_items[0]
 			else:
-				raise RuntimeError("Mathematically Impossible Error")
-		else:
-			raise ModuleNotFoundError(f"{str(self)}has invalid invoicing style: {self.invoicing_style.value}")
+				notify_admins_of_error(f"Multiple Draft Invoices found for {str(self)} - Updating Monday")
+				result = None
+				for inv_item in draft_items:
+					xero_inv = xero.client.get_invoice_by_id(inv_item.invoice_id.value)
+					if xero_inv['Status'] == "SENT":
+						inv_item.invoice_status = "SENT"
+						inv_item.commit()
+						continue
+					elif xero_inv['Status'] == "DRAFT":
+						result = inv_item
+				if result:
+					return result
 
 		# create and return a new invoice item
 		invoice_item = monday.items.sales.InvoiceControllerItem()
 		invoice_item.corporate_account_connect = [int(self.id)]
 		invoice_item.corporate_account_item_id = str(self.id)
-
-		xero_invoice = self.create_blank_xero_invoice()
-
-		invoice_item.invoice_id = xero_invoice['InvoiceID']
-		invoice_item.invoice_number = xero_invoice['InvoiceNumber']
 		invoice_item.invoice_status = "DRAFT"
-		f_date = parse(xero_invoice['DateString']).strftime("%a %d %b")
-		invoice_item.create(f"{self.name}: {f_date}")
+		invoice_item.create(f"{self.name}")
 
 		return invoice_item
 

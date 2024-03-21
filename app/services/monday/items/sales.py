@@ -26,6 +26,8 @@ class SaleControllerItem(BaseItemType):
 		self.cost_centre = columns.TextValue("text3")
 		self.username = columns.TextValue("text9")
 
+		self.date_added = columns.DateValue("date4")
+
 		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		# properties

@@ -1,9 +1,11 @@
+import datetime
+
 from ...errors import EricError
 from ...services import monday, zendesk
 from ...utilities import notify_admins_of_error
 
 
-def create_or_update_sale(main_id):
+def create_or_update_sale(main_id, date_added: datetime.datetime = None):
 	# get the main item
 	main_item = monday.items.MainItem(main_id)
 
@@ -77,6 +79,8 @@ def create_or_update_sale(main_id):
 					column_values=blank_line.staged_changes
 				)
 		sale_controller.processing_status = "Complete"
+		if date_added:
+			sale_controller.date_added = date_added
 		sale_controller.commit()
 
 		return sale_controller

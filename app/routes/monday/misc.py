@@ -105,6 +105,7 @@ def adjust_web_price():
 @monday_misc_bp.route('/convert-to-new-sales', methods=["POST"])
 @monday.monday_challenge
 def convert_financial_item_to_sales():
+	from dateutil.parser import parse
 	log.debug('Converting old financial item to new sales item')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
@@ -114,12 +115,14 @@ def convert_financial_item_to_sales():
 	financial_data = monday.api.get_api_items([int(financial_id)])[0]
 
 	main_id_col = [c for c in financial_data['column_values'] if c['id'] == "mainboard_id6"][0]
+	date_col = [c for c in financial_data['column_values'] if c['id'] == "date3"][0]
 
 	main_id = main_id_col['text']
+	date_added = parse(date_col['text'])
 
 	q_low.enqueue(
 		sales.create_or_update_sale,
-		main_id
+		(main_id, date_added)
 	)
 
 	return jsonify({'message': 'OK'}), 200

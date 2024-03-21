@@ -204,7 +204,8 @@ def book_courier_collection():
 	data = json.loads(data)['event']
 
 	q_high.enqueue(
-		stuart.book_courier(data['pulseId'], 'incoming')
+		stuart.book_courier,
+		args=(data['pulseId'], 'incoming')
 	)
 	return jsonify({'message': 'OK'}), 200
 
@@ -218,7 +219,8 @@ def book_courier_return():
 	data = json.loads(data)['event']
 
 	q_high.enqueue(
-		stuart.book_courier(data['pulseId'], 'outgoing')
+		stuart.book_courier,
+		args=(data['pulseId'], 'outgoing')
 	)
 	return jsonify({'message': 'OK'}), 200
 

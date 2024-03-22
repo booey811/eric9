@@ -183,6 +183,13 @@ class RepairSessionItem(BaseItemType):
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
+	def get_session_duration(self):
+		# calculate the duration of the session in minutes from self.start_time and self.end_time
+		start_time = self.start_time.value
+		end_time = self.end_time.value
+		duration = end_time - start_time
+		return duration.total_seconds() / 60
+
 
 class CustomQuoteLineItem(BaseItemType):
 	BOARD_ID = 4570780706
@@ -331,7 +338,6 @@ class CourierDataDumpItem(BaseItemType):
 
 
 class SickWDataItem(BaseItemType):
-
 	BOARD_ID = 5808954740
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -354,11 +360,9 @@ class StaffItem(BaseItemType):
 	BOARD_ID = 2477606931
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.monday_id = columns.TextValue("text")
 		self.slack_id = columns.TextValue("text8")
 
 		self.internal_hourly_rate = columns.NumberValue("numbers")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
-

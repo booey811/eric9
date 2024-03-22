@@ -286,6 +286,39 @@ class InvoiceLineItem(BaseItemType):
 		super().__init__(item_id, api_data, search, cache_data)
 
 
+class WasItWorthItItem(BaseItemType):
+
+	BOARD_ID = 6310609889
+
+	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
+
+		self.imeisn = columns.TextValue("text84")
+		self.device_connect = columns.ConnectBoards("connect_boards")
+		self.device_id = columns.TextValue("text3")
+
+		self.calculation_status = columns.StatusValue("status")
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+
+class WasItWorthItLineItem(BaseItemType):
+
+	BOARD_ID = 6310611850
+
+	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
+
+		self.line_type = columns.StatusValue("status")
+		self.cost = columns.NumberValue("numbers")
+		self.revenue = columns.NumberValue("numbers1")
+
+		self.source_item_id = columns.TextValue("text")
+		self.source_item_url = columns.LinkURLValue('link')
+
+		self.is_warranty = columns.CheckBoxValue("checkbox")
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+
 class InvoicingError(EricError):
 	def __init__(self, message):
 		super().__init__(message)

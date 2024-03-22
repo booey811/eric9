@@ -348,3 +348,17 @@ class SickWDataItem(BaseItemType):
 		self.main_item_id = columns.TextValue("text7")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class StaffItem(BaseItemType):
+	BOARD_ID = 2477606931
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.monday_id = columns.TextValue("text")
+		self.slack_id = columns.TextValue("text8")
+
+		self.internal_hourly_rate = columns.NumberValue("numbers")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+

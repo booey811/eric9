@@ -14,29 +14,37 @@ from ...zendesk import helpers, client as zendesk_client, custom_fields
 class WebBookingItem(BaseItemType):
 	BOARD_ID = 973467694
 
-	transfer_status = columns.StatusValue("status_18")
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 
-	woo_commerce_order_id = columns.TextValue('order_id')
+		self.transfer_status = columns.StatusValue("status_18")
 
-	pay_status = columns.StatusValue("payment_status")
-	pay_method = columns.StatusValue("payment_method")
+		self.woo_commerce_order_id = columns.TextValue('order_id')
 
-	booking_notes = columns.TextValue('notes')
-	secondary_notes = columns.LongTextValue('enquiry')
+		self.pay_status = columns.StatusValue("payment_status")
+		self.pay_method = columns.StatusValue("payment_method")
 
-	phone = columns.TextValue('phone_number')
-	email = columns.TextValue('email')
+		self.booking_notes = columns.TextValue('notes')
+		self.secondary_notes = columns.LongTextValue('enquiry')
 
-	service = columns.StatusValue('service')
-	client = columns.StatusValue('client')
-	repair_type = columns.StatusValue('type')
+		self.phone = columns.TextValue('phone_number')
+		self.email = columns.TextValue('email')
 
-	booking_date = columns.DateValue('booking_time')
+		self.service = columns.StatusValue('service')
+		self.client = columns.StatusValue('client')
+		self.repair_type = columns.StatusValue('type')
 
-	address_postcode = columns.TextValue('post_code')
-	address_notes = columns.TextValue('company_flat')
-	address_street = columns.TextValue('street_name_number')
-	point_of_collection = columns.TextValue('text9')
+		self.booking_date = columns.DateValue('booking_time')
+
+		self.address_postcode = columns.TextValue('post_code')
+		self.address_notes = columns.TextValue('company_flat')
+		self.address_street = columns.TextValue('street_name_number')
+		self.point_of_collection = columns.TextValue('text9')
+
+		self.main_item_id = columns.TextValue("text1")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
 
 
 class WebEnquiryItem(BaseItemType):
@@ -54,6 +62,9 @@ class WebEnquiryItem(BaseItemType):
 		self.body = columns.TextValue("long_text")
 
 		self.fault_type = columns.StatusValue("status6")
+
+		self.converted_status = columns.StatusValue("converted")
+		self.date_received = columns.DateValue("date9")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 

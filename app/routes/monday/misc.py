@@ -124,7 +124,6 @@ def convert_financial_item_to_sales():
 		sales.create_or_update_sale,
 		kwargs={
 			"main_id": main_id,
-			"date_added": date_added
 		}
 	)
 

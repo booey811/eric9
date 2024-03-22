@@ -356,6 +356,8 @@ def transfer_web_booking(web_booking_item_id):
 		send_confirmation_email()
 
 		booking_item.transfer_status = 'Complete'
+		booking_item.email = email
+		booking_item.main_item_id = str(main.id)
 	except Exception as e:
 		log.error(e)
 		notify_admins_of_error(f"Error transferring web booking: {e}")

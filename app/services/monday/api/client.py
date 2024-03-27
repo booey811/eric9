@@ -8,7 +8,7 @@ from .exceptions import MondayAPIError
 
 conf = config.get_config()
 
-conn = monday.MondayClient(conf.MONDAY_KEYS["gabe"])
+conn = monday.MondayClient(conf.MONDAY_KEYS["system"])
 
 
 def get_api_items(item_ids):

@@ -151,7 +151,8 @@ def convert_sale_to_profit_and_loss(sale_item_id):
 		wiwi.calculation_status = "Processing"
 		wiwi.commit()
 
-		print()
+		sale_item.convert_to_pl_status = "Complete"
+		sale_item.commit()
 
 	except Exception as e:
 		notify_admins_of_error(f"Task: Error calculating profit and loss: {e}")

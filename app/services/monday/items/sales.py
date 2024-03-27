@@ -14,6 +14,7 @@ class SaleControllerItem(BaseItemType):
 		self.main_item_connect = columns.ConnectBoards("connect_boards")
 
 		self.processing_status = columns.StatusValue("status4")
+		self.convert_to_pl_status = columns.StatusValue("status5")
 
 		self.invoicing_status = columns.StatusValue("status1")
 		self.invoice_line_item_id = columns.TextValue("text018")

@@ -1,5 +1,5 @@
 from ....errors import EricError
-from ....utilities import notify_admins_of_error
+from ....utilities import notify_admins_of_error, users
 from ... import zendesk, monday, xero
 from ..api.items import BaseItemType
 from ..api import columns
@@ -248,7 +248,6 @@ class InvoiceControllerItem(BaseItemType):
 		xero_data['LineItems'] = []
 
 		for line in inv_lines_from_monday:
-
 			self.add_update("Adding Line Item to Invoice: " + line.line_description.value)
 			xero_data['LineItems'].append(
 				xero.client.make_line_item(
@@ -286,10 +285,193 @@ class InvoiceLineItem(BaseItemType):
 		super().__init__(item_id, api_data, search, cache_data)
 
 
+class WasItWorthItItem(BaseItemType):
+	BOARD_ID = 6310609889
+
+	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
+		self.imeisn = columns.TextValue("text84")
+		self.device_connect = columns.ConnectBoards("connect_boards")
+		self.device_id = columns.TextValue("text3")
+
+		self.sale_items_connect = columns.ConnectBoards("connect_boards2")
+
+		self.calculation_status = columns.StatusValue("status")
+
+		self.date_added = columns.DateValue("date")
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+	def _add_sub_line(self, name, line_type, costs, revenue, source_item, notes=''):
+		blank = WasItWorthItLineItem()
+		blank.source_item_id = str(source_item.id)
+		blank.source_item_url = [str(source_item.name),
+								 f"https://icorrect.monday.com/boards/{source_item.BOARD_ID}/pulses/{source_item.id}"]
+		blank.line_type = line_type
+		if costs:
+			blank.cost = costs
+		if revenue:
+			blank.revenue = revenue
+		if notes:
+			blank.notes = notes
+		r = monday.api.monday_connection.items.create_subitem(
+			parent_item_id=int(self.id),
+			subitem_name=name,
+			column_values=blank.staged_changes
+		)
+
+		if r.get('error_message'):
+			notify_admins_of_error(f"Error creating sub line item: {r['error_message']}")
+			raise WasItWorthItError(f"Error creating sub line item on Monday: {r['error_message']}")
+
+		return r['data']['create_subitem']['id'], r['data']['create_subitem']
+
+	def add_parts_cost(self, main_item, sale_item):
+		stock_checkout_item = None
+		if not main_item.stock_checkout_id.value:
+			sc_search = monday.items.part.StockCheckoutControlItem(search=True).search_board_for_items(
+				"main_item_id",
+				str(main_item.id)
+			)
+			if sc_search:
+				main_item.stock_checkout_id = sc_search[0]['id']
+				main_item.commit()
+				stock_checkout_item = monday.items.part.StockCheckoutControlItem(sc_search[0]['id'], sc_search[0])
+			else:
+				self.add_update("No Stock Checkout Item Found, No Parts Cost Applied")
+		else:
+			stock_checkout_item = monday.items.part.StockCheckoutControlItem(
+				main_item.stock_checkout_id.value).load_from_api()
+		if stock_checkout_item:
+			stock_line_data = monday.api.get_api_items(stock_checkout_item.checkout_line_ids.value)
+			stock_checkout_lines = [
+				monday.items.part.StockCheckoutLineItem(item['id'], item) for item in stock_line_data
+			]
+			parts_cost = sum([float(line.parts_cost.value) for line in stock_checkout_lines])
+			self._add_sub_line(
+				name=f"Parts Cost: {sale_item.name} ({sale_item.date_added.value.strftime('%d/%m/%Y')})",
+				line_type="Parts Cost",
+				costs=parts_cost,
+				revenue=None,
+				source_item=stock_checkout_item
+			)
+
+	def add_courier_costs(self, main_item, sale_item):
+		courier_search = monday.items.misc.CourierDataDumpItem(search=True).search_board_for_items(
+			"main_item_id",
+			str(main_item.id)
+		)
+		if courier_search:
+			courier_data = [monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_search]
+			courier_costs = sum([float(c.cost_inc_vat.value) for c in courier_data])
+			self._add_sub_line(
+				name=f"Courier Costs: {sale_item.name} ({sale_item.date_added.value.strftime('%d/%m/%Y')})",
+				line_type="Logistics Costs",
+				costs=courier_costs,
+				revenue=None,
+				source_item=courier_data[0]
+			)
+
+	def add_labour_costs(self, main_item):
+		session_search = monday.items.misc.RepairSessionItem(search=True).search_board_for_items(
+			"main_board_id",
+			str(main_item.id)
+		)
+		if session_search:
+			session_data = [monday.items.misc.RepairSessionItem(item['id'], item) for item in session_search]
+			sessions_by_technician = {}
+			for session in session_data:
+				technician = users.User(monday_id=session.technician.value[0])
+				if technician.monday_id not in sessions_by_technician:
+					sessions_by_technician[technician.monday_id] = []
+				sessions_by_technician[technician.monday_id].append(session)
+			for tech_id in sessions_by_technician:
+				technicians_sessions = sessions_by_technician[tech_id]
+				sessions_duration_in_mins = sum(
+					[float(s.get_session_duration()) for s in technicians_sessions]
+				)
+				technician = users.User(monday_id=tech_id)
+				hourly_rate = technician.get_staff_item().internal_hourly_rate.value
+
+				session_costs = sessions_duration_in_mins / 60 * hourly_rate
+
+				note = f"{sessions_duration_in_mins} minutes @ {hourly_rate} per hour"
+				self._add_sub_line(
+					name=f"Session Costs: {technician.name.title()}",
+					line_type="Labour Cost",
+					costs=session_costs,
+					revenue=None,
+					source_item=session_data[0],
+					notes=note
+				)
+
+	def add_sale_revenue(self, sale_item):
+		sale_revenue_data = monday.api.get_api_items(sale_item.subitem_ids.value)
+		sale_lines = [SaleLineItem(item['id'], item) for item in sale_revenue_data]
+		sale_revenue = sum([float(line.price_inc_vat.value) for line in sale_lines])
+		self._add_sub_line(
+			name=f"Sale Revenue: {sale_item.name} ({sale_item.date_added.value.strftime('%d/%m/%Y')})",
+			line_type="Sale",
+			costs=None,
+			revenue=sale_revenue,
+			source_item=sale_item
+		)
+
+	def calculate_profit_loss(self):
+
+		try:
+			if not self.sale_items_connect.value:
+				raise WasItWorthItError("No Sale Items Connected")
+
+			sale_item_data = monday.api.get_api_items(self.sale_items_connect.value)
+			sale_items = [SaleControllerItem(item['id'], item) for item in sale_item_data]
+
+			for sale in sale_items:
+				main_item = MainItem(sale.main_item_id.value).load_from_api()
+				if not main_item:
+					raise WasItWorthItError("Main Item Not Found")
+
+				self.add_parts_cost(main_item, sale)
+				self.add_sale_revenue(sale)
+				self.add_courier_costs(main_item, sale)
+				self.add_labour_costs(main_item)
+
+			self.calculation_status = "Complete"
+			self.commit()
+			return self
+
+		except Exception as e:
+			self.calculation_status = "Error"
+			self.commit()
+			self.add_update(f"Error calculating profit/loss: {e}")
+			raise e
+
+
+class WasItWorthItLineItem(BaseItemType):
+	BOARD_ID = 6310611850
+
+	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
+		self.line_type = columns.StatusValue("status")
+		self.cost = columns.NumberValue("numbers")
+		self.revenue = columns.NumberValue("numbers1")
+
+		self.source_item_id = columns.TextValue("text")
+		self.source_item_url = columns.LinkURLValue('link')
+
+		self.is_warranty = columns.CheckBoxValue("checkbox")
+
+		self.notes = columns.LongTextValue("long_text")
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+
 class InvoicingError(EricError):
 	def __init__(self, message):
 		super().__init__(message)
 
 
 class InvoiceDataError(InvoicingError):
+	pass
+
+
+class WasItWorthItError(EricError):
 	pass

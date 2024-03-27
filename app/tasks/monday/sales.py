@@ -114,5 +114,51 @@ def sync_invoice_data_to_xero(invoice_item_id):
 		raise e
 
 
-class InvoiceDetailsError(EricError):
+def convert_sale_to_profit_and_loss(sale_item_id):
+	try:
+		warranty = False
+
+		sale_item = monday.items.sales.SaleControllerItem(sale_item_id).load_from_api()
+		main_item = monday.items.MainItem(sale_item.main_item_id.value).load_from_api()
+
+		if main_item.client.value == "Warranty":
+			warranty = True
+
+		if not warranty:
+			# create a new profit/loss item
+			wiwi = monday.items.sales.WasItWorthItItem()
+			wiwi.imeisn = main_item.imeisn.value
+			wiwi.device_id = str(main_item.device_id)
+			wiwi.device_connect = [int(main_item.device_id)]
+			wiwi.create(f"{main_item.name}")
+		else:
+			# get the most recent profit/loss item
+			wiwi = monday.items.sales.WasItWorthItItem(search=True)
+			search = wiwi.search_board_for_items("imeisn", main_item.imeisn.value)
+			if search:
+				wiwis_by_imei = sorted([
+					monday.items.sales.WasItWorthItItem(item['id'], item) for item in search
+				], key=lambda x: x.date_added.value, reverse=True)
+				wiwi = wiwis_by_imei[0]
+			else:
+				raise SalesError(
+					"No profit/loss item found for this warranty item: Cannot find original repair details")
+
+		if wiwi.sale_items_connect.value:
+			if int(sale_item.id) not in wiwi.sale_items_connect.value:
+				wiwi.sale_items_connect = wiwi.sale_items_connect.value.append(int(sale_item.id))
+		else:
+			wiwi.sale_items_connect = [int(sale_item.id)]
+
+		wiwi.calculation_status = "Processing"
+		wiwi.commit()
+
+		print()
+
+	except Exception as e:
+		notify_admins_of_error(f"Task: Error calculating profit and loss: {e}")
+		raise e
+
+
+class SalesError(EricError):
 	pass

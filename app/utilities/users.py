@@ -1,7 +1,9 @@
 import functools
 import os
 
-from .. import conf
+from . import config
+
+conf = config.get_config()
 
 USER_DATA = [
 	{
@@ -138,3 +140,14 @@ class User:
 	@ensure_attribute_set
 	def gcal_sessions_id(self):
 		return self._gcal_sessions_id
+
+	def get_staff_item(self):
+		from ..services.monday.items.misc import StaffItem
+		search = StaffItem(search=True).search_board_for_items(
+			"monday_id",
+			str(self.monday_id)
+		)
+		if search:
+			return StaffItem(search[0]['id'])
+		else:
+			raise ValueError(f"No staff item found for {self.name}")

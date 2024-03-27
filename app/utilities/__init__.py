@@ -5,6 +5,8 @@ import traceback
 import os
 import tempfile
 
+from . import users
+
 
 def notify_admins_of_error(error):
 	from ..services.slack import blocks, slack_client

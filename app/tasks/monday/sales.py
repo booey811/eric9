@@ -158,5 +158,16 @@ def convert_sale_to_profit_and_loss(sale_item_id):
 		raise e
 
 
+def calculate_profit_and_loss(wiwi_id):
+	wiwi = monday.items.sales.WasItWorthItItem(wiwi_id).load_from_api()
+	try:
+		wiwi.calculate_profit_loss()
+	except Exception as e:
+		notify_admins_of_error(f"Task: Error calculating profit and loss: {e}")
+		wiwi.calculation_status = "Error"
+		wiwi.commit()
+		raise e
+
+
 class SalesError(EricError):
 	pass

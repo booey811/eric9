@@ -3,7 +3,7 @@ import json
 
 from ...services import monday
 from ...tasks.monday import sales as sales_tasks
-from ...cache.rq import q_high
+from ...cache.rq import q_high, q_low
 
 monday_sales_bp = Blueprint('monday_sales', __name__, url_prefix='/monday/financial')
 
@@ -57,6 +57,35 @@ def sync_invoice_to_xero():
 	q_high.enqueue(
 		sales_tasks.sync_invoice_data_to_xero,
 		invoice_item_id
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_sales_bp.route("/convert-to-pl-item", methods=["POST"])
+@monday.monday_challenge
+def add_item_to_pl_board():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_low.enqueue(
+		sales_tasks.convert_sale_to_profit_and_loss,
+		data['pulseId']
+	)
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_sales_bp.route("/sync-invoice-to-xero", methods=["POST"])
+@monday.monday_challenge
+def process_pl_item():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_low.enqueue(
+		sales_tasks.calculate_profit_and_loss,
+		data['pulseId']
 	)
 
 	return jsonify({'message': 'OK'}), 200

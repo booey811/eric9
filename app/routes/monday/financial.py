@@ -76,7 +76,7 @@ def add_item_to_pl_board():
 	return jsonify({'message': 'OK'}), 200
 
 
-@monday_sales_bp.route("/sync-invoice-to-xero", methods=["POST"])
+@monday_sales_bp.route("/process-pl-item", methods=["POST"])
 @monday.monday_challenge
 def process_pl_item():
 	webhook = request.get_data()

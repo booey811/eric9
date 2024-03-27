@@ -70,7 +70,7 @@ def sync_to_zendesk(main_item_id, ticket_id):
 				tags.append(f"product__{product_id}")
 
 		# sync text fields:
-		# address notes, street address, postcode, imei/sn, passcode, booking date string
+		# address notes, street address, postcode, imei/sn, passcode, booking date string, RM tracking link
 
 		# address notes
 		if main_item.address_notes.value:
@@ -144,6 +144,19 @@ def sync_to_zendesk(main_item_id, ticket_id):
 			)
 		)
 
+		# RM tracking link
+		if main_item.outgoing_tracking_number.value:
+			f_num = main_item.outgoing_tracking_number.value.replace(' ', '')
+			ticket.custom_fields.append(
+				CustomField(
+					id=field_ids['tracking_link'],
+					value=f"https://www.royalmail.com/track-your-item#/tracking-results/{f_num}"
+				)
+			)
+		elif 'mail' in main_item.service.value.lower() and main_item.main_status.value == "Return Booked":
+			failed.append(['RMTrackingLink', 'No Outgoing Tracking Number'])
+			raise ValueError("Cannot book a return without a tracking number")
+
 		if failed:
 			message = f"{str(main_item)}Failed Monday -> Zendesk sync, could not locate labels\n\n"
 			for f in failed:
@@ -162,8 +175,11 @@ def sync_to_zendesk(main_item_id, ticket_id):
 		)
 		ticket.status = 'open'
 		ticket = zendesk.client.tickets.update(ticket).ticket
-		main_item.add_update(message, main_item.notes_thread_id.value)
+		main_item.add_update(message, main_item.error_thread_id.value)
+		main_item.main_status = "Error"
+		main_item.commit()
 		notify_admins_of_error(message)
+		raise e
 
 	return ticket
 

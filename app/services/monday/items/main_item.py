@@ -75,6 +75,9 @@ class MainItem(items.BaseItemType):
 		self.be_courier_collection = columns.StatusValue("be_courier_collection")
 		self.be_courier_return = columns.StatusValue("be_courier_return")
 
+		self.incoming_tracking_number = columns.TextValue("text796")
+		self.outgoing_tracking_number = columns.TextValue("text53")
+
 		# customer info
 		self.corp_item_id = columns.TextValue("text7")
 
@@ -187,7 +190,8 @@ class MainItem(items.BaseItemType):
 			main_board = boards.get_board(self.BOARD_ID)
 			device_no = self.device_deprecated_dropdown.value[0]
 			colour_label = self.device_colour.value
-			colour_col_settings = json.loads([c for c in main_board['columns'] if c['id'] == str(self.device_colour.column_id)][0]['settings_str'])
+			colour_col_settings = json.loads(
+				[c for c in main_board['columns'] if c['id'] == str(self.device_colour.column_id)][0]['settings_str'])
 			colour_no = None
 			for _id, _label in colour_col_settings['labels'].items():
 				if str(_label) == str(colour_label):
@@ -209,6 +213,7 @@ class MainItem(items.BaseItemType):
 		except Exception as e:
 			notify_admins_of_error(f"Could Not Generate Repair Map ID List from {self}")
 			raise e
+
 
 class PropertyTestItem(items.BaseItemType):
 	BOARD_ID = 349212843

@@ -299,6 +299,7 @@ class WasItWorthItItem(BaseItemType):
 		self.calculation_status = columns.StatusValue("status")
 
 		self.date_added = columns.DateValue("date")
+		self.subitem_ids = columns.ConnectBoards("subitems")
 
 		super().__init__(item_id, api_data, search, cache_data)
 
@@ -418,6 +419,12 @@ class WasItWorthItItem(BaseItemType):
 		)
 
 	def calculate_profit_loss(self):
+
+		# remove old lines
+		current_sub_line_ids = self.subitem_ids.value
+		if current_sub_line_ids:
+			for _ in current_sub_line_ids:
+				monday.api.monday_connection.items.delete_item_by_id(_)
 
 		try:
 			if not self.sale_items_connect.value:

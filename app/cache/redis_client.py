@@ -23,6 +23,5 @@ def get_redis_connection():
 		connection_pool=redis_connection_pool,
 		charset='utf-8',
 		decode_responses=False,
-		ssl=True,
 		ssl_cert_reqs=None
 	)

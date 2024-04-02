@@ -12,8 +12,6 @@ def setup_redis_connection_pool():
 	redis_connection_pool = redis.ConnectionPool.from_url(
 		url=conf.REDIS_URL,
 		decode_responses=False,
-		ssl=True,
-		ssl_cert_reqs=None
 	)
 
 
@@ -24,5 +22,7 @@ def get_redis_connection():
 	return redis.StrictRedis(
 		connection_pool=redis_connection_pool,
 		charset='utf-8',
-		decode_responses=False
+		decode_responses=False,
+		ssl=True,
+		ssl_cert_reqs=None
 	)

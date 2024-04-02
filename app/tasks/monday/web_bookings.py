@@ -164,7 +164,7 @@ def transfer_web_booking(web_booking_item_id):
 		elif 'stripe' in payment_method.lower():
 			payment_method = 'Stripe Payment'
 		elif 'paypal' in payment_method.lower():
-			payment_method = 'PayPal Payment'
+			payment_method = 'Paypal Payment'
 		else:
 			payment_method = 'Other'
 

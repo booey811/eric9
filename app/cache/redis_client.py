@@ -11,7 +11,9 @@ def setup_redis_connection_pool():
 	global redis_connection_pool
 	redis_connection_pool = redis.ConnectionPool.from_url(
 		url=conf.REDIS_URL,
-		decode_responses=False
+		decode_responses=False,
+		ssl=True,
+		ssl_cert_reqs=None
 	)
 
 

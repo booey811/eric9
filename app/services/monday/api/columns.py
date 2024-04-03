@@ -333,6 +333,9 @@ class LinkURLValue(ValueType):
 			split_value = [str(_.strip()) for _ in value.split("-")]
 			if len(split_value) == 2:
 				self.text, self.url = split_value
+			elif len(split_value) > 2:
+				self.text = " - ".join(split_value[:-1])
+				self.url = split_value[-1]
 			else:
 				raise InvalidColumnData(column_data, 'text - url could not be split')
 

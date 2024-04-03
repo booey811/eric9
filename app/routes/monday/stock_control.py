@@ -61,7 +61,7 @@ def build_stock_profile():
 
 @stock_control_bp.route("/stock-checkout-adjustment", methods=['POST'])
 @monday.monday_challenge
-def build_stock_profile():
+def checkout_stock_profile():
 	log.debug('Checking out repair stock')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')

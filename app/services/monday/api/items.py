@@ -119,11 +119,13 @@ class BaseItemType:
 		elif not self.id and name:
 			self.create(name)
 		try:
-			conn.items.change_multiple_column_values(
+			res = conn.items.change_multiple_column_values(
 				board_id=self.BOARD_ID,
 				item_id=self.id,
 				column_values=self.staged_changes
 			)
+			if res.get('error_message'):
+				raise MondayAPIError(f"{str(self)} could not Commit: {res.get('error_message')}")
 		except Exception as e:
 			raise MondayAPIError(f"Error calling monday API: {e}")
 

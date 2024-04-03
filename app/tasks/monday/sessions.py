@@ -33,7 +33,7 @@ def end_session(main_id, timestamp: str, ending_status, post_update: str = ''):
 	active_session = get_active_session(main_id)
 
 	if not active_session:
-		notify_admins_of_error(f"No active session found for {main_id}, cannot end session")
+		# notify_admins_of_error(f"No active session found for {main_id}, cannot end session")
 		return False
 
 	if isinstance(timestamp, datetime.datetime):
@@ -103,9 +103,13 @@ def get_active_session(main_id: str | int):
 				}
 			)
 
-	if sessions[-1].session_status.value == 'Active':
-		active_session = sessions[-1]
-		log.debug(f"Got Active Session: {active_session}")
+	try:
+		if sessions[-1].session_status.value == 'Active':
+			active_session = sessions[-1]
+			log.debug(f"Got Active Session: {active_session}")
+	except IndexError:
+		active_session = None
+		log.debug(f"No Active Session Found for {main}")
 	else:
 		active_session = None
 		log.debug(f"No Active Session Found for {main}")

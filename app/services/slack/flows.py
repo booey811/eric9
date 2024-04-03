@@ -513,7 +513,7 @@ class WalkInFlow(RepairViewFlow):
 
 			for prod in products:
 				note += f"\n{prod.name}"
-				description += f"\n{prod.name.replace(device.name, '').title()}({int(prod.price)})"
+				description += f"\n{prod.name.replace(device.name, '').title()}({int(prod.price.value)})"
 				if 'diagnostic' in prod.name.lower():
 					diagnostic = True
 

@@ -459,6 +459,23 @@ class QuoteInformationViews:
 				)
 				total += int(custom['price'])
 
+		if total:
+			repair_blocks.append(blocks.add.header_block(f"Total: £{total}"))
+
+		if meta_dict.get('description'):
+			if meta_dict['description'].lower() == 'no products connected':
+				pass
+			else:
+				repair_blocks.append(blocks.add.divider_block())
+				repair_blocks.append(
+					blocks.add.simple_text_display("*Description*")
+				)
+				repair_blocks.append(
+					blocks.add.simple_text_display(meta_dict['description'])
+				)
+
+		repair_blocks.append(blocks.add.divider_block())
+
 		if meta_dict.get('deadline'):
 			deadline = meta_dict['deadline']
 		else:
@@ -485,9 +502,6 @@ class QuoteInformationViews:
 			repair_blocks.append(
 				blocks.add.simple_text_display(f"No products or custom lines added to this quote"),
 			)
-
-		if total:
-			repair_blocks.append(blocks.add.header_block(f"Total: £{total}"))
 
 		if meta_dict['pay_status'] == 'Confirmed':
 			repair_blocks.append(blocks.add.simple_text_display(":white_check_mark:  Payment has already been taken"))

@@ -8,7 +8,7 @@ from ...utilities import notify_admins_of_error
 
 
 def extract_meta_from_main_item(main_item=None, main_id=''):
-	user = device = products = custom_lines = None
+	user = device = products = custom_lines = description = None
 
 	if not main_item and not main_id:
 		raise ValueError("No main item or main id provided")
@@ -43,16 +43,19 @@ def extract_meta_from_main_item(main_item=None, main_id=''):
 	if main_item.hard_deadline.value:
 		deadline = main_item.hard_deadline.value
 
+	if main_item.description.value:
+		description = main_item.description.value
+
 	return create_meta(
 		user=user, device=device, products=products, main_item=main_item, custom_lines=custom_lines,
-		imei_sn=imei_sn, pay_status=pay_status, passcode=passcode, deadline=deadline
+		imei_sn=imei_sn, pay_status=pay_status, passcode=passcode, deadline=deadline, description=description
 	)
 
 
 def create_meta(
 		user_id=None, device_id=None, product_ids=None, user=None, device=None,
 		products=None, main_item=None, custom_lines=None, imei_sn=None, pay_status=None,
-		passcode=None, deadline: datetime.datetime = None
+		passcode=None, deadline: datetime.datetime = None, description=None
 ):
 	meta = {
 		'main_id': '',
@@ -70,7 +73,8 @@ def create_meta(
 		'imei_sn': '',
 		'pay_status': '',
 		'pc': '',
-		'deadline': ''
+		'deadline': '',
+		'description': ''
 	}
 
 	if not user and not user_id:
@@ -126,6 +130,9 @@ def create_meta(
 			deadline = ''
 
 		meta['deadline'] = deadline
+
+	if description:
+		meta['description'] = description
 
 	return meta
 

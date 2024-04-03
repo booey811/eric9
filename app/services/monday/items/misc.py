@@ -389,6 +389,11 @@ class BatteryTestItem(BaseItemType):
 		self.end_level = columns.NumberValue("numbers_1")
 		self.time_tracking = columns.TimeTrackingColumn("time_tracking")
 
+		self.test_status = columns.StatusValue("status")
+		self.test_parameters = columns.DropdownValue("dropdown")
+
+		self.main_item_connect = columns.ConnectBoards("connect_boards")
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 	def get_hourly_consumption_rate(self):

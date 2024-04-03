@@ -86,3 +86,46 @@ def handle_imei_change(main_item_id):
 		main.add_update(update, main.notes_thread_id.value)
 
 		return imei_item
+
+
+def print_battery_test_results_to_main_item(battery_test_item_id):
+
+	battery_test_item = monday.items.misc.BatteryTestItem(battery_test_item_id)
+
+	try:
+		try:
+			main_id = battery_test_item.main_item_connect.value[0]
+			if not main_id:
+				raise IndexError
+		except IndexError:
+			raise monday.api.exceptions.MondayDataError(f"No Main Item Connected to Battery Test Item: {battery_test_item_id}")
+		main_item = monday.items.MainItem(main_id)
+
+		# get the battery test data
+		test_param_ids = battery_test_item.test_parameters.value
+		if test_param_ids:
+			test_params = battery_test_item.convert_dropdown_ids_to_labels(
+				test_param_ids,
+				battery_test_item.test_parameters.column_id
+			)
+			test_param_str = ", ".join(test_params)
+		else:
+			test_param_str = "No Test Parameters Provided"
+
+		consumption_rate = round(battery_test_item.get_hourly_consumption_rate(), 3)
+
+		# create the update
+		update = f"====!  BATTERY TEST RESULTS  !====\n\n" \
+				 f"CONSUMPTION RATE: {consumption_rate}% per hour\n" \
+				 f"TEST PARAMETERS: {test_param_str}\n"
+
+		# add the update to the main item
+		main_item.add_update(update, main_item.notes_thread_id.value)
+		return battery_test_item
+
+	except Exception as e:
+		notify_admins_of_error(f"Error Printing Battery Test Results to Main Item: {str(e)}")
+		battery_test_item.test_status = "Error"
+		battery_test_item.commit()
+		battery_test_item.add_update(f"Error Printing Battery Test Results to Main Item: {str(e)}")
+		raise e

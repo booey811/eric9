@@ -40,9 +40,9 @@ def process_completed_count():
 	return jsonify({'status': 'ok'}), 200
 
 
-@stock_control_bp.route("/stock-checkout-adjustment", methods=['POST'])
+@stock_control_bp.route("/stock-profile-creation", methods=['POST'])
 @monday.monday_challenge
-def checkout_repair_stock():
+def build_stock_profile():
 	log.debug('Checking out repair stock')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
@@ -55,5 +55,22 @@ def checkout_repair_stock():
 		q_low.enqueue(
 			stock_tasks.update_stock_checkouts,
 			main_id
+		)
+	return jsonify({'status': 'ok'}), 200
+
+
+@stock_control_bp.route("/stock-checkout-adjustment", methods=['POST'])
+@monday.monday_challenge
+def build_stock_profile():
+	log.debug('Checking out repair stock')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	item_id = data['pulseId']
+	if item_id:
+		q_low.enqueue(
+			stock_tasks.process_stock_checkout,
+			item_id
 		)
 	return jsonify({'status': 'ok'}), 200

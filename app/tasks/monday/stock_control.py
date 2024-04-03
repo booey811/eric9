@@ -7,6 +7,7 @@ from ...utilities import notify_admins_of_error
 
 def update_stock_checkouts(main_id, create_sc_item=False):
 	main_item = monday.items.MainItem(main_id).load_from_api()
+	profile_status = "Complete"
 	try:
 		if not main_item.stock_checkout_id.value:
 			if not create_sc_item:
@@ -25,13 +26,13 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 		raise e
 
 	if not main_item.parts_used_dropdown.value:
-		checkout_controller.checkout_status = "Error"
+		checkout_controller.profile_status = "Error"
 		checkout_controller.commit()
 		checkout_controller.add_update("No Parts Selected")
 		return False
 
 	if not main_item.device_deprecated_dropdown.value:
-		checkout_controller.checkout_status = "Error"
+		checkout_controller.profile_status = "Error"
 		checkout_controller.commit()
 		checkout_controller.add_update("No Device Selected")
 		return False
@@ -72,9 +73,11 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 					blank.dual_id = str(dual_id)
 
 					d_id, pu_id = dual_id.split("-")
-					pu_text = main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[0]
+					pu_text = \
+					main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[0]
 					device_text = \
-					main_item.convert_dropdown_ids_to_labels([d_id], main_item.device_deprecated_dropdown.column_id)[0]
+						main_item.convert_dropdown_ids_to_labels([d_id],
+																 main_item.device_deprecated_dropdown.column_id)[0]
 					name = f"{device_text} {pu_text}"
 					if main_item.device_colour.value and main_item.device_colour.value != 'Not Selected':
 						name = f"{device_text} {pu_text} {main_item.device_colour.value}"
@@ -85,14 +88,24 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 		for map_item in map_items:
 			if not map_item.part_ids.value:
 				missing_part_ids.append(map_item)
+			elif len(map_item.part_ids.value) > 1:
+				profile_status = "User Input Required"
+				checkout_controller.add_update(
+					f"Multiple Parts Attached to {map_item.name} - User Input Required"
+					f"\n\nPlease delete any parts that are not required and set Profile Status to 'Complete'"
+				)
 
 		if missing_part_ids:
 			urls = [
-				f"https://icorrect.monday.com/boards/{monday.items.part.PartItem.BOARD_ID}/pulses/{_.id}" for _ in missing_part_ids
+				f"https://icorrect.monday.com/boards/{monday.items.part.PartItem.BOARD_ID}/pulses/{_.id}" for _ in
+				missing_part_ids
 			]
-			raise monday.api.exceptions.MondayDataError(f"No Parts Attached to {len(missing_part_ids)} RepairMaps: {urls}")
+			raise monday.api.exceptions.MondayDataError(
+				f"No Parts Attached to {len(missing_part_ids)} RepairMaps: {urls}")
 
-		part_ids = [_.part_ids.value[0] for _ in map_items]
+		part_ids = []
+		for map_item in map_items:
+			part_ids.extend(map_item.part_ids.value)
 		parts_data = monday.api.get_api_items(part_ids)
 		parts = [monday.items.PartItem(_['id'], _) for _ in parts_data]
 		for part in parts:
@@ -104,16 +117,14 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 			i.part_id = str(part.id)
 			i.commit()
 
+		checkout_controller.profile_status = profile_status
+		checkout_controller.checkout_status = 'Do Now!'
 		checkout_controller.commit()
-		q_low.enqueue(
-			process_stock_checkout,
-			checkout_controller.id
-		)
 		return checkout_controller
 
 	except Exception as e:
 		notify_admins_of_error(e)
-		checkout_controller.checkout_status = "Error"
+		checkout_controller.profile_status = "Error"
 		checkout_controller.commit()
 		checkout_controller.add_update(f"Could not setup Stock Checkout: {e}")
 		raise e
@@ -122,7 +133,12 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 def process_stock_checkout(stock_checkout_id):
 	checkout_controller = monday.items.part.StockCheckoutControlItem(stock_checkout_id).load_from_api()
 	try:
-		lines = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in monday.api.get_api_items(checkout_controller.checkout_line_ids.value)]
+
+		if checkout_controller.profile_status.value != 'Complete':
+			raise ValueError(f"Cannot Checkout Stock, Profile Status is not Complete: {checkout_controller}")
+
+		lines = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in
+				 monday.api.get_api_items(checkout_controller.checkout_line_ids.value)]
 
 		for line in lines:
 			if not line.part_id.value:
@@ -153,8 +169,6 @@ def process_stock_checkout(stock_checkout_id):
 		checkout_controller.add_update(message)
 		checkout_controller.commit()
 		raise e
-	return checkout_controller
-
 	return checkout_controller
 
 

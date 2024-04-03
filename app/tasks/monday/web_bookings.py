@@ -398,12 +398,6 @@ def transfer_web_booking(web_booking_item_id):
 	return booking_item
 
 
-def transfer_type_form_booking(type_form_booking_item_id):
-	item = get_api_items([type_form_booking_item_id])[0]
-	type_form_booking = monday.items.misc.TypeFormWalkInResponseItem(item['id'], item)
-	main = monday.items.MainItem()
-
-
 def push_web_enquiry_to_zendesk(web_enquiry_id):
 	try:
 		enquiry = monday.items.misc.WebEnquiryItem(web_enquiry_id)

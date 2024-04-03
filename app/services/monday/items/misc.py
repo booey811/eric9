@@ -377,3 +377,28 @@ class StaffItem(BaseItemType):
 		self.internal_hourly_rate = columns.NumberValue("numbers")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+
+class BatteryTestItem(BaseItemType):
+
+	BOARD_ID = 586351593
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+
+		self.start_level = columns.NumberValue("numbers")
+		self.end_level = columns.NumberValue("numbers_1")
+		self.time_tracking = columns.TimeTrackingColumn("time_tracking")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
+
+	def get_hourly_consumption_rate(self):
+		start_level = self.start_level.value
+		end_level = self.end_level.value
+		difference = start_level - end_level
+		seconds = self.time_tracking.value
+		if not seconds:
+			raise MondayDataError(f"{self} has no time tracking data, cannot calculate consumption rate")
+
+		return difference / (seconds / 3600)
+
+

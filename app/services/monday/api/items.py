@@ -2,6 +2,7 @@ import logging
 import abc
 import json
 
+import monday.exceptions
 import redis.utils
 
 from .columns import ValueType, EditingNotAllowed
@@ -137,6 +138,7 @@ class BaseItemType:
 
 	def create(self, name):
 		# create a new item in the API
+		name = name.replace('"', '')
 		try:
 			new_item = conn.items.create_item(
 				board_id=self.BOARD_ID,
@@ -149,6 +151,19 @@ class BaseItemType:
 				raise MondayAPIError(f"Error creating item: {new_item['error_message']}")
 			self.id = new_item['data']['create_item']['id']
 			return self
+		except monday.exceptions.MondayQueryError as e1:
+			name = name.replace("(", "").replace(")", "")
+			try:
+				new_item = conn.items.create_item(
+					board_id=self.BOARD_ID,
+					group_id="",
+					item_name=name,
+					column_values=self.staged_changes
+				)
+			except Exception as e:
+				log.error("Error creating item", exc_info=True)
+				log.error("Staged changes: " + str(self.staged_changes))
+				raise MondayAPIError(f"Error calling monday API: {e}")
 		except Exception as e:
 			log.error("Error creating item", exc_info=True)
 			log.error("Staged changes: " + str(self.staged_changes))

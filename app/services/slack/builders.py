@@ -487,7 +487,6 @@ class QuoteInformationViews:
 			)
 
 		if total:
-			repair_blocks.append(blocks.add.divider_block())
 			repair_blocks.append(blocks.add.header_block(f"Total: £{total}"))
 
 		if meta_dict['pay_status'] == 'Confirmed':

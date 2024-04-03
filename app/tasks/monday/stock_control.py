@@ -118,7 +118,8 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 			i.commit()
 
 		checkout_controller.profile_status = profile_status
-		checkout_controller.checkout_status = 'Do Now!'
+		if profile_status == "Complete":
+			checkout_controller.checkout_status = 'Do Now!'
 		checkout_controller.commit()
 		return checkout_controller
 

@@ -181,7 +181,7 @@ class StockCheckoutControlItem(BaseItemType):
 		self.main_item_connect = columns.ConnectBoards("connect_boards")
 		self.repair_status = columns.StatusValue("status47")
 		self.profile_status = columns.StatusValue("status4")
-		self.checkout_status = columns.StatusValue("status47")
+		self.checkout_status = columns.StatusValue("status3")
 
 		self.checkout_line_ids = columns.ConnectBoards("subitems")
 

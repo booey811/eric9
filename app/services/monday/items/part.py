@@ -113,6 +113,9 @@ class PartItem(BaseCacheableItem):
 		self.stock_level = desired_quantity
 		self.commit()
 
+		adjustment.parts_connect = [self.id]
+		adjustment.commit()
+
 		return adjustment
 
 
@@ -129,6 +132,8 @@ class InventoryAdjustmentItem(BaseItemType):
 
 		self.part_id = columns.TextValue("text4")
 		self.part_url = columns.LinkURLValue("part_url")
+		
+		self.parts_connect = columns.ConnectBoards("connect_boards9")
 
 		self.source_item_id = columns.TextValue("mainboard_id")
 		self.source_url = columns.LinkURLValue("link2")

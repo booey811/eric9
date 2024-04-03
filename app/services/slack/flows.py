@@ -504,6 +504,7 @@ class WalkInFlow(RepairViewFlow):
 				main = monday.items.MainItem(self.meta['main_id'])
 
 			note = "Front of House Notes\n\nREQUESTED_PRODUCTS"
+			description = ""
 
 			device = monday.items.DeviceItem(self.meta['device_id'])
 			products = monday.items.ProductItem.get(self.meta['product_ids'])
@@ -512,6 +513,7 @@ class WalkInFlow(RepairViewFlow):
 
 			for prod in products:
 				note += f"\n{prod.name}"
+				description += f"\n{prod.name.replace(device.name, '').title()}({int(prod.price)})"
 				if 'diagnostic' in prod.name.lower():
 					diagnostic = True
 
@@ -573,8 +575,10 @@ class WalkInFlow(RepairViewFlow):
 					custom_line = custom_line.create(custom['name'])
 					custom_ids.append(custom_line.id)
 				note += f"\n{custom['name']}"
+				description += f"\n{custom['name'].title()}({int(custom['price'])})"
 			main.custom_quote_connect = custom_ids
 			main.main_status = 'Received'
+			main.description = description
 			main.commit()
 
 			note += "\n\nPRE-CHECKS"

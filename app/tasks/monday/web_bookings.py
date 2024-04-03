@@ -225,6 +225,7 @@ def transfer_web_booking(web_booking_item_id):
 			raise WebBookingTransferError(f'{str(order_id)} could not determine service type')
 
 		main.service = service
+		booking_item.service = service
 
 		search_results = []
 
@@ -257,6 +258,7 @@ def transfer_web_booking(web_booking_item_id):
 				break
 
 		main.repair_type = repair_type
+		booking_item.repair_type = repair_type
 
 		device_ids = [p.device_id for p in products if p.device_id is not None]
 		device_id = device_ids[0] if device_ids else None
@@ -267,6 +269,7 @@ def transfer_web_booking(web_booking_item_id):
 			email_subject = f"Your {device.name} Repair"
 		else:
 			device_id = 4028854241  # Other Device
+			device = monday.items.DeviceItem(4028854241)
 			email_subject = "Your Repair with iCorrect"
 
 		main.device_id = int(device_id)
@@ -319,34 +322,51 @@ def transfer_web_booking(web_booking_item_id):
 		ticket = zendesk.client.tickets.create(ticket).ticket
 
 		main.email = email
+		booking_item.email = email
 		main.phone = phone
+		booking_item.phone = phone
 		main.ticket_id = str(ticket.id)
+		booking_item.ticket_id = str(ticket.id)
 		main.ticket_url = [
 			str(ticket.id),
 			f"https://icorrect.zendesk.com/agent/tickets/{ticket.id}",
 		]
-		main.description = "; ".join([f"{p.name}(£{p.price})" for p in products])
+		desc = f"{device.name}\n\n"
+		for p in products:
+			d_name = p.name.replace(device.name, '')
+			desc += f"{d_name} - £{int(p.price.value)}\n"
+		booking_item.description = desc
+		main.description = desc
 
 		if point_of_collection:
 			main.point_of_collection = point_of_collection
+			booking_item.point_of_collection = point_of_collection
 		if address_notes:
 			main.address_notes = address_notes
+			booking_item.address_notes = address_notes
 		if address_street:
 			main.address_street = address_street
+			booking_item.address_street = address_street
 		if address_postcode:
 			main.address_postcode = address_postcode
+			booking_item.address_postcode = address_postcode
 		if booking_date:
 			main.booking_date = booking_date
+			booking_item.booking_date = booking_date
 		if payment_status:
 			main.payment_status = payment_status
+			booking_item.pay_status = payment_status
 		if payment_method:
 			main.payment_method = payment_method
+			booking_item.pay_method = payment_method
 
 		main.client = 'End User'
+		booking_item.client = 'End User'
 		main.main_status = 'Awaiting Confirmation'
 		main.notifications_status = 'ON'
 
 		main.create(name)
+		booking_item.booking_notes = booking_text
 
 		main.add_update(booking_text, main.notes_thread_id.value)
 		main.add_update(main.get_stock_check_string([str(p.id) for p in products]), main.notes_thread_id.value)
@@ -362,8 +382,19 @@ def transfer_web_booking(web_booking_item_id):
 		log.error(e)
 		notify_admins_of_error(f"Error transferring web booking: {e}")
 		booking_item.transfer_status = 'Error'
+		raise e
 
 	booking_item.commit()
+
+	monday.api.monday_connection.items.change_multiple_column_values(
+		main.BOARD_ID,
+		main.id,
+		{
+			"device0": {"labels": [str(device.name)]}
+		},
+		create_labels_if_missing=True
+	)
+
 	return booking_item
 
 

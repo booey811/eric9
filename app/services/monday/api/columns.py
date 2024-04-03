@@ -600,6 +600,28 @@ class CheckBoxValue(ValueType):
 		return self.value
 
 
+class TimeTrackingColumn(ValueType):
+
+	@property
+	def value(self):
+		return self._value
+
+	@value.setter
+	def value(self, value):
+		raise EditingNotAllowed(self.column_id)
+
+	def column_api_data(self, search=None):
+		raise EditingNotAllowed(self.column_id)
+
+	def load_column_value(self, column_data: dict):
+		value_data = json.loads(column_data['value'])
+		if not value_data.get('duration'):
+			return 0
+		duration = int(value_data['duration'])
+		self._value = duration
+		return self._value
+
+
 class InvalidColumnData(MondayDataError):
 
 	def __init__(self, column_data: dict, key: str):

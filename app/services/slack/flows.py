@@ -595,7 +595,8 @@ class WalkInFlow(RepairViewFlow):
 				main.id,
 				{
 					"device0": {"labels": [str(device.name)]}
-				}
+				},
+				create_labels_if_missing=True
 			)
 
 		except Exception as e:

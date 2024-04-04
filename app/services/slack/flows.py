@@ -513,7 +513,7 @@ class WalkInFlow(RepairViewFlow):
 
 			for prod in products:
 				note += f"\n{prod.name}"
-				description += f"\n{prod.name.replace(device.name, '').title()}({int(prod.price.value)})"
+				description += f"\n{prod.name.replace(device.name, '').title()}(£{int(prod.price.value)})"
 				if 'diagnostic' in prod.name.lower():
 					diagnostic = True
 
@@ -575,7 +575,7 @@ class WalkInFlow(RepairViewFlow):
 					custom_line = custom_line.create(custom['name'])
 					custom_ids.append(custom_line.id)
 				note += f"\n{custom['name']}"
-				description += f"\n{custom['name'].title()}({int(custom['price'])})"
+				description += f"\n{custom['name'].title()}(£{int(custom['price'])})"
 			main.custom_quote_connect = custom_ids
 			main.main_status = 'Received'
 			main.description = description
@@ -595,7 +595,8 @@ class WalkInFlow(RepairViewFlow):
 				main.id,
 				{
 					"device0": {"labels": [str(device.name)]}
-				}
+				},
+				create_labels_if_missing=True
 			)
 
 		except Exception as e:

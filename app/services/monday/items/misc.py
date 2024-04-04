@@ -74,12 +74,16 @@ class TypeFormWalkInResponseItem(BaseItemType):
 
 	FORM_ID = "LtNyVqVN"
 
-	phone = columns.TextValue('text')
-	email = columns.TextValue('text_1')
-	device_type = columns.StatusValue('device_category')
-	device = columns.TextValue('device6')
-	repair_notes = columns.TextValue('text7')
-	push_to_slack = columns.StatusValue('status6')
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.form_type = columns.StatusValue('status4')
+		self.phone = columns.TextValue('text')
+		self.email = columns.TextValue('text_1')
+		self.device_type = columns.StatusValue('device_category')
+		self.device = columns.TextValue('device6')
+		self.repair_notes = columns.TextValue('text7')
+		self.push_to_slack = columns.StatusValue('status6')
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 	def sync_typeform_data(self):
 
@@ -87,6 +91,7 @@ class TypeFormWalkInResponseItem(BaseItemType):
 			return [ans for ans in most_recent['answers'] if ans['field']['ref'] == f_id][0]
 
 		typeform_field_refs = {
+			'form_type': 'fc093e51-6c78-470d-a6be-f907db22ffcc',
 			'phone': '399e680c-f83f-4fd6-bd86-1cb9a0d09512',
 			'email': 'ad62f045-c8a6-4fb2-8442-f5c6d0a4abe1',
 			'device_type': 'c6c7c1d0-e016-480e-ac37-d25a312d5cd6',
@@ -113,6 +118,7 @@ class TypeFormWalkInResponseItem(BaseItemType):
 		self.email = get_answer_by_field_id(typeform_field_refs['email'])['email']
 		self.device_type = get_answer_by_field_id(typeform_field_refs['device_type'])['choice']['label']
 		self.repair_notes = get_answer_by_field_id(typeform_field_refs['repair_notes'])['text']
+		self.form_type = get_answer_by_field_id(typeform_field_refs['form_type'])['choice']['label']
 
 		for field_id in typeform_field_refs['device']:
 			try:

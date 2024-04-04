@@ -96,7 +96,7 @@ def get_active_session(main_id: str | int):
 				update_session,
 				kwargs={
 					'session_id': session.id,
-					'session_status': 'Complete: Bad Data',
+					'session_status': 'Complete; Bad Data',
 					'end_time': datetime.datetime.now().strftime("%c"),
 					'ending_status': 'Unknown',
 					'post_update': "Session marked as 'Complete: Bad Data' because of duplicate active sessions"
@@ -107,10 +107,10 @@ def get_active_session(main_id: str | int):
 		if sessions[-1].session_status.value == 'Active':
 			active_session = sessions[-1]
 			log.debug(f"Got Active Session: {active_session}")
+		else:
+			active_session = None
+			log.debug(f"No Active Session Found for {main}")
 	except IndexError:
-		active_session = None
-		log.debug(f"No Active Session Found for {main}")
-	else:
 		active_session = None
 		log.debug(f"No Active Session Found for {main}")
 

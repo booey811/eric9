@@ -32,3 +32,48 @@ class CountLineItem(BaseItemType):
 		self.adjustment_status = columns.StatusValue("status1")
 
 		super().__init__(item_id, api_data, search, cache_data)
+
+
+class SupplierItem(BaseItemType):
+
+	BOARD_ID = 6390037479
+
+	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
+
+		self.parts_connect = columns.ConnectBoards("board_relation3")
+		self.order_connect = columns.ConnectBoards("connect_boards")
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+	def crete_new_order_item(self):
+		pass
+
+	def get_current_order_item(self):
+		pass
+
+
+class OrderItem(BaseItemType):
+
+	BOARD_ID = 6392094556
+
+	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
+
+		self.order_status = columns.StatusValue('status2')
+		self.subitems = columns.ConnectBoards('subtasks')
+
+		super().__init__(item_id, api_data, search, cache_data)
+
+	def get_line_items(self):
+		pass
+
+
+class OrderLineItem(BaseItemType):
+
+	BOARD_ID = 6392131341
+
+	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
+
+		self.part_id = columns.TextValue("text")
+		self.current_stock_level = columns.NumberValue("numbers")
+
+		super().__init__(item_id, api_data, search, cache_data)

@@ -134,6 +134,10 @@ class InventoryAdjustmentItem(BaseItemType):
 		self.part_url = columns.LinkURLValue("part_url")
 		
 		self.parts_connect = columns.ConnectBoards("connect_boards9")
+		self.supplier_connect = columns.ConnectBoards("connect_boards")
+
+		self.auto_order_status = columns.StatusValue("status_1")
+		self.auto_order_minimum = columns.NumberValue("numbers")
 
 		self.source_item_id = columns.TextValue("mainboard_id")
 		self.source_url = columns.LinkURLValue("link2")

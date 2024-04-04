@@ -225,7 +225,7 @@ def book_courier_return():
 	return jsonify({'message': 'OK'}), 200
 
 
-@main_board_bp.route("/handle-imei-change")
+@main_board_bp.route("/handle-imei-change", methods=["POST"])
 @monday_challenge
 def handle_imei_change():
 	log.debug('Booking Courier Return')

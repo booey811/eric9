@@ -1,5 +1,6 @@
 from ..api.items import BaseItemType
-from ..api import columns
+from ..api import columns, monday_connection, get_api_items
+from .. import items
 
 
 class CountItem(BaseItemType):
@@ -59,12 +60,29 @@ class OrderItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 
 		self.order_status = columns.StatusValue('status2')
-		self.subitems = columns.ConnectBoards('subtasks')
+		self.subitems = columns.ConnectBoards('subitems')
+
+		self._subitem_data = []
 
 		super().__init__(item_id, api_data, search, cache_data)
 
 	def get_line_items(self):
-		pass
+		if not self._subitem_data:
+			subitem_ids = self.subitems.value
+			self._subitem_data = get_api_items(subitem_ids)
+		return [OrderLineItem(_['id'], _).load_from_api() for _ in self._subitem_data]
+
+	def add_part_to_order(self, part: "items.PartItem"):
+		blank = OrderLineItem()
+		blank.part_id = str(part.id)
+		res = monday_connection.items.create_subitem(
+			self.id,
+			part.name,
+			column_values=blank.staged_changes
+		)
+		# reset subitem data in case we want to view the added lines again (refreshes the list)
+		self._subitem_data = []
+		return res
 
 
 class OrderLineItem(BaseItemType):

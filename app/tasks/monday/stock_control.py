@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from ...cache.rq import q_low
 from ...services import monday
@@ -234,3 +235,24 @@ def process_completed_count_item(count_item_id):
 		count_item.commit()
 		raise e
 	return count_item
+
+
+def add_parts_to_order(
+		part_items: List[monday.items.part.PartItem],
+		order_item: monday.items.part.OrderItem
+):
+	"""Adds the parts from an auto order to an order item"""
+	for part in part_items:
+		i = monday.api.monday_connection.items.create_subitem(
+			order_item.id,
+			part.name,
+			column_values={
+				"numbers": part.quantity,
+				"board_relation3": part.id
+			}
+		)
+		i = monday.items.part.OrderLineItem(i['data']['create_subitem']['id'], i['data']['create_subitem'])
+		i.part_id = str(part.id)
+		i.quantity = part.quantity
+		i.commit()
+	return order_item

@@ -5,7 +5,7 @@ import traceback
 import os
 import tempfile
 
-from . import users
+from . import users, tools
 
 
 def notify_admins_of_error(error):

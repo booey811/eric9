@@ -66,7 +66,10 @@ def handle_imei_change(main_item_id):
 
 			imei_item = sickw.helpers.record_device_information(raw_data)
 
-		main_ids = [str(item) for item in imei_item.main_board_connect.value]
+		if imei_item.main_board_connect.value:
+			main_ids = [str(item) for item in imei_item.main_board_connect.value]
+		else:
+			main_ids = []
 
 		main_board_imei_search = monday.api.monday_connection.items.fetch_items_by_column_value(
 			board_id=main.BOARD_ID,

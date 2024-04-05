@@ -82,6 +82,9 @@ def adjust_web_price():
 	data = webhook.decode('utf-8')
 	data = json.loads(data)['event']
 
+	if int(data['userId']) == 12304876:  # systems manager (change created by system)
+		return jsonify({'message': 'OK'}), 200
+
 	product_id = data.get('pulseId')
 	new_price = data['value']['value']
 	old_price = data.get('previousValue')

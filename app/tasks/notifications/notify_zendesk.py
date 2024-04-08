@@ -1,6 +1,6 @@
 from zenpy.lib.api_objects import Comment
 
-from ...services.monday import items
+from ...services.monday import items, api
 from ..sync_platform import sync_to_zendesk
 from ...services import zendesk
 from ...utilities import notify_admins_of_error
@@ -23,6 +23,35 @@ def send_macro(main_item_id):
 		raise e
 
 	try:
+		def determine_password_state():
+			if main_item.main_status.value == 'Password Req':
+				# password requested
+				current_pc = main_item.passcode.value
+				if current_pc:
+					if current_pc.lower() == 'will not provide':
+						# no email sent, client refuses
+						return False
+					elif current_pc.lower() == 'n/a':
+						# client has advised of no password, but the device requests one
+						pw_macro = 360049361977
+					else:
+						# client has provided password, but this is incorrect
+						pw_macro = 24020282847249
+				else:
+					# no password provided, we must get one
+					pw_macro = 24020315030929
+
+				m_e = zendesk.client.tickets.show_macro_effect(ticket, pw_macro)
+				t = zendesk.client.tickets.update(macro_effect.ticket).ticket
+				return True
+
+			else:
+				return False
+
+		t = determine_password_state()
+		if t:
+			return t
+
 		search_item = items.misc.NotificationMappingItem(search=True)
 
 		macro_search_term = f"{main_item.main_status.value}-{main_item.client.value}-{main_item.service.value}"

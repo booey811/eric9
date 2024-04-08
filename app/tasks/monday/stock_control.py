@@ -278,7 +278,8 @@ def build_daily_orders():
 def add_part_to_order(part: Union["monday.items.PartItem", str, int], supplier_item=None):
 
 	if isinstance(part, (str, int)):
-		part = monday.items.PartItem(part).load_data()
+		part = monday.items.PartItem(part)
+		part.load_data()
 
 	if not supplier_item:
 		if not part.supplier_connect.value:

@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Union
 
 from ...cache.rq import q_low
 from ...services import monday
@@ -270,20 +270,37 @@ def build_daily_orders():
 			supplier_item = monday.items.counts.SupplierItem(supplier_item_id).load_from_api()
 			suppliers[str(supplier_item_id)] = supplier_item
 
-		try:
-			current_order = supplier_item.get_current_order_item()
-		except monday.api.exceptions.MondayDataError:
-			current_order = supplier_item.create_new_order_item()
+		add_part_to_order(part, supplier_item)
 
-		current_lines = current_order.get_line_items()
-		current_part_ids = [str(line.part_id.value) for line in current_lines]
-		if str(part.id) in current_part_ids:
-			continue
+	return suppliers
 
-		reorder_level = int(part.reorder_level.value) or 2
 
-		if int(part.stock_level.value) < reorder_level:
-			# add to order
-			current_order.add_part_to_order(part)
+def add_part_to_order(part: Union["monday.items.PartItem", str, int], supplier_item=None):
 
-	return item_data
+	if isinstance(part, (str, int)):
+		part = monday.items.PartItem(part).load_data()
+
+	if not supplier_item:
+		if not part.supplier_connect.value:
+			supplier_item_id = 6392289150  # 'other' supplier
+		else:
+			supplier_item_id = part.supplier_connect.value[0]
+		supplier_item = monday.items.counts.SupplierItem(supplier_item_id).load_from_api()
+
+	try:
+		current_order = supplier_item.get_current_order_item()
+	except monday.api.exceptions.MondayDataError:
+		current_order = supplier_item.create_new_order_item()
+
+	current_lines = current_order.get_line_items()
+	current_part_ids = [str(line.part_id.value) for line in current_lines]
+	if str(part.id) in current_part_ids:
+		return False
+
+	reorder_level = int(part.reorder_level.value) or 2
+
+	if int(part.stock_level.value) < reorder_level:
+		# add to order
+		current_order.add_part_to_order(part)
+
+	return current_order

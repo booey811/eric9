@@ -74,3 +74,20 @@ def checkout_stock_profile():
 			item_id
 		)
 	return jsonify({'status': 'ok'}), 200
+
+
+@stock_control_bp.route("/add-part-to-pending-orders", methods=['POST'])
+@monday.monday_challenge
+def add_part_to_pending_orders():
+	log.debug('Adding part to pending orders')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	item_id = data['pulseId']
+	if item_id:
+		q_low.enqueue(
+			stock_tasks.add_part_to_order,
+			item_id
+		)
+	return jsonify({'status': 'ok'}), 200

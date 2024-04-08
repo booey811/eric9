@@ -298,7 +298,10 @@ def add_part_to_order(part: Union["monday.items.PartItem", str, int], supplier_i
 	if str(part.id) in current_part_ids:
 		return False
 
-	reorder_level = int(part.reorder_level.value) or 2
+	if part.reorder_level.value:
+		reorder_level = int(part.reorder_level.value)
+	else:
+		reorder_level = 2
 
 	if int(part.stock_level.value) < reorder_level:
 		# add to order

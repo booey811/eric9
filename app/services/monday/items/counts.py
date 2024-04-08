@@ -57,7 +57,10 @@ class SupplierItem(BaseItemType):
 	def get_current_order_item(self):
 		if not self.order_connect.value:
 			raise MondayDataError(f"No order item connected to this supplier: {str(self)}")
-		return OrderItem(self.order_connect.value[0])
+		order = OrderItem(self.order_connect.value[0])
+		if order.order_status != 'Building':
+			order = self.create_new_order_item()
+		return order
 
 
 class OrderItem(BaseItemType):

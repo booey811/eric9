@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from ...cache.rq import q_low
 from ...services import monday
@@ -74,7 +75,7 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 
 					d_id, pu_id = dual_id.split("-")
 					pu_text = \
-					main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[0]
+						main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[0]
 					device_text = \
 						main_item.convert_dropdown_ids_to_labels([d_id],
 																 main_item.device_deprecated_dropdown.column_id)[0]
@@ -234,3 +235,55 @@ def process_completed_count_item(count_item_id):
 		count_item.commit()
 		raise e
 	return count_item
+
+
+def build_daily_orders():
+	suppliers = {}
+
+	item_data = []
+	# get auto order parts
+	search_results = monday.api.monday_connection.items.fetch_items_by_column_value(
+		board_id=monday.items.PartItem.BOARD_ID,
+		column_id="status_1",
+		value="On"
+	)['data']['items_page_by_column_values']
+
+	item_data.extend(search_results['items'])
+	while search_results['cursor']:
+		search_results = monday.api.monday_connection.items.fetch_items_by_column_value(
+			board_id=monday.items.PartItem.BOARD_ID,
+			column_id="status_1",
+			value="On",
+			cursor=search_results['cursor']
+		)['data']['items_page_by_column_values']
+		item_data.extend(search_results['items'])
+
+	parts = [monday.items.PartItem(_['id'], _).load_from_api(_) for _ in item_data]
+
+	for part in parts:
+		if not part.supplier_connect.value:
+			supplier_item_id = 6392289150  # 'other' supplier
+		else:
+			supplier_item_id = part.supplier_connect.value[0]
+		supplier_item = suppliers.get(str(supplier_item_id))
+		if not supplier_item:
+			supplier_item = monday.items.counts.SupplierItem(supplier_item_id).load_from_api()
+			suppliers[str(supplier_item_id)] = supplier_item
+
+		try:
+			current_order = supplier_item.get_current_order_item()
+		except monday.api.exceptions.MondayDataError:
+			current_order = supplier_item.create_new_order_item()
+
+		current_lines = current_order.get_line_items()
+		current_part_ids = [str(line.part_id.value) for line in current_lines]
+		if str(part.id) in current_part_ids:
+			continue
+
+		reorder_level = int(part.reorder_level.value) or 2
+
+		if int(part.stock_level.value) < reorder_level:
+			# add to order
+			current_order.add_part_to_order(part)
+
+	return item_data

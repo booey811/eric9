@@ -11,6 +11,9 @@ class PartItem(BaseCacheableItem):
 		self.products_connect = columns.ConnectBoards("link_to_products___pricing")
 		self.supply_price = columns.NumberValue("supply_price")
 
+		self.supplier_connect = columns.ConnectBoards("connect_boards")
+		self.reorder_level = columns.NumberValue("numbers")
+
 		self._product_ids = None
 
 		super().__init__(item_id, api_data, search)
@@ -134,6 +137,10 @@ class InventoryAdjustmentItem(BaseItemType):
 		self.part_url = columns.LinkURLValue("part_url")
 		
 		self.parts_connect = columns.ConnectBoards("connect_boards9")
+		self.supplier_connect = columns.ConnectBoards("connect_boards")
+
+		self.auto_order_status = columns.StatusValue("status_1")
+		self.auto_order_minimum = columns.NumberValue("numbers")
 
 		self.source_item_id = columns.TextValue("mainboard_id")
 		self.source_url = columns.LinkURLValue("link2")

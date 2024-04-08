@@ -11,6 +11,9 @@ class PartItem(BaseCacheableItem):
 		self.products_connect = columns.ConnectBoards("link_to_products___pricing")
 		self.supply_price = columns.NumberValue("supply_price")
 
+		self.supplier_connect = columns.ConnectBoards("connect_boards")
+		self.reorder_level = columns.NumberValue("numbers")
+
 		self._product_ids = None
 
 		super().__init__(item_id, api_data, search)

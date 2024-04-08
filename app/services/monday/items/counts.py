@@ -1,4 +1,4 @@
-from ..api.items import BaseItemType
+from ..api.items import BaseItemType, MondayDataError
 from ..api import columns, monday_connection, get_api_items
 from .. import items
 
@@ -42,15 +42,22 @@ class SupplierItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 
 		self.parts_connect = columns.ConnectBoards("board_relation3")
-		self.order_connect = columns.ConnectBoards("connect_boards")
+		self.order_connect = columns.ConnectBoards("connect_boards0")
 
 		super().__init__(item_id, api_data, search, cache_data)
 
-	def crete_new_order_item(self):
-		pass
+	def create_new_order_item(self):
+		blank = OrderItem()
+		blank.supplier_connect = [int(self.id)]
+		order = blank.create(self.name)
+		self.order_connect = [int(order.id)]
+		self.commit()
+		return order
 
 	def get_current_order_item(self):
-		pass
+		if not self.order_connect.value:
+			raise MondayDataError(f"No order item connected to this supplier: {str(self)}")
+		return OrderItem(self.order_connect.value[0])
 
 
 class OrderItem(BaseItemType):
@@ -60,6 +67,7 @@ class OrderItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 
 		self.order_status = columns.StatusValue('status2')
+		self.supplier_connect = columns.ConnectBoards('link_to_suppliers')
 		self.subitems = columns.ConnectBoards('subitems')
 
 		self._subitem_data = []
@@ -75,6 +83,7 @@ class OrderItem(BaseItemType):
 	def add_part_to_order(self, part: "items.PartItem"):
 		blank = OrderLineItem()
 		blank.part_id = str(part.id)
+		blank.current_stock_level = int(part.stock_level.value)
 		res = monday_connection.items.create_subitem(
 			self.id,
 			part.name,

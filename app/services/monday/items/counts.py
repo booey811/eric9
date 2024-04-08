@@ -44,6 +44,8 @@ class SupplierItem(BaseItemType):
 		self.parts_connect = columns.ConnectBoards("board_relation3")
 		self.order_connect = columns.ConnectBoards("connect_boards0")
 
+		self._current_order = None
+
 		super().__init__(item_id, api_data, search, cache_data)
 
 	def create_new_order_item(self):
@@ -52,15 +54,19 @@ class SupplierItem(BaseItemType):
 		order = blank.create(self.name)
 		self.order_connect = [int(order.id)]
 		self.commit()
-		return order
+		self._current_order = OrderItem(order.id).load_from_api()
+		return self._current_order
 
-	def get_current_order_item(self):
-		if not self.order_connect.value:
-			raise MondayDataError(f"No order item connected to this supplier: {str(self)}")
-		order = OrderItem(self.order_connect.value[0])
-		if order.order_status != 'Building':
-			order = self.create_new_order_item()
-		return order
+	@property
+	def current_order(self):
+		if not self._current_order:
+			if not self.order_connect.value:
+				self._current_order = self.create_new_order_item()
+			else:
+				order = OrderItem(self.order_connect.value[0]).load_from_api()
+				if order.order_status.value != 'Building':
+					self.create_new_order_item()
+		return self._current_order
 
 
 class OrderItem(BaseItemType):
@@ -80,7 +86,10 @@ class OrderItem(BaseItemType):
 	def get_line_items(self):
 		if not self._subitem_data:
 			subitem_ids = self.subitems.value
-			self._subitem_data = get_api_items(subitem_ids)
+			if subitem_ids:
+				self._subitem_data = get_api_items(subitem_ids)
+			else:
+				self._subitem_data = []
 		return [OrderLineItem(_['id'], _).load_from_api() for _ in self._subitem_data]
 
 	def add_part_to_order(self, part: "items.PartItem"):

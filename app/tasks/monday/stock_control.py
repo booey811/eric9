@@ -288,10 +288,7 @@ def add_part_to_order(part: Union["monday.items.PartItem", str, int], supplier_i
 			supplier_item_id = part.supplier_connect.value[0]
 		supplier_item = monday.items.counts.SupplierItem(supplier_item_id).load_from_api()
 
-	try:
-		current_order = supplier_item.get_current_order_item()
-	except monday.api.exceptions.MondayDataError:
-		current_order = supplier_item.create_new_order_item()
+	current_order = supplier_item.current_order
 
 	current_lines = current_order.get_line_items()
 	current_part_ids = [str(line.part_id.value) for line in current_lines]

@@ -247,7 +247,7 @@ def handle_stuart_job_updates():
 	log.debug('Booking Courier Return')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
-	data = json.loads(data)['event']
+	data = json.loads(data)
 
 	job_id = data['details']['package']['id']
 	topic = data['topic']

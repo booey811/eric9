@@ -741,13 +741,14 @@ class QuoteInformationViews:
 		return view_blocks
 
 	@staticmethod
-	def show_custom_product_form(error_dict=None):
+	def show_custom_product_form(error_dict=None, device_name=""):
 		view_blocks = []
 
 		#  name element
 		name_input = blocks.elements.text_input_element(
 			placeholder="Enter a name for the product",
-			action_id='name_input'
+			action_id='name_input',
+			initial_value=f"{device_name} "
 		)
 		# price element
 		price_input = blocks.elements.text_input_element(
@@ -758,7 +759,7 @@ class QuoteInformationViews:
 		# description element
 		description_input = blocks.elements.text_input_element(
 			placeholder="Enter a description for the product",
-			action_id='description_input'
+			action_id='description_input',
 		)
 
 		# name block
@@ -800,7 +801,8 @@ class QuoteInformationViews:
 			element=description_input,
 			block_id="custom_product_description",
 			action_id="custom_product_description",
-			hint=hint
+			hint=hint,
+			optional=True
 		))
 
 		return view_blocks

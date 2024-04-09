@@ -416,7 +416,14 @@ class RepairViewFlow(FlowController):
 	def add_custom_product(self, method='update', view_id='', errors=None):
 		if errors is None:
 			errors = {}
-		blocks = builders.QuoteInformationViews.show_custom_product_form(errors)
+		device = monday.items.DeviceItem(self.meta['device_id'])
+		if device:
+			device_name = device.name
+		else:
+			device_name = None
+		if not device_name:
+			device_name = "Device Not Selected"
+		blocks = builders.QuoteInformationViews.show_custom_product_form(errors, device_name)
 		view = self.get_view(
 			"Add Custom Product",
 			blocks=blocks,

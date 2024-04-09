@@ -43,9 +43,10 @@ def book_courier(main_id, direction):
 	except Exception as e:
 		notify_admins_of_error(e)
 		if direction == 'incoming':
-			main_item.be_courier_collection = 'Error'
+			main_item.be_courier_collection = 'Booking Failed'
 		elif direction == 'outgoing':
-			main_item.be_courier_return = 'Error'
+			main_item.be_courier_return = 'Booking Failed'
+		main_item.main_status = "Error"
 		notify_admins_of_error(f"Error booking courier for {str(main_item)}: {e}")
 		main_item.commit()
 		raise e

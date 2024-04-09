@@ -110,9 +110,14 @@ class SaleControllerItem(BaseItemType):
 				# 		repair_total += int(custom.price.value)
 				# 		repair_description += f'{custom.name}, '
 
+				if self.date_added.value:
+					date_desc = "\nRepair Date: " + self.date_added.value.strftime("%d/%m/%Y")
+				else:
+					date_desc = '\nRepair Date: N/A'
+
 				repair_description = repair_description[:-2]
 				repair_description += "\nIMEI/SN: " + main_item.imeisn.value
-				repair_description += "\nRepair Date: " + self.date_added.value.strftime("%d/%m/%Y")
+				repair_description += date_desc
 				repair_description += "\nRequested By: " + main_item.name
 
 				repair_description = corp_item.apply_account_specific_description(self, repair_description)

@@ -3,6 +3,7 @@ import logging
 import abc
 from datetime import timezone, datetime
 from dateutil import parser as date_parser
+import pytz
 
 from .client import conn as monday_connection
 from .boards import cache as board_cache
@@ -218,7 +219,6 @@ class DateValue(ValueType):
 	def value(self, new_value: datetime):
 		# make sure it is a datetime in UTC
 		if isinstance(new_value, datetime):
-			new_value = new_value.astimezone(timezone.utc)
 			self._value = new_value
 
 		elif new_value is None:
@@ -243,6 +243,7 @@ class DateValue(ValueType):
 			value = ''
 		else:
 			assert isinstance(value, datetime)
+			value = value.astimezone(pytz.utc)
 			value = value.strftime('%Y-%m-%d %H:%M:%S')
 		return {self.column_id: value}
 
@@ -262,6 +263,7 @@ class DateValue(ValueType):
 			except Exception as e:
 				raise ValueError(f"Error parsing date value: {value}")
 			assert (isinstance(value, datetime))
+			value = value.astimezone(pytz.timezone("Europe/London"))
 
 		log.debug("Loaded column value: %s", value)
 

@@ -239,3 +239,23 @@ def handle_imei_change():
 	)
 
 	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route("/handle-stuart-updates", methods=["POST"])
+@monday_challenge
+def handle_stuart_job_updates():
+	log.debug('Booking Courier Return')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	job_id = data['details']['package']['id']
+	topic = data['topic']
+
+	if topic == "package_delivered":
+		q_high.enqueue(
+			stuart.handle_webhook_update,
+			job_id
+		)
+
+	return jsonify({'message': 'OK'}), 200

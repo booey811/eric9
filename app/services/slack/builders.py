@@ -751,7 +751,7 @@ class QuoteInformationViews:
 			initial_value=f"{device_name} "
 		)
 		# price element
-		price_input = blocks.elements.text_input_element(
+		price_input = blocks.elements.number_input_element(
 			placeholder="Enter a price for the product",
 			action_id='price_input'
 		)

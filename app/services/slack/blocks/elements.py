@@ -141,6 +141,28 @@ def text_input_element(placeholder='', action_id='', multiline=False, initial_va
 	return basic
 
 
+def number_input_element(decimal_allowed=False, action_id='', initial_value='', placeholder=''):
+
+	basic = {
+		"type": "number_input",
+		"is_decimal_allowed": decimal_allowed,
+	}
+
+	if action_id:
+		basic['action_id'] = action_id
+
+	if initial_value:
+		basic['initial_value'] = str(initial_value)
+
+	if placeholder:
+		basic['placeholder'] = {
+			"type": "plain_text",
+			"text": placeholder
+		}
+
+	return basic
+
+
 def button_element(button_text, button_value='', action_id='', button_style='primary'):
 	basic = {
 		"type": "button",

@@ -11,10 +11,17 @@ def book_courier(main_id, direction):
 	"""Book a collection for a main item"""
 	main_item = monday.items.MainItem(main_id).load_from_api()
 	try:
+		log_item = monday.items.misc.CourierDataDumpItem().create(f"{main_item.name}: {direction.capitalize()} Booking")
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Create Courier Log with name {main_item.name}: {e}")
+		name = main_item.name.replace('/', '').replace('"', '').replace("-", "")
+		log_item = monday.items.misc.CourierDataDumpItem().create(f"{name}: {direction.capitalize()} Booking")
+	try:
 		try:
-			job_data = stuart.helpers.generate_job_data(main_item, direction)
+			job_data = stuart.helpers.generate_job_data(main_item, direction, client_reference=str(log_item.id))
 		except Exception as e:
 			main_item.add_update(f"Could not generate job data: {e}", main_item.error_thread_id)
+			monday.api.monday_connection.items.delete_item_by_id(log_item.id)
 			raise e
 		try:
 			response = stuart.client.create_job(job_data)
@@ -22,7 +29,7 @@ def book_courier(main_id, direction):
 		except Exception as e:
 			main_item.add_update(f"Could not create job: {e}", main_item.error_thread_id)
 			raise e
-		log_job_data(job_data, response, main_item)
+		log_job_data(job_data, response, main_item, log_item)
 		if direction == 'incoming':
 			main_item.be_courier_collection = 'Booking Complete'
 		elif direction == 'outgoing':
@@ -52,19 +59,18 @@ def book_courier(main_id, direction):
 		raise e
 
 
-def log_job_data(booking_data, stuart_response, main_item):
+def log_job_data(booking_data, stuart_response, main_item, log_item: "monday.items.misc.CourierDataDumpItem" = None):
 	"""Log the job data"""
 
 	try:
-		log_item = monday.items.misc.CourierDataDumpItem()
+		if not log_item:
+			log_item = monday.items.misc.CourierDataDumpItem()
 
 		job_id = str(stuart_response.get('id'))
 		if job_id:
 			log_item.job_id = job_id
-		# if main_item.booking_date.value:
-		# 	log_item.booking_time = main_item.booking_date.value
-		# else:
-		# 	log_item.booking_time = datetime.datetime.now()
+
+		delivery_id = stuart_response['deliveries'][0]['id']
 
 		log_item.cost_inc_vat = stuart_response['pricing']['price_tax_included']
 		log_item.cost_ex_vat = stuart_response['pricing']['price_tax_excluded']
@@ -76,9 +82,15 @@ def log_job_data(booking_data, stuart_response, main_item):
 		log_item.tracking_url = ["Tracking", stuart_response['deliveries'][0]['tracking_url']]
 		log_item.main_item_id = str(main_item.id)
 
-		log_item.create(main_item.name)
+		log_item.delivery_id = str(delivery_id)
 
-		log_item.add_update(json.dumps(booking_data, indent=4))
+		if not log_item.id:
+			log_item.create(main_item.name)
+		else:
+			log_item.commit()
+
+		log_item.add_update(f"=== REQUEST DATA ===\n\n{json.dumps(booking_data, indent=4)}")
+		log_item.add_update(f"=== RESPONSE DATA ===\n\n{json.dumps(stuart_response, indent=4)}")
 
 		return log_item
 
@@ -87,24 +99,14 @@ def log_job_data(booking_data, stuart_response, main_item):
 		raise e
 
 
-def handle_webhook_update(job_id):
+def handle_webhook_update(courier_item_id):
 	"""Handle a webhook update from Stuart, currently only used for confirming deliveries"""
 	try:
-		search_results = monday.api.monday_connection.items.fetch_items_by_column_value(
-			board_id=monday.items.misc.CourierDataDumpItem.BOARD_ID,
-			column_id="stuart_job_id",
-			value=str(job_id)
-		)
-		if search_results.get('error_message'):
-			raise monday.api.exceptions.MondayAPIError(f"Stuart Webhook Listener failed; {search_results['error_message']}")
-		else:
-			results = search_results['data']['items_page_by_column_values']['items']
-			if len(results) > 1:
-				raise monday.api.exceptions.MondayAPIError(f"Stuart Webhook Failed, multiple items found for job_id {job_id}")
-			elif len(results) == 0:
-				raise monday.api.exceptions.MondayAPIError(f"Stuart Webhook Failed, no items found for job_id {job_id}")
+		try:
+			log_item = monday.items.misc.CourierDataDumpItem(courier_item_id).load_from_api()
+		except Exception as e:
+			raise monday.api.exceptions.MondayDataError(f"Could not load courier item with id {courier_item_id}: {e}")
 
-		log_item = monday.items.misc.CourierDataDumpItem(search_results['items'][0]['id'], search_results['items'][0])
 		main_id = log_item.main_item_id.value
 		if not main_id:
 			raise monday.api.exceptions.MondayDataError(f"Could not find main item id for job_id {job_id}")
@@ -121,5 +123,5 @@ def handle_webhook_update(job_id):
 			raise monday.api.exceptions.MondayDataError("Could Not Update Main Item Status")
 
 	except Exception as e:
-		notify_admins_of_error(e)
+		notify_admins_of_error(f"Stuart Webhook Update: {e}")
 		raise e

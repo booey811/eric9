@@ -249,13 +249,13 @@ def handle_stuart_job_updates():
 	data = webhook.decode('utf-8')
 	data = json.loads(data)
 
-	job_id = data['details']['package']['id']
+	courier_item_id = data['details']['package']['reference']
 	topic = data['topic']
 
 	if topic == "package_delivered":
 		q_high.enqueue(
 			stuart.handle_webhook_update,
-			job_id
+			courier_item_id
 		)
 
 	return jsonify({'message': 'OK'}), 200

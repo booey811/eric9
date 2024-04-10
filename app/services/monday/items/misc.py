@@ -349,6 +349,8 @@ class CourierDataDumpItem(BaseItemType):
 
 		self.main_item_id = columns.TextValue("text6")
 
+		self.delivery_id = columns.TextValue("text")
+
 		self.job_status = columns.StatusValue("status")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)

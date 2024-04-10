@@ -17,7 +17,7 @@ def generate_address_string(address_notes, address_street, address_postcode):
 		return f"{address_street}, London {address_postcode}"
 
 
-def generate_job_data(main_board_item: monday.items.MainItem, direction):
+def generate_job_data(main_board_item: monday.items.MainItem, direction, client_reference=""):
 	if main_board_item.booking_date.value:
 		time = main_board_item.booking_date.value.isoformat()
 	else:
@@ -93,6 +93,9 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction):
 			]
 		}
 	}
+
+	if client_reference:
+		basic["job"]["dropoffs"][0]["client_reference"] = client_reference
 
 	if time and direction == 'incoming':
 		basic["job"]['pickup_at'] = time

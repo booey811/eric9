@@ -25,7 +25,7 @@ def handle_repair_group_change():
 	old_group_id = data['sourceGroupId']
 	all_users = [users.User(_['name']) for _ in users.USER_DATA]
 	repair_group_ids = [
-		user.repair_group_id for user in all_users if user.name in ('safan', 'andres')
+		user.repair_group_id for user in all_users if user.name in ('ferrari', 'andres')
 	]
 	log.debug(f"MainItem({main_id}) moved from group({old_group_id}) to group({new_group_id})")
 
@@ -96,7 +96,7 @@ def handle_client_side_deadline_adjustment():
 
 	all_users = [users.User(_['name']) for _ in users.USER_DATA]
 	repair_group_ids = [
-		user.repair_group_id for user in all_users if user.name in ('safan', 'andres')
+		user.repair_group_id for user in all_users if user.name in ('ferrari', 'andres')
 	]
 	if group_id not in repair_group_ids:
 		log.debug("CS Deadline Adjusted within non-repair group, do nothing")

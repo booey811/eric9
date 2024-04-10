@@ -40,7 +40,7 @@ USER_DATA = [
 	},
 	{
 		"name": "ferrari",
-		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"motion_assignee_id": "ZaLckqS6QDUhF0ZzucTgo1NsdR42",  # safan
 		"slack_id": "U06JERUU5RA",  # ferrari
 		"monday_id": "55780786",  # ferrari
 		"repair_group_id": "new_group34603",  # ferrari's group

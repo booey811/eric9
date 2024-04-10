@@ -4,7 +4,7 @@ import json
 
 from ...cache.rq import q_low, q_high
 from ...services import monday
-from ...tasks.monday import web_bookings, product_management, sales
+from ...tasks.monday import web_bookings, product_management, sales, misc
 from ...tasks import sync_platform
 from ...utilities import notify_admins_of_error
 import config
@@ -100,6 +100,22 @@ def adjust_web_price():
 			"old_price": old_price,
 			"user_id": user_id
 		}
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_misc_bp.route('/battery-test-results', methods=["POST"])
+@monday.monday_challenge
+def print_battery_results_to_main_item():
+	log.debug('Printing Battery Test Results to Main Item')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_high.enqueue(
+		misc.print_battery_test_results_to_main_item,
+		data['pulseId']
 	)
 
 	return jsonify({'message': 'OK'}), 200

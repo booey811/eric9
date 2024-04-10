@@ -42,7 +42,7 @@ def send_macro(main_item_id):
 					pw_macro = 24020315030929
 
 				m_e = zendesk.client.tickets.show_macro_effect(ticket, pw_macro)
-				t = zendesk.client.tickets.update(macro_effect.ticket).ticket
+				res = zendesk.client.tickets.update(m_e.ticket).ticket
 				return True
 
 			else:

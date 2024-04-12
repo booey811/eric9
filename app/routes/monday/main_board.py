@@ -267,7 +267,7 @@ def request_client_feedback():
 	log.debug('Requesting Feedback')
 	webhook = request.get_data()
 	data = webhook.decode('utf-8')
-	data = json.loads(data)
+	data = json.loads(data)['event']
 
 	q_low.enqueue(
 		misc.request_client_feedback,

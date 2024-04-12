@@ -100,15 +100,15 @@ def handle_tech_status_adjustment():
 
 	elif new_label in repair_paused_status_labels:
 		log.warning(f"Repair Paused: {new_label}")
-		# notify_admins_of_error(f"{str(main)} paused with status: {new_label}. Actions will neeed to be taken")
+	# notify_admins_of_error(f"{str(main)} paused with status: {new_label}. Actions will neeed to be taken")
 
 	elif new_label == 'Not Started':
 		log.debug('Not Started: Do Nothing')
-		# notify_admins_of_error(f"{str(main)} has been reset to Not Started. This is likely a system change.")
+	# notify_admins_of_error(f"{str(main)} has been reset to Not Started. This is likely a system change.")
 
 	elif new_label == 'Active':
 		log.warning("Not Yet Developed")
-		# notify_admins_of_error("Tech Status Adjustment: Active. A technician has started repairing a phase")
+	# notify_admins_of_error("Tech Status Adjustment: Active. A technician has started repairing a phase")
 
 	else:
 		raise EricError(f"Unknown Tech Status: {new_label}")
@@ -257,5 +257,21 @@ def handle_stuart_job_updates():
 			stuart.handle_webhook_update,
 			courier_item_id
 		)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@main_board_bp.route("/request-feedback", methods=["POST"])
+@monday_challenge
+def request_client_feedback():
+	log.debug('Requesting Feedback')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)
+
+	q_low.enqueue(
+		misc.request_client_feedback,
+		data['pulseId']
+	)
 
 	return jsonify({'message': 'OK'}), 200

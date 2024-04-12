@@ -67,16 +67,18 @@ def adjust_web_price(product_id, new_price, old_price=None, user_id=None):
 			update = f"Price Changed by '{user_name}' ({old_price_text} -> {new_price})"
 			status = 'Synced'
 
-		except ValueError:
+		except ValueError as e:
 			update = f"Could Not Update Price: No Woo Commerce ID found (revert to previous price: {old_price_text})"
 			if old_price:
 				prod.price = int(old_price)
 			status = 'Error'
+			notify_admins_of_error(f"{str(prod)} Could Not Update Price: {e}")
 		except Exception as e:
 			update = f"Could Not Update Price: Unknown Error\n\n{str(e)}\n\n(revert to previous price: {old_price_text})"
 			if old_price:
 				prod.web_price = int(old_price)
 			status = 'Error'
+			notify_admins_of_error(f"{str(prod)} Could Not Update Price: {e}")
 
 		prod.price_sync_status = status
 		prod.commit()

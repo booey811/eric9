@@ -52,8 +52,11 @@ def adjust_web_price(product_id, new_price, old_price=None, user_id=None):
 			if not user_id:
 				user_name = 'Unknown User'
 			else:
-				user = users.User(monday_id=user_id)
-				user_name = user.name
+				try:
+					user = users.User(monday_id=user_id)
+					user_name = user.name
+				except ValueError:
+					user_name = 'Unknown User ID: ' + str(user_id)
 
 			woo_id = prod.woo_commerce_product_id.value
 

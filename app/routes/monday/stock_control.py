@@ -91,3 +91,20 @@ def add_part_to_pending_orders():
 			item_id
 		)
 	return jsonify({'status': 'ok'}), 200
+
+
+@stock_control_bp.route("/process-refurb-output", methods=['POST'])
+@monday.monday_challenge
+def process_refurb_output_item():
+	log.debug('Processing Refurb Output')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	item_id = data['pulseId']
+	if item_id:
+		q_low.enqueue(
+			stock_tasks.process_refurb_output_item,
+			item_id
+		)
+	return jsonify({'status': 'ok'}), 200

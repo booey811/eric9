@@ -316,6 +316,11 @@ def process_refurb_output_item(refurb_output_id):
 		if not refurb_output.batch_size.value:
 			raise monday.api.exceptions.MondayDataError(f"{refurb_output} has no Batch Size")
 
+		if refurb_output.parts_movement_id.value:
+			mov_item = monday.items.part.InventoryAdjustmentItem(refurb_output.parts_movement_id.value)
+			mov_item.void_self()
+			refurb_output.parts_movement_id = ""
+
 		part = monday.items.PartItem(refurb_output.part_id.value)
 
 		inv_mov = part.adjust_stock_level(

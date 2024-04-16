@@ -124,7 +124,6 @@ def sync_to_zendesk(main_item_id, ticket_id):
 		ds = "as soon as possible"
 		if main_item.booking_date.value:
 			dt = main_item.booking_date.value
-			dt = dt.replace(tzinfo=pytz.timezone("Europe/London"))
 			try:
 				if not main_item.service.value:
 					raise MondayDataError(

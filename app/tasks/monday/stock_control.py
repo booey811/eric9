@@ -1,7 +1,6 @@
 import json
 from typing import List, Union
 
-from ...cache.rq import q_low
 from ...services import monday
 from ...utilities import notify_admins_of_error
 
@@ -305,3 +304,33 @@ def add_part_to_order(part: Union["monday.items.PartItem", str, int], supplier_i
 		current_order.add_part_to_order(part)
 
 	return current_order
+
+
+def process_refurb_output_item(refurb_output_id):
+	refurb_output = monday.items.part.RefurbOutputItem(refurb_output_id)
+
+	try:
+		if not refurb_output.part_id.value:
+			raise monday.api.exceptions.MondayDataError(f"{refurb_output} has no Part ID")
+
+		if not refurb_output.batch_size.value:
+			raise monday.api.exceptions.MondayDataError(f"{refurb_output} has no Batch Size")
+
+		part = monday.items.PartItem(refurb_output.part_id.value)
+
+		inv_mov = part.adjust_stock_level(
+			adjustment_quantity=refurb_output.batch_size.value,
+			source_item=refurb_output,
+			movement_type="Refurbished Screen",
+		)
+
+		refurb_output.parts_movement_id = str(inv_mov.id)
+		refurb_output.parts_adjustment_status = "Complete"
+		refurb_output.commit()
+
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Process Refurb Output: {e}")
+		refurb_output.add_update(f"Could Not Process Refurb Output: {e}")
+		refurb_output.parts_adjustment_status = "Error"
+		refurb_output.commit()
+		raise e

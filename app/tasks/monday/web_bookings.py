@@ -366,6 +366,17 @@ def transfer_web_booking(web_booking_item_id):
 		main.notifications_status = 'ON'
 
 		main.create(name)
+
+		if woo_commerce_product_data:
+			booking_text += "\n\nWebsite Products:\n\n"
+			for wp in woo_commerce_product_data:
+				try:
+					price = int(float(wp['price']))
+				except Exception as e:
+					price = "Could not fetch price from WooCommerce"
+					notify_admins_of_error(f"Could not fetch price from WooCommerce: {e}")
+				booking_text += f"{wp['name']}: £{price}\n"
+
 		booking_item.booking_notes = booking_text
 
 		main.add_update(booking_text, main.notes_thread_id.value)

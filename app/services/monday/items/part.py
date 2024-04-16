@@ -320,3 +320,34 @@ class RepairMapItem(BaseItemType):
 		self.dual_id = columns.TextValue("dual_only_id")
 
 		super().__init__(item_id, api_data, search)
+
+
+class RefurbMenuItem(BaseItemType):
+
+	BOARD_ID = 1106794399
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+
+		self.processing_status = columns.StatusValue("status2")
+
+		self.part_connect = columns.ConnectBoards("connect_boards")
+		self.quantity_to_add = columns.NumberValue("numbers4")
+
+		super().__init__(item_id, api_data, search)
+
+
+class RefurbOutputItem(BaseItemType):
+
+	BOARD_ID = 3382612900
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+
+		self.part_id = columns.TextValue("text")
+		self.parts_movement_id = columns.TextValue("text__1")
+
+		self.batch_size = columns.NumberValue("numbers")
+
+		self.refurb_consumption_status = columns.StatusValue("status1")
+		self.parts_adjustment_status = columns.StatusValue("status6")
+
+		super().__init__(item_id, api_data, search)

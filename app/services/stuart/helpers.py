@@ -21,7 +21,7 @@ def generate_address_string(address_notes, address_street, address_postcode):
 def generate_job_data(main_board_item: monday.items.MainItem, direction, client_reference=""):
 	if main_board_item.booking_date.value:
 		dt = main_board_item.booking_date.value
-		dt = dt.replace(tzinfo=pytz.timezone('Europe/London'))
+		dt = dt.astimezone(pytz.utc)
 		time = dt.isoformat()
 	else:
 		time = None

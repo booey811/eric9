@@ -259,11 +259,19 @@ class DateValue(ValueType):
 			value = None
 		else:
 			try:
-				value = date_parser.parse(value)
+				col_val_data = json.loads(column_data['value'])
+				date = col_val_data.get('date')
+				time = col_val_data.get('time')
+				if date and time:
+					value = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M:%S")
+				elif date:
+					value = datetime.strptime(date, "%Y-%m-%d")
+				else:
+					raise ValueError("No date or time data")
+				value = value.replace(tzinfo=timezone.utc).astimezone(pytz.timezone("Europe/London"))
 			except Exception as e:
 				raise ValueError(f"Error parsing date value: {value}")
 			assert (isinstance(value, datetime))
-			value = value.astimezone(pytz.timezone("Europe/London"))
 
 		log.debug("Loaded column value: %s", value)
 

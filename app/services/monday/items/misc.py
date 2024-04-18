@@ -339,26 +339,31 @@ class CheckItem(BaseCacheableItem):
 			return result_ids
 
 	def get_slack_block(self):
+
+		action_id = f"check_action__{self.id}"
+
 		# return a slack block with the check item's name and available responses
 		if self.response_type.value == 'Text Input':
 			element = blocks.elements.text_input_element(
+				action_id=action_id,
 				placeholder="",
 			)
 		elif self.response_type.value == 'Number Input':
 			element = blocks.elements.number_input_element(
+				action_id=action_id,
 				decimal_allowed=True,
 			)
 		elif self.response_type.value == 'Single Select':
 			options = [blocks.objects.option_object(x, x) for x in self.get_available_responses()]
 			element = blocks.elements.static_select_element(
-				action_id=f"check_action_{self.id}",
+				action_id=action_id,
 				options=options,
 				placeholder=self.name,
 			)
 		elif self.response_type.value == "Multi-Select":
 			options = [blocks.objects.option_object(x, x) for x in self.get_available_responses()]
 			element = blocks.elements.multi_select_element(
-				action_id=f"check_action_{self.id}",
+				action_id=action_id,
 				options=options,
 				placeholder=self.name
 			)

@@ -1095,9 +1095,7 @@ class CheckViews:
 		check_items = check_set.get_check_items(checkpoint_name)
 
 		for check_item in check_items:
-			view_blocks.append(blocks.add.simple_text_display(
-				"*{}*".format(check_item.name)
-			))
+			view_blocks.append(check_item.get_slack_block())
 
 		return view_blocks
 

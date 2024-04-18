@@ -14,6 +14,6 @@ def test_route_for_checks(ack, body, client):
 	main_item = monday.items.MainItem(MAIN_ID)
 
 	flow = flows.ChecksFlow(client, ack, view)
-	flow.show_check_form(main_item.device_id, 'cs_walk_pre_check')
+	flow.show_check_form(main_item.device_id, 'tech_post_check')
 
 	return True

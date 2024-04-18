@@ -9,6 +9,7 @@ from ..api.exceptions import MondayDataError
 from ... import typeform
 from ..items import MainItem
 from ...zendesk import helpers, client as zendesk_client, custom_fields
+from ...slack import blocks
 
 
 class WebBookingItem(BaseItemType):
@@ -292,6 +293,8 @@ class CheckItem(BaseCacheableItem):
 		self.available_responses = columns.DropdownValue('dropdown')
 		self.check_sets_connect = columns.ConnectBoards('board_relation')
 
+		self.response_type = columns.StatusValue("status__1")
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 	def cache_key(self):
@@ -333,6 +336,45 @@ class CheckItem(BaseCacheableItem):
 			return labels
 		else:
 			return result_ids
+
+	def get_slack_block(self):
+		# return a slack block with the check item's name and available responses
+
+		if self.response_type.value == 'Text Input':
+			element = blocks.elements.text_input_element(
+				placeholder="",
+			)
+		elif self.response_type.value == 'Number Input':
+			element = blocks.elements.number_input_element(
+				decimal_allowed=True,
+			)
+		elif self.response_type.value == 'Single Select':
+			options = [blocks.objects.option_object(x, x) for x in self.get_available_responses()]
+			element = blocks.elements.static_select_element(
+				action_id=f"check_action_{self.id}",
+				options=options,
+				placeholder=self.name,
+			)
+		elif self.response_type.value == "Multi-Select":
+			options = [blocks.objects.option_object(x, x) for x in self.get_available_responses()]
+			element = blocks.elements.multi_select_element(
+				action_id=f"check_action_{self.id}",
+				options=options,
+				placeholder=self.name
+			)
+		else:
+			raise MondayDataError(f"{self} has Unknown response type: {self.response_type.value}")
+
+		block = blocks.add.input_block(
+			block_title=self.name,
+			element=element,
+			dispatch_action=False,
+			block_id=str(self.id),
+			optional=False
+		)
+
+		return block
+
 
 
 class CourierDataDumpItem(BaseItemType):

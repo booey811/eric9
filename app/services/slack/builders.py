@@ -808,7 +808,7 @@ class QuoteInformationViews:
 		return view_blocks
 
 	@staticmethod
-	def show_pre_check_view(pre_checks: List[items.misc.PreCheckItem]):
+	def show_pre_check_view(pre_checks: List[items.misc.CheckItem]):
 		view_blocks = []
 
 		for check in pre_checks:
@@ -1077,3 +1077,28 @@ class ResultScreenViews:
 			)
 			view_blocks.append(blocks.add.simple_context_block([f"Device: {device_name}"]))
 		return view_blocks
+
+
+class CheckViews:
+
+	@staticmethod
+	def get_loading_screen(message='Loading Available Items to Check....', modal=True):
+		return ResultScreenViews.get_loading_screen(message, modal)
+
+	@staticmethod
+	def show_check_form(device_id, checkpoint_name):
+
+		view_blocks = []
+
+		device = items.DeviceItem(device_id)
+		check_set = device.pre_check_set
+		check_items = check_set.get_check_items(checkpoint_name)
+
+		for check_item in check_items:
+			view_blocks.append(blocks.add.simple_text_display(
+				"*{}*".format(check_item.name)
+			))
+
+		return view_blocks
+
+

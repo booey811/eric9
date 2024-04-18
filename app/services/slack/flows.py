@@ -306,7 +306,7 @@ class RepairViewFlow(FlowController):
 				view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks", modal=True)
 			)
 
-			pre_checks = pre_check_set.get_pre_check_items()
+			pre_checks = pre_check_set.get_check_items('cs_walk_pre_check')
 
 			check_dicts = []
 			for pre_check in pre_checks:
@@ -322,7 +322,7 @@ class RepairViewFlow(FlowController):
 				self.meta['pre_checks'] = check_dicts
 
 		for check in check_dicts:
-			pre_check_item = monday.items.misc.PreCheckItem(check['id']).load_from_cache()
+			pre_check_item = monday.items.misc.CheckItem(check['id']).load_from_cache()
 			available_responses = pre_check_item.get_available_responses(labels=True)
 			options = []
 			for available_response in available_responses:
@@ -630,6 +630,7 @@ class HomeScreenFlow:
 			['Adjust Quote', 'adjust_quote'],
 			['Receive Order', 'receive_order'],
 			['Start Count', 'start_count'],
+			['TechChecks Test', 'checks__test'],
 		]
 		buttons = []
 		for button in button_data:
@@ -935,6 +936,45 @@ class CountsFlow(FlowController):
 			callback_id='stock_count_form'
 		)
 		self.update_view(view, method='update', view_id=loading_screen.data['view']['id'])
+		return view
+
+
+class ChecksFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta=None):
+		if not meta:
+			meta = {
+				"checks": []
+			}
+		super().__init__("checks", slack_client, ack, body, meta)
+
+	@handle_errors
+	def show_check_form(self, device_id, checkpoint_name):
+
+		device = monday.items.DeviceItem(device_id)
+		check_set = device.pre_check_set
+		checks = check_set.get_check_items(checkpoint_name)
+
+		checks_info = []
+		for check in checks:
+			checks_info.append({
+				"check_id": str(check.id),
+				"answer": ''
+			})
+			self.meta['checks'].append({
+				"check_id": str(check.id),
+				"answer": ''
+			})
+
+		blocks = builders.CheckViews.show_check_form(device_id, checkpoint_name)
+		view = self.get_view(
+			"Checks",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='checks_form'
+		)
+		self.update_view(view, method='update', view_id=self.received_body['view']['id'])
+		self.ack()
 		return view
 
 

@@ -15,7 +15,6 @@ class WebBookingItem(BaseItemType):
 	BOARD_ID = 973467694
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.transfer_status = columns.StatusValue("status_18")
 
 		self.woo_commerce_order_id = columns.TextValue('order_id')
@@ -43,8 +42,6 @@ class WebBookingItem(BaseItemType):
 		self.main_item_id = columns.TextValue("text1")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
-
-
 
 
 class WebEnquiryItem(BaseItemType):
@@ -242,7 +239,8 @@ class PreCheckSet(BaseCacheableItem):
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.set_type = columns.StatusValue('status9')
-		self.pre_check_items_connect = columns.ConnectBoards('connect_boards4')
+		self.cs_walk_pre_check_connect = columns.ConnectBoards('connect_boards4')
+		self.tech_post_check_connect = columns.ConnectBoards("connect_boards__1")
 
 		self._pre_check_items = None
 
@@ -256,28 +254,38 @@ class PreCheckSet(BaseCacheableItem):
 			"name": str(self.name),
 			"id": str(self.id),
 			"set_type": self.set_type.value,
-			"pre_check_item_ids": self.pre_check_items_connect.value
+			"cs_walk_pre_check_ids": self.cs_walk_pre_check_connect.value
 		}
 
 	def load_from_cache(self, cache_data=None):
 		if cache_data is None:
 			cache_data = self.fetch_cache_data()
 		self.set_type.value = cache_data['set_type']
-		self.pre_check_items_connect.value = cache_data['pre_check_item_ids']
+		self.cs_walk_pre_check_connect.value = cache_data['cs_walk_pre_check_ids']
 		self.id = cache_data['id']
 		self.name = cache_data['name']
 		return self
 
-	def get_pre_check_items(self):
-		if not self.pre_check_items_connect.value:
-			self.load_from_api()
-		if not self.pre_check_items_connect.value:
-			raise exceptions.MondayDataError(f"{self} could not load pre check items: {self._api_data}")
-		self._pre_check_items = [PreCheckItem(i['id'], i) for i in get_api_items(self.pre_check_items_connect.value)]
-		return self._pre_check_items
+	def get_check_items(self, checkpoint_name):
+		# select the correct attribute for the check set requested
+		available_checkpoints = [
+			["cs_walk_pre_check", 'cs_walk_pre_check_connect'],  # walk-ins
+			["tech_post_check", "tech_post_check_connect"]  # technicians following a repair
+		]
+
+		for checkpoint in available_checkpoints:
+			if checkpoint_name == checkpoint[0]:
+				connect_col = getattr(self, checkpoint[1])
+				break
+		else:  # This else clause corresponds to the for loop, not the if statement
+			raise ValueError(f"No Checkpoint Available For: {checkpoint_name}")
+
+		check_item_ids = connect_col.value
+		check_items = [CheckItem(i['id'], i) for i in get_api_items(check_item_ids)]
+		return check_items
 
 
-class PreCheckItem(BaseCacheableItem):
+class CheckItem(BaseCacheableItem):
 	BOARD_ID = 4455646189
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
@@ -388,11 +396,9 @@ class StaffItem(BaseItemType):
 
 
 class BatteryTestItem(BaseItemType):
-
 	BOARD_ID = 586351593
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
-
 		self.start_level = columns.NumberValue("numbers")
 		self.end_level = columns.NumberValue("numbers_1")
 		self.time_tracking = columns.TimeTrackingColumn("time_tracking")
@@ -413,5 +419,3 @@ class BatteryTestItem(BaseItemType):
 			raise MondayDataError(f"{self} has no time tracking data, cannot calculate consumption rate")
 
 		return difference / (seconds / 3600)
-
-

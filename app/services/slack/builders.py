@@ -1088,6 +1088,8 @@ class CheckViews:
 	@staticmethod
 	def show_check_form(device_id, checkpoint_name):
 
+		invalid_checks = []
+
 		view_blocks = []
 
 		device = items.DeviceItem(device_id)
@@ -1095,8 +1097,16 @@ class CheckViews:
 		check_items = check_set.get_check_items(checkpoint_name)
 
 		for check_item in check_items:
-			view_blocks.append(check_item.get_slack_block())
+			try:
+				view_blocks.append(check_item.get_slack_block())
+			except monday.items.misc.CheckDataError as e:
+				invalid_checks.append([check_item, str(e)])
+
+		if invalid_checks:
+			view_blocks.append(blocks.add.divider_block())
+			view_blocks.append(blocks.add.header_block("Invalid Check Data Found"))
+			for failure in invalid_checks:
+				text = f":no_entry: {failure[0].name}: No Available Response Options"
+				view_blocks.append(blocks.add.simple_text_display(text))
 
 		return view_blocks
-
-

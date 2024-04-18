@@ -10,10 +10,9 @@ def test_route_for_checks(ack, body, client):
 		view=builders.CheckViews.get_loading_screen()
 	).data
 
-	MAIN_ID = 6384263114
-	main_item = monday.items.MainItem(MAIN_ID)
+	device_id = 3926515763
 
 	flow = flows.ChecksFlow(client, ack, view)
-	flow.show_check_form(main_item.device_id, 'tech_post_check')
+	flow.show_check_form(device_id, 'tech_post_check')
 
 	return True

@@ -330,7 +330,7 @@ class CheckItem(BaseCacheableItem):
 			self.load_from_api()
 			result_ids = self.available_responses.value
 			if not result_ids:
-				raise MondayDataError(f"{self} could not load available responses: {self._api_data}")
+				raise CheckDataError(f"{self} could not load available responses: {self._api_data}")
 		if labels:
 			labels = self.convert_dropdown_ids_to_labels(result_ids, self.available_responses.column_id)
 			return labels
@@ -339,7 +339,6 @@ class CheckItem(BaseCacheableItem):
 
 	def get_slack_block(self):
 		# return a slack block with the check item's name and available responses
-
 		if self.response_type.value == 'Text Input':
 			element = blocks.elements.text_input_element(
 				placeholder="",
@@ -461,3 +460,7 @@ class BatteryTestItem(BaseItemType):
 			raise MondayDataError(f"{self} has no time tracking data, cannot calculate consumption rate")
 
 		return difference / (seconds / 3600)
+
+
+class CheckDataError(MondayDataError):
+	pass

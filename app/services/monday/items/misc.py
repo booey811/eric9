@@ -238,6 +238,11 @@ class RepairProfitModelItem(BaseItemType):
 class PreCheckSet(BaseCacheableItem):
 	BOARD_ID = 4347106321
 
+	AVAILABLE_CHECKPOINTS = [
+		["cs_walk_pre_check", 'cs_walk_pre_check_connect'],  # walk-ins
+		["tech_post_check", "tech_post_check_connect"]  # technicians following a repair
+	]
+
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.set_type = columns.StatusValue('status9')
 		self.cs_walk_pre_check_connect = columns.ConnectBoards('connect_boards4')
@@ -269,12 +274,8 @@ class PreCheckSet(BaseCacheableItem):
 
 	def get_check_items(self, checkpoint_name):
 		# select the correct attribute for the check set requested
-		available_checkpoints = [
-			["cs_walk_pre_check", 'cs_walk_pre_check_connect'],  # walk-ins
-			["tech_post_check", "tech_post_check_connect"]  # technicians following a repair
-		]
 
-		for checkpoint in available_checkpoints:
+		for checkpoint in self.AVAILABLE_CHECKPOINTS:
 			if checkpoint_name == checkpoint[0]:
 				connect_col = getattr(self, checkpoint[1])
 				break

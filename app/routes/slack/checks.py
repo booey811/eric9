@@ -73,3 +73,12 @@ def test_route_for_checks(ack, body, client):
 	flow.show_check_form(device_id, 'tech_post_check')
 
 	return True
+
+
+@slack_app.view("checks_form")
+def checks_form_submission(ack, body, client):
+	from pprint import pprint as p
+	ack()
+	flow = flows.ChecksFlow(client, ack, body)
+	p(body)
+	return True

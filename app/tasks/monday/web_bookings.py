@@ -170,10 +170,11 @@ def transfer_web_booking(web_booking_item_id):
 
 		if woo_order_data['transaction_id']:
 			payment_status = 'Confirmed'
+		else:
 			if 'cash' in payment_method.lower():
 				payment_status = 'Pay In Store - Pending'
-		else:
-			payment_status = 'Unsuccessful'
+			else:
+				payment_status = 'Unsuccessful'
 
 		woo_commerce_product_ids = [str(line['product_id']) for line in woo_order_data['line_items']]
 		woo_commerce_product_data = woocommerce.woo.get(

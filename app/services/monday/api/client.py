@@ -1,4 +1,5 @@
 import os
+import logging
 
 import monday
 
@@ -9,6 +10,8 @@ from .exceptions import MondayAPIError
 conf = config.get_config()
 
 conn = monday.MondayClient(conf.MONDAY_KEYS["system"])
+
+log = logging.getLogger('eric')
 
 
 def get_api_items(item_ids):
@@ -44,3 +47,29 @@ def get_api_items_by_group(board_id, group_id):
 		raise MondayAPIError(f"Error fetching items from Monday: {raw['errors']}")
 
 	return raw["data"]["boards"][0]["groups"][0]["items_page"]["items"]
+
+
+def get_items_by_board_id(board_id):
+
+	item_data = []
+	try:
+		query_results = conn.boards.fetch_items_by_board_id(
+			int(board_id)
+		)['data']['boards'][0]['items_page']
+		cursor = query_results.get('cursor')
+		log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+		counter = len(query_results['items'])
+		item_data.extend(query_results['items'])
+		while cursor:
+			query_results = conn.boards.fetch_items_by_board_id(
+				int(board_id),
+				cursor=cursor
+			)['data']['boards'][0]['items_page']
+			cursor = query_results.get('cursor')
+			log.debug(f"Cursor: {cursor}, {len(query_results['items'])} items fetched")
+			counter += len(query_results['items'])
+			item_data.extend(query_results['items'])
+			log.debug(f"Total items fetched: {counter}")
+	except Exception as e:
+		raise MondayAPIError(f"Error fetching items by board: {e}")
+	return item_data

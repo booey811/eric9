@@ -13,6 +13,7 @@ from ...errors import EricError
 from ...utilities import notify_admins_of_error
 from ...services.monday.api.client import get_api_items
 from ...tasks.sync_platform import sync_to_zendesk
+from ...cache.rq import q_low
 import config
 
 conf = config.get_config()
@@ -20,7 +21,7 @@ conf = config.get_config()
 log = logging.getLogger('eric')
 
 
-def transfer_web_booking(web_booking_item_id):
+def transfer_web_booking(web_booking_item_id, is_second_attempt=False):
 	def send_confirmation_email():
 		"""checks booking date to see if it is a day we are open. First check will be weekend, the another check will
 		occur that checks if the date is within a public holiday (hard coded)"""
@@ -165,6 +166,20 @@ def transfer_web_booking(web_booking_item_id):
 			payment_method = 'Stripe Payment'
 		elif 'paypal' in payment_method.lower():
 			payment_method = 'Paypal Payment'
+			if not woo_order_data['transaction_id'] and not is_second_attempt:
+				# requeue the transfer job
+				q_low.enqueue_in(
+					datetime.timedelta(minutes=3),
+					transfer_web_booking,
+					kwargs={
+						"web_booking_item_id": web_booking_item_id,
+						"is_second_attempt": True
+					}
+				)
+				raise WebBookingTransferError("Paypal payment is pending, requeueing transfer job")
+			elif not woo_order_data['transaction_id'] and is_second_attempt:
+				notify_admins_of_error(f"Paypal payment has failed for {booking_item}")
+
 		else:
 			payment_method = 'Other'
 

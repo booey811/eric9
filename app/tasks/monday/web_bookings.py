@@ -177,8 +177,6 @@ def transfer_web_booking(web_booking_item_id, is_second_attempt=False):
 					}
 				)
 				raise WebBookingTransferError("Paypal payment is pending, requeueing transfer job")
-			elif not woo_order_data['transaction_id'] and is_second_attempt:
-				notify_admins_of_error(f"Paypal payment has failed for {booking_item}")
 
 		else:
 			payment_method = 'Other'
@@ -392,6 +390,9 @@ def transfer_web_booking(web_booking_item_id, is_second_attempt=False):
 					price = "Could not fetch price from WooCommerce"
 					notify_admins_of_error(f"Could not fetch price from WooCommerce: {e}")
 				booking_text += f"{wp['name']}: £{price}\n"
+
+		booking_text += f"Website Payment Method: {payment_method}\n"
+		booking_text += f"Website Payment Status: {payment_status}\n"
 
 		booking_item.booking_notes = booking_text
 

@@ -294,6 +294,8 @@ class CheckItem(BaseCacheableItem):
 		self.available_responses = columns.DropdownValue('dropdown')
 		self.check_sets_connect = columns.ConnectBoards('board_relation')
 
+		self.results_column_id = columns.TextValue("text__1")
+
 		self.response_type = columns.StatusValue("status__1")
 
 		super().__init__(item_id=item_id, api_data=api_data, search=search)

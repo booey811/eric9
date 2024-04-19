@@ -30,7 +30,7 @@ iniconfig==2.0.0
 itsdangerous==2.1.2
 Jinja2==3.1.2
 MarkupSafe==2.1.3
-monday @ git+https://github.com/booey811/monday@0d6c7191159e7d2700658b48f1f9c082163562f4
+monday @ git+https://github.com/booey811/monday@22393c64e89582c16e625d6efaec6889ac645deb
 multidict==6.0.4
 notion-client==2.2.1
 openai==1.9.0

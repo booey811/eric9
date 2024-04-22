@@ -949,22 +949,13 @@ class ChecksFlow(FlowController):
 		super().__init__("checks", slack_client, ack, body, meta)
 
 	@handle_errors
-	def show_check_form(self, device_id, checkpoint_name):
+	def show_check_form(self, main_id, checkpoint_name):
 
-		device = monday.items.DeviceItem(device_id)
-		check_set = device.pre_check_set
-		checks = check_set.get_check_items(checkpoint_name)
+		self.meta['main_id'] = main_id
+		self.meta['checkpoint_name'] = checkpoint_name
 
-		checks_info = []
-		for check in checks:
-			checks_info.append({
-				"check_id": str(check.id),
-				"answer": ''
-			})
-			self.meta['checks'].append({
-				"check_id": str(check.id),
-				"answer": ''
-			})
+		main_item = monday.items.MainItem(main_id).load_from_api()
+		device_id = main_item.device_id
 
 		blocks = builders.CheckViews.show_check_form(device_id, checkpoint_name)
 		view = self.get_view(
@@ -976,6 +967,65 @@ class ChecksFlow(FlowController):
 		self.update_view(view, method='update', view_id=self.received_body['view']['id'])
 		self.ack()
 		return view
+
+	@staticmethod
+	def process_submission_data(main_id, submission_values):
+
+		# get the results item, if None, create it
+		try:
+			results = monday.api.monday_connection.items.fetch_items_by_column_value(
+				monday.items.misc.CheckResultItem.BOARD_ID,
+				"text__1",
+				str(main_id)
+			)
+		except Exception as e:
+			raise monday.api.exceptions.MondayAPIError(f"Failed to fetch results item: {e}")
+
+		results_item_data = results.get('data', {}).get('items_page_by_column_values', {}).get('items', [])
+
+		if results_item_data:
+			results_item = monday.items.misc.CheckResultItem(results_item_data[0]['id'],
+															 results_item_data[0]).load_from_api()
+		else:
+			name = f"Check Results for {main_id}"
+			results_item = monday.items.misc.CheckResultItem()
+			results_item.main_item_id = str(main_id)
+			results_item = results_item.create(name)
+
+		results_item.slack_answer_values = json.dumps(submission_values)
+		results_item.commit()
+
+		check_ids = [_ for _ in submission_values]
+		check_item_data = monday.api.get_api_items(check_ids)
+		check_items = [monday.items.misc.CheckItem(_['id'], _) for _ in check_item_data]
+		results_col_data = {}
+
+		for check_id in submission_values:
+			answer_data = submission_values[check_id]["check_action__" + check_id]
+			if answer_data.get('type') in ('radio_buttons', 'static_select'):
+				answer = answer_data['selected_option']['value']
+			elif answer_data.get('type') == 'multi_static_select':
+				answer = ", ".join([_['value'] for _ in answer_data['selected_options']])
+			elif answer_data.get('type') in ('plain_text_input', 'number_input'):
+				answer = answer_data['value']
+			else:
+				answer = None
+
+			check_item = [_ for _ in check_items if str(_.id) == str(check_id)][0]
+			col_data = check_item.get_result_column_data(answer)
+			results_col_data.update(col_data)
+
+		create_subitem = monday.api.monday_connection.items.create_subitem(
+			parent_item_id=int(results_item.id),
+			subitem_name="Check Results",
+			column_values=results_col_data
+		)
+		monday.api.monday_connection.updates.create_update(
+			item_id=create_subitem['data']['create_subitem']['id'],
+			update_value=json.dumps(submission_values, indent=4)
+		)
+
+		return results_item
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

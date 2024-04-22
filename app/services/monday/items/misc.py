@@ -382,6 +382,25 @@ class CheckItem(BaseCacheableItem):
 
 		return block
 
+	def get_result_column_data(self, result_string):
+		# Get the column data for the result string
+		if not self.results_column_id.value:
+			raise CheckDataError(f"{self} has no results column id")
+		column_data = {
+			str(self.results_column_id.value): str(result_string)
+		}
+		if not column_data:
+			raise CheckDataError(f"{self} has no column data")
+		return column_data
+
+
+class CheckResultItem(BaseItemType):
+	BOARD_ID = 6487504495
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
+		self.main_item_id = columns.TextValue("text__1")
+
+		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 
 class CourierDataDumpItem(BaseItemType):

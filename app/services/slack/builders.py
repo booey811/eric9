@@ -1086,7 +1086,7 @@ class CheckViews:
 		return ResultScreenViews.get_loading_screen(message, modal)
 
 	@staticmethod
-	def show_check_form(device_id, checkpoint_name, has_power=False):
+	def show_check_form(device_id, checkpoint_name, has_power=True):
 
 		sort_order = [
 			'Initial',
@@ -1097,11 +1097,21 @@ class CheckViews:
 			'Cameras and Speakers',
 			'Hardware Buttons',
 		]
+		special_check_item_ids = [
+			6506928970,  # has power? question
+		]
+
 		sort_order_dict = {category_id: index for index, category_id in enumerate(sort_order)}
-
 		invalid_checks = []
-
 		view_blocks = []
+		has_power_check = items.misc.CheckItem(special_check_item_ids[0])
+		has_power_block = has_power_check.get_slack_block()
+		if has_power:
+			has_power_block['element']['initial_option'] = blocks.objects.option_object("Yes", "Yes")
+		else:
+			has_power_block['element']['initial_option'] = blocks.objects.option_object("No", "No")
+
+		view_blocks.append(has_power_block)
 
 		device = items.DeviceItem(device_id)
 		check_set = device.pre_check_set
@@ -1111,11 +1121,16 @@ class CheckViews:
 			key=lambda item: (sort_order_dict.get(item.check_category.value, float('inf')), item.name))
 
 		for check_item in sorted_check_items:
+
+			if int(check_item.id) in special_check_item_ids:
+				continue
+
 			if not has_power:
 				if check_item.requires_power.value:
 					continue
 			try:
-				view_blocks.append(check_item.get_slack_block())
+				block = check_item.get_slack_block()
+				view_blocks.append(block)
 			except monday.items.misc.CheckDataError as e:
 				invalid_checks.append([check_item, str(e)])
 

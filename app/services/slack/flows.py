@@ -952,7 +952,7 @@ class ChecksFlow(FlowController):
 		super().__init__("checks", slack_client, ack, body, meta)
 
 	@handle_errors
-	def show_check_form(self, main_id, checkpoint_name):
+	def show_check_form(self, main_id, checkpoint_name, view_id=''):
 
 		self.meta['main_id'] = main_id
 		self.meta['checkpoint_name'] = checkpoint_name
@@ -967,7 +967,9 @@ class ChecksFlow(FlowController):
 			close='Cancel',
 			callback_id='checks_form'
 		)
-		self.update_view(view, method='update', view_id=self.received_body['view']['id'])
+		if not view_id:
+			view_id = self.received_body['view']['id']
+		self.update_view(view, method='update', view_id=view_id)
 		self.ack()
 		return view
 
@@ -1006,7 +1008,7 @@ class ChecksFlow(FlowController):
 		}
 
 		for check_id in submission_values:
-			answer_data = submission_values[check_id]["check_action__" + check_id]
+			answer_data = list(submission_values[check_id].values())[0]
 			if answer_data.get('type') in ('radio_buttons', 'static_select'):
 				answer = answer_data['selected_option']['value']
 			elif answer_data.get('type') == 'multi_static_select':

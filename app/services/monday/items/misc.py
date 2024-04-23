@@ -388,13 +388,16 @@ class CheckItem(BaseCacheableItem):
 		if self.conditional.value:
 			if not self.conditional_tag.value:
 				raise CheckDataError(f"{self} has no conditional tag")
+			if not self.positive_responses.value:
+				raise CheckDataError(f"{self} has no positive responses")
 			block = blocks.add.input_block(
 				block_title=self.name,
 				element=element,
 				dispatch_action=True,
 				block_id=str(self.id),
 				optional=False,
-				action_id=f"checks_conditional__{self.conditional_tag.value}"
+				action_id=f"checks_conditional__{self.conditional_tag.value}",
+				initial_option=self.conditional_tag.value
 			)
 		else:
 			block = blocks.add.input_block(

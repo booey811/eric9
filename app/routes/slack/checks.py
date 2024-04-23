@@ -1,3 +1,5 @@
+import json
+
 from ...services.slack import slack_app, blocks, builders, flows
 from ...services import monday
 
@@ -101,8 +103,24 @@ def show_checks_form(ack, body, client):
 	flow.show_check_form(main_id, checkpoint)
 	return True
 
+
 @slack_app.view("checks_form")
 def checks_form_submission(ack, body, client):
 	from pprint import pprint as p
-	res = flows.ChecksFlow.process_submission_data(6384263114, body['view']['state']['values'])
-	return True
+	p(body)
+	success = builders.ResultScreenViews.get_success_screen("Check Form Submitted! :+1:")
+	success['clear_on_close'] = True
+	ack({
+		"response_action": "update",
+		"view": success
+	})
+
+	meta = json.loads(body['view']['private_metadata'])
+
+	flow = flows.ChecksFlow(client, ack, body)
+	flow.process_submission_data(
+		main_id=meta['main_id'],
+		submission_values=body['view']['state']['values']
+	)
+
+	return

@@ -86,8 +86,23 @@ def test_route_for_showing_check_selection(ack, body, client):
 	return True
 
 
+@slack_app.action("request_checks")
+def show_checks_form(ack, body, client):
+	ack()
+	main_id = body['message']['metadata']['event_payload']['main_id']
+	checkpoint = body['message']['metadata']['event_payload']['check_point_name']
+	external_id = f"checks__{main_id}"
+	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....')
+	loading['external_id'] = external_id
+	body = client.views_open(
+		trigger_id=body['trigger_id'],
+		view=loading)
+	flow = flows.ChecksFlow(client, ack, body)
+	flow.show_check_form(main_id, checkpoint)
+	return True
+
 @slack_app.view("checks_form")
 def checks_form_submission(ack, body, client):
-	# SAMPLE SUBMISSION DATA
+	from pprint import pprint as p
 	res = flows.ChecksFlow.process_submission_data(6384263114, body['view']['state']['values'])
 	return True

@@ -292,6 +292,10 @@ class CheckItem(BaseCacheableItem):
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.available_responses = columns.DropdownValue('dropdown')
+		self.positive_responses = columns.DropdownValue('dropdown6__1')
+		self.check_category = columns.StatusValue('status0__1')
+		self.requires_power = columns.CheckBoxValue('checkbox')
+
 		self.check_sets_connect = columns.ConnectBoards('board_relation')
 
 		self.results_column_id = columns.TextValue("text__1")

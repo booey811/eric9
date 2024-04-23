@@ -178,6 +178,11 @@ def handle_main_status_adjustment():
 		)
 
 	if new_label == 'Repaired':
+		monday.repair_process.request_checks_from_technician(
+			main_item_id=data['pulseId'],
+			checkpoint_name='tech_post_check_connect',
+			monday_user_id=data['userId']
+		)
 		q_high.enqueue(
 			monday.sales.create_or_update_sale,
 			kwargs={

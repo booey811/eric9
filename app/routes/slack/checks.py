@@ -1,4 +1,5 @@
 import json
+import re
 
 from ...services.slack import slack_app, blocks, builders, flows
 from ...services import monday
@@ -104,6 +105,27 @@ def show_checks_form(ack, body, client):
 	return True
 
 
+@slack_app.action(re.compile(r"checks_conditional__(\w+)"))
+def adjust_checks_form_from_conditional(ack, body, client):
+	meta = json.loads(body['view']['private_metadata'])
+
+	conditional_tag = body['actions'][0]['action_id'].split('__')[1]
+	answer = body['actions'][0]['selected_option']['value']
+	if conditional_tag == 'power':
+		if answer == 'Yes':
+			conditional = True
+		else:
+			conditional = False
+	else:
+		raise ValueError(f"Unknown conditional tag: {conditional_tag}")
+
+	meta['has_power'] = conditional
+
+	flow = flows.ChecksFlow(client, ack, body, meta)
+	flow.show_check_form(meta['main_id'], meta['checkpoint_name'])
+	return True
+
+
 @slack_app.view("checks_form")
 def checks_form_submission(ack, body, client):
 	success = builders.ResultScreenViews.get_success_screen("Check Form Submitted! :+1:")
@@ -115,7 +137,7 @@ def checks_form_submission(ack, body, client):
 
 	meta = json.loads(body['view']['private_metadata'])
 
-	flow = flows.ChecksFlow(client, ack, body)
+	flow = flows.ChecksFlow(client, ack, body, meta)
 	flow.process_submission_data(
 		main_id=meta['main_id'],
 		submission_values=body['view']['state']['values'],

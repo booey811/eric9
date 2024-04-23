@@ -944,7 +944,10 @@ class ChecksFlow(FlowController):
 	def __init__(self, slack_client, ack, body, meta=None):
 		if not meta:
 			meta = {
-				"checks": []
+				"checks": [],
+				"has_power": True,
+				"main_id": "",
+				"checkpoint_name": ""
 			}
 		super().__init__("checks", slack_client, ack, body, meta)
 
@@ -957,7 +960,7 @@ class ChecksFlow(FlowController):
 		main_item = monday.items.MainItem(main_id).load_from_api()
 		device_id = main_item.device_id
 
-		blocks = builders.CheckViews.show_check_form(device_id, checkpoint_name)
+		blocks = builders.CheckViews.show_check_form(device_id, checkpoint_name, has_power=self.meta['has_power'])
 		view = self.get_view(
 			"Checks",
 			blocks=blocks,

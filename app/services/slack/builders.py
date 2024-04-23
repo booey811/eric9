@@ -1086,9 +1086,10 @@ class CheckViews:
 		return ResultScreenViews.get_loading_screen(message, modal)
 
 	@staticmethod
-	def show_check_form(device_id, checkpoint_name):
+	def show_check_form(device_id, checkpoint_name, has_power=False):
 
 		sort_order = [
+			'Initial',
 			'Device History',
 			'Device Info',
 			'Physical Condition',
@@ -1110,6 +1111,9 @@ class CheckViews:
 			key=lambda item: (sort_order_dict.get(item.check_category.value, float('inf')), item.name))
 
 		for check_item in sorted_check_items:
+			if not has_power:
+				if check_item.requires_power.value:
+					continue
 			try:
 				view_blocks.append(check_item.get_slack_block())
 			except monday.items.misc.CheckDataError as e:

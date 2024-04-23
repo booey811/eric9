@@ -302,6 +302,9 @@ class CheckItem(BaseCacheableItem):
 		self.check_category = columns.StatusValue('status0__1')
 		self.requires_power = columns.CheckBoxValue('checkbox')
 
+		self.conditional = columns.CheckBoxValue("checkbox__1")
+		self.conditional_tag = columns.TextValue("text0__1")
+
 		self.check_sets_connect = columns.ConnectBoards('board_relation')
 
 		self.results_column_id = columns.TextValue("text__1")
@@ -382,13 +385,25 @@ class CheckItem(BaseCacheableItem):
 		else:
 			raise MondayDataError(f"{self} has Unknown response type: {self.response_type.value}")
 
-		block = blocks.add.input_block(
-			block_title=self.name,
-			element=element,
-			dispatch_action=False,
-			block_id=str(self.id),
-			optional=False
-		)
+		if self.conditional.value:
+			if not self.conditional_tag.value:
+				raise CheckDataError(f"{self} has no conditional tag")
+			block = blocks.add.input_block(
+				block_title=self.name,
+				element=element,
+				dispatch_action=True,
+				block_id=str(self.id),
+				optional=False,
+				action_id=f"checks_conditional__{self.conditional_tag.value}"
+			)
+		else:
+			block = blocks.add.input_block(
+				block_title=self.name,
+				element=element,
+				dispatch_action=False,
+				block_id=str(self.id),
+				optional=False
+			)
 
 		return block
 

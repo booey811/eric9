@@ -969,7 +969,7 @@ class ChecksFlow(FlowController):
 		return view
 
 	@staticmethod
-	def process_submission_data(main_id, submission_values):
+	def process_submission_data(main_id, submission_values, checkpoint_name="Test"):
 
 		# get the results item, if None, create it
 		try:
@@ -998,7 +998,9 @@ class ChecksFlow(FlowController):
 		check_ids = [_ for _ in submission_values]
 		check_item_data = monday.api.get_api_items(check_ids)
 		check_items = [monday.items.misc.CheckItem(_['id'], _) for _ in check_item_data]
-		results_col_data = {}
+		results_col_data = {
+			"text55__1": checkpoint_name,
+		}
 
 		for check_id in submission_values:
 			answer_data = submission_values[check_id]["check_action__" + check_id]
@@ -1025,7 +1027,7 @@ class ChecksFlow(FlowController):
 			update_value=json.dumps(submission_values, indent=4)
 		)
 
-		return results_item
+		return results_item.id
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

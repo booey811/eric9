@@ -4,12 +4,13 @@ import json
 from zenpy.lib.api_objects import Ticket, CustomField, Comment
 
 from ..api.items import BaseItemType, BaseCacheableItem
-from ..api import columns, get_api_items, exceptions, monday_connection
+from ..api import columns, get_api_items, exceptions, monday_connection, get_items_by_board_id
 from ..api.exceptions import MondayDataError
 from ... import typeform
 from ..items import MainItem
 from ...zendesk import helpers, client as zendesk_client, custom_fields
 from ...slack import blocks
+from ....utilities import notify_admins_of_error
 
 
 class WebBookingItem(BaseItemType):
@@ -289,6 +290,11 @@ class PreCheckSet(BaseCacheableItem):
 
 class CheckItem(BaseCacheableItem):
 	BOARD_ID = 4455646189
+
+	@classmethod
+	def get_all(cls):
+		item_data = get_items_by_board_id(cls.BOARD_ID)
+		return [cls(i['id'], i) for i in item_data]
 
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.available_responses = columns.DropdownValue('dropdown')

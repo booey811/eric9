@@ -5,6 +5,7 @@ from ...services.slack.flows import get_flow
 from ...services.slack.exceptions import save_metadata
 from ...utilities import notify_admins_of_error
 from ...services import monday
+from ...services.slack import flows
 
 
 def process_repair_view_submission(metadata):
@@ -95,3 +96,14 @@ def process_slack_stock_count(metadata, view=''):
 		raise e
 	return count_item
 
+
+def process_check_submission(main_id, submission_values, checkpoint_name):
+	"""Processes the data from a check submission"""
+
+	flow = flows.ChecksFlow
+	flow.process_submission_data(
+		main_id=main_id,
+		submission_values=submission_values,
+		checkpoint_name=checkpoint_name
+	)
+	return True

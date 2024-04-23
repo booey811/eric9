@@ -93,23 +93,37 @@ def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id
 
 
 def print_results_main_item(main_item_id, results_subitem_id):
+
+	all_checks = mon_obj.items.misc.CheckItem.get_all()
 	main_item = mon_obj.items.MainItem(main_item_id)
+	result_data = mon_obj.api.get_api_items([results_subitem_id])[0]
 	try:
-		raw_col_data = mon_obj.api.monday_connection.boards.fetch_columns_by_board_id(6487518414)['data']['boards'][0][
-			'columns']
-		col_data = {col['id']: col['title'] for col in raw_col_data}
-		raw_results_data = mon_obj.api.get_api_items([results_subitem_id])[0]['column_values']
-		results_data = {col['id']: col['text'] for col in raw_results_data}
-		results_formatted = [
-			(col_data.get(col_id), results_data.get(col_id)) for col_id in results_data.keys()
-		]
+		timestamp = [col['text'] for col in result_data['column_values'] if col['id'] == 'date__1'][0]
+	except IndexError:
+		timestamp = "No Timestamp Found"
+	checks_with_answers = []
+	try:
+		results_data = {col['id']: col['text'] for col in result_data['column_values']}
+		for col_id in results_data.keys():
+			try:
+				check_item = [check for check in all_checks if check.results_column_id.value == col_id][0]
+			except IndexError:
+				continue
+			checks_with_answers.append((check_item, results_data[col_id]))
 
-		update = "==== CHECKS RESULTS ===="
-		update += f"\n{results_data['date__1']}\n\n"
+		update = f"==== CHECKS RESULTS ====\n<b>Timestamp:</b> {timestamp}\n"
 
-		for q, a in results_formatted:
-			if q != "Date Submitted" and a:
-				update += f"\n<b>{q}</b>: {a}"
+		for q, a in checks_with_answers:
+			positive_response_labels = q.convert_dropdown_ids_to_labels(q.positive_responses.value, q.positive_responses.column_id)
+			if not a:
+				continue
+			if not positive_response_labels:
+				a = a
+			elif a in positive_response_labels:
+				a = f"&#9989; {a}"
+			else:
+				a = f"&#9940; {a}"
+			update += f"\n<b>{q.name}</b>: {a}"
 
 		main_item.add_update(update, main_item.notes_thread_id.value)
 		return main_item
@@ -117,3 +131,4 @@ def print_results_main_item(main_item_id, results_subitem_id):
 		main_item.add_update(f"Could Not Print Device Check Data: {e}", main_item.notes_thread_id.value)
 		notify_admins_of_error(f"Could Not Print Device Check Data: {e}")
 		raise e
+

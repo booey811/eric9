@@ -106,8 +106,6 @@ def show_checks_form(ack, body, client):
 
 @slack_app.view("checks_form")
 def checks_form_submission(ack, body, client):
-	from pprint import pprint as p
-	p(body)
 	success = builders.ResultScreenViews.get_success_screen("Check Form Submitted! :+1:")
 	success['clear_on_close'] = True
 	ack({
@@ -120,7 +118,8 @@ def checks_form_submission(ack, body, client):
 	flow = flows.ChecksFlow(client, ack, body)
 	flow.process_submission_data(
 		main_id=meta['main_id'],
-		submission_values=body['view']['state']['values']
+		submission_values=body['view']['state']['values'],
+		checkpoint_name=meta['checkpoint_name']
 	)
 
 	return

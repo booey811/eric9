@@ -43,6 +43,9 @@ class WebBookingItem(BaseItemType):
 
 		self.main_item_id = columns.TextValue("text1")
 
+		self.device_text = columns.TextValue("text__1")
+		self.repairs_text = columns.TextValue("text1__1")
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 

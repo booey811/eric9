@@ -351,6 +351,7 @@ def transfer_web_booking(web_booking_item_id, is_second_attempt=False):
 			desc += f"{d_name} - £{int(p.price.value)}\n"
 		booking_item.description = desc
 		main.description = desc
+		booking_item.repairs_text = desc
 
 		if point_of_collection:
 			main.point_of_collection = point_of_collection
@@ -406,6 +407,7 @@ def transfer_web_booking(web_booking_item_id, is_second_attempt=False):
 		booking_item.transfer_status = 'Complete'
 		booking_item.email = email
 		booking_item.main_item_id = str(main.id)
+		booking_item.device_text = str(device.name)
 	except Exception as e:
 		log.error(e)
 		notify_admins_of_error(f"Error transferring web booking: {e}")

@@ -1,12 +1,18 @@
-from zenpy.lib.api_objects import Comment
+import datetime
 
+from zenpy.lib.api_objects import Comment, CustomField
+
+import config
 from ...services.monday import items, api
 from ..sync_platform import sync_to_zendesk
 from ...services import zendesk
 from ...utilities import notify_admins_of_error
+from ...cache import rq
+
+conf = config.get_config()
 
 
-def send_macro(main_item_id):
+def send_macro(main_item_id, second_attempt=False):
 	try:
 		main_item = items.MainItem(main_item_id).load_from_api()
 	except Exception as e:
@@ -103,6 +109,74 @@ def send_macro(main_item_id):
 				ticket.comment = comment
 				zendesk.client.tickets.update(ticket)
 				return False
+
+			if main_item.main_status.value in ('Booking Confirmed', 'Courier Booked'):
+				try:
+					date_custom_field = [cf for cf in ticket.fields if cf['id'] == 10885002669585][0]
+				except (TypeError, AttributeError):
+					date_custom_field = [cf for cf in ticket.fields if int(cf.id) == 10885002669585][0]
+
+				if not date_custom_field['value'] or date_custom_field['value'] == 'as soon as possible':
+					date_from_item = main_item.booking_date.value
+					if not date_from_item:
+						# date not found, waiting for monday to update itself
+						if 'courier' in main_item.service.value.lower():
+							ds = 'as soon as possible'
+						else:
+							if not second_attempt:
+								ticket.comment = Comment(
+									public=False,
+									body=f"Macro Requested: {macro_search_term}, but no date found in Monday. Retrying in 5 mins..."
+								)
+								ticket.status = 'pending'
+								zendesk.client.tickets.update(ticket)
+								if conf.CONFIG == 'DEVELOPMENT':
+									send_macro(main_item_id, second_attempt=True)
+									return False
+								else:
+									rq.q_high.enqueue_in(
+										time_delta=datetime.timedelta(minutes=5),
+										func=send_macro,
+										kwargs={
+											'main_item_id': main_item.id,
+											'second_attempt': True
+										},
+									)
+									return False
+							else:
+								body = f"Macro Requested: {macro_search_term}, but no date found in Monday"
+								comment = Comment(
+									public=False,
+									body=body
+								)
+								ticket.comment = comment
+								ticket.status = 'open'
+								zendesk.client.tickets.update(ticket)
+								return False
+					else:
+						def set_booking_date():
+							from_item = date_from_item
+							if not main_item.service.value:
+								raise api.exceptions.MondayDataError(
+									"Cannot convert Booking Date to string, please select which service the client will be using")
+							if 'mail' in main_item.service.value.lower():
+								# mail format: on Wednesday 14th February
+								result = from_item.strftime("on %A %d %B")
+							else:
+								# courier & walk-in format: "at 12:30PM on Wednesday 14 February"
+								result = from_item.strftime("at %I:%M%p on %A %d %B")
+
+							return result
+
+						ds = set_booking_date()
+
+					ticket.custom_fields.append(
+						CustomField(
+							id=10885002669585,
+							value=ds
+						)
+					)
+					zendesk.client.tickets.update(ticket)
 
 			macro_id = notifier_item.macro_id.value
 			macro_effect = zendesk.client.tickets.show_macro_effect(ticket, macro_id)

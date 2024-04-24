@@ -121,32 +121,6 @@ def sync_to_zendesk(main_item_id, ticket_id):
 			)
 
 		# booking date string
-		ds = "as soon as possible"
-		if main_item.booking_date.value:
-			dt = main_item.booking_date.value
-			try:
-				if not main_item.service.value:
-					raise MondayDataError(
-						"Cannot convert Booking Date to string, please select which service the client will be using")
-				if 'mail' in main_item.service.value.lower():
-					# mail format: on Wednesday 14th February
-					ds = dt.strftime("on %A %d %B")
-				else:
-					# courier format: "at 12:30PM on Wednesday 14 February"
-					ds = dt.strftime("at %I:%M%p on %A %d %B")
-			except MondayDataError as e:
-				failed.append(['BookingDateString (Service Issue)', main_item.service.value])
-				raise e
-			except Exception as e:
-				failed.append(['BookingDateString', main_item.booking_date.value])
-				notify_admins_of_error(str(e))
-				raise e
-		ticket.custom_fields.append(
-			CustomField(
-				id=field_ids['booking_date_string'],
-				value=ds
-			)
-		)
 
 		# RM tracking link
 		if main_item.outgoing_tracking_number.value:

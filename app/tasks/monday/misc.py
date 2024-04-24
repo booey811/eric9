@@ -83,7 +83,9 @@ def handle_imei_change(main_item_id):
 			main_ids.extend([str(item) for item in main_ids_from_board])
 
 		if main_ids:
-			update += f"\n\nPREVIOUSLY REPAIRED BY US {len(main_ids)} TIMES"
+			prev_repairs = len(main_ids) - 1
+			if prev_repairs > 0:
+				update += f"\n\nPREVIOUSLY REPAIRED BY US {prev_repairs} TIMES"
 			for item_id in main_ids:
 				update += f"\n{item_id}"
 

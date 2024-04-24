@@ -65,6 +65,7 @@ class MainItem(items.BaseItemType):
 		self.notes_thread_id = columns.TextValue("text37")
 		self.email_thread_id = columns.TextValue("text_1")
 		self.error_thread_id = columns.TextValue("text34")
+		self.high_level_thread_id = columns.TextValue("text03")
 
 		# address info
 		self.address_postcode = columns.TextValue("text93")
@@ -97,8 +98,8 @@ class MainItem(items.BaseItemType):
 	def _check_update_threads(self):
 		if self.id:
 			commit = False
-			for thread_name in ["EMAIL", "ERROR", "NOTES"]:
-				thread_val = getattr(self, f"{thread_name.lower()}_thread_id")
+			for thread_name in ["EMAIL", "ERROR", "NOTES", "HIGH LEVEL"]:
+				thread_val = getattr(self, f"{thread_name.lower().replace(' ', '_')}_thread_id")
 				thread_id = thread_val.value
 				if not thread_id:
 					body = f"****** {thread_name} ******"

@@ -182,8 +182,10 @@ class EntityInformationViews:
 				block_title='Reason for Waste',
 				element=blocks.elements.text_input_element(
 					placeholder='Enter a reason for the waste',
+					action_id="waste_reason",
 				),
 				block_id="waste_reason",
+				action_id="waste_reason",
 			)
 		)
 

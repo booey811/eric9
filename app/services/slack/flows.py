@@ -13,8 +13,9 @@ from .. import monday, zendesk
 from ...utilities import notify_admins_of_error
 from ...errors import EricError
 from ...tasks.sync_platform import sync_to_zendesk
-from ...cache.rq import q_high
+from ...cache.rq import q_high, q_low
 from ...tasks.notifications import quotes
+from ...tasks.monday import repair_process
 
 import config
 
@@ -1030,6 +1031,14 @@ class ChecksFlow(FlowController):
 		monday.api.monday_connection.updates.create_update(
 			item_id=create_subitem['data']['create_subitem']['id'],
 			update_value=json.dumps(submission_values, indent=4)
+		)
+
+		q_low.enqueue(
+			repair_process.print_check_results_main_item,
+			kwargs={
+				"main_item_id": main_id,
+				"results_subitem_id": create_subitem['data']['create_subitem']['id']
+			}
 		)
 
 		return results_item.id

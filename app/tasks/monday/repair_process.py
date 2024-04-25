@@ -92,7 +92,7 @@ def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id
 	return res
 
 
-def print_results_main_item(main_item_id, results_subitem_id):
+def print_check_results_main_item(main_item_id, results_subitem_id):
 
 	all_checks = mon_obj.items.misc.CheckItem.get_all()
 	main_item = mon_obj.items.MainItem(main_item_id)

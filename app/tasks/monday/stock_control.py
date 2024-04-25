@@ -2,7 +2,7 @@ import json
 from typing import List, Union
 
 from ...services import monday
-from ...utilities import notify_admins_of_error
+from ...utilities import notify_admins_of_error, users
 
 
 def update_stock_checkouts(main_id, create_sc_item=False):
@@ -354,4 +354,24 @@ def process_refurb_output_item(refurb_output_id):
 		refurb_output.add_update(f"Could Not Process Refurb Output: {e}")
 		refurb_output.parts_adjustment_status = "Error"
 		refurb_output.commit()
+		raise e
+
+
+def add_waste_entry(part_id, reason, monday_user_id):
+	# first create the waste item, then use this as a source for stock adjustment
+	part = monday.items.PartItem(part_id)
+	user = users.User(monday_id=monday_user_id)
+
+	try:
+		waste_record = monday.items.part.WasteItem()
+		waste_record.part_id = str(part_id)
+		waste_record.parts_connect = [int(part_id)]
+		waste_record.reason = str(reason)
+		waste_record.recorded_by = [int(user.monday_id)]
+		waste_record.create(part.name)
+
+		waste_record.stock_adjust_status = 'Waste It!'
+		waste_record.commit()
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Process Waste Entry: {e}")
 		raise e

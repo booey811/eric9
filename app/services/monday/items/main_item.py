@@ -44,6 +44,7 @@ class MainItem(items.BaseItemType):
 		self.device_deprecated_dropdown = columns.DropdownValue("device0")
 		self.parts_used_dropdown = columns.DropdownValue("repair")
 		self.device_colour = columns.StatusValue("status8")
+		self.parts_connect = columns.ConnectBoards("connect_boards__1")
 
 		# payment info
 		self.payment_status = columns.StatusValue("payment_status")

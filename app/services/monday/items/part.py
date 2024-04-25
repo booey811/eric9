@@ -135,7 +135,7 @@ class InventoryAdjustmentItem(BaseItemType):
 
 		self.part_id = columns.TextValue("text4")
 		self.part_url = columns.LinkURLValue("part_url")
-		
+
 		# self.parts_connect = columns.ConnectBoards("connect_boards9")
 		# self.supplier_connect = columns.ConnectBoards("connect_boards")
 
@@ -323,7 +323,6 @@ class RepairMapItem(BaseItemType):
 
 
 class RefurbMenuItem(BaseItemType):
-
 	BOARD_ID = 1106794399
 
 	def __init__(self, item_id=None, api_data=None, search=False):
@@ -351,3 +350,34 @@ class RefurbOutputItem(BaseItemType):
 		self.parts_adjustment_status = columns.StatusValue("status6")
 
 		super().__init__(item_id, api_data, search)
+
+
+class WasteItem(BaseItemType):
+	BOARD_ID = 1157165964
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+
+		self.reason = columns.TextValue("waste_description")
+		self.part_id = columns.TextValue("partboard_id")
+		self.parts_connect = columns.ConnectBoards("connect_boards")
+
+		self.recorded_by = columns.PeopleValue("people")
+		self.movement_item_id = columns.TextValue("text__1")
+
+		self.stock_adjust_status = columns.StatusValue("waste_status")
+
+		super().__init__(item_id, api_data, search)
+
+	def process_stock_adjustment(self, part: PartItem = None):
+		if not part and not self.part_id.value:
+			raise exceptions.MondayDataError(f"{self} has no Part ID")
+		elif not part:
+			part = PartItem(self.part_id.value)
+		else:
+			raise Exception("Part ID and Part Object Provided")
+
+		movement_item = part.adjust_stock_level(-1, self, 'Damaged')
+		self.movement_item_id = str(movement_item.id)
+		self.stock_adjust_status = 'Complete'
+		self.commit()
+		return part

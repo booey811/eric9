@@ -23,6 +23,14 @@ USER_DATA = [
 		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
 	},
 	{
+		"name": "dev-slack-workspace",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U038CSWUHLY",  # gabe
+		"monday_id": "4251271",  # gabe
+		"repair_group_id": conf.MAIN_DEV_GROUP_ID,  # test proof items group
+		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
+	},
+	{
 		"name": "safan",
 		"motion_assignee_id": "ZaLckqS6QDUhF0ZzucTgo1NsdR42",  # safan
 		"slack_id": "D02LMMHCZPA",  # safan

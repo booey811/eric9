@@ -632,6 +632,7 @@ class HomeScreenFlow:
 			['Receive Order', 'receive_order'],
 			['Start Count', 'start_count'],
 			['TechChecks Test', 'checks__test'],
+			['Record Waste', 'create_waste_entry']
 		]
 		buttons = []
 		for button in button_data:
@@ -1033,15 +1034,41 @@ class ChecksFlow(FlowController):
 			update_value=json.dumps(submission_values, indent=4)
 		)
 
-		q_low.enqueue(
-			repair_process.print_check_results_main_item,
-			kwargs={
-				"main_item_id": main_id,
-				"results_subitem_id": create_subitem['data']['create_subitem']['id']
-			}
-		)
+		if conf.CONFIG == 'production':
+			q_low.enqueue(
+				repair_process.print_check_results_main_item,
+				kwargs={
+					"main_item_id": main_id,
+					"results_subitem_id": create_subitem['data']['create_subitem']['id']
+				}
+			)
+		else:
+			repair_process.print_check_results_main_item(main_id, create_subitem['data']['create_subitem']['id'])
 
 		return results_item.id
+
+
+class WasteFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta=None):
+		if not meta:
+			meta = {
+			}
+		super().__init__("waste", slack_client, ack, body, meta)
+
+	@handle_errors
+	def show_waste_form(self):
+
+		blocks = builders.EntityInformationViews().waste_recording_entry_point()
+		view = self.get_view(
+			"Waste",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='waste_form'
+		)
+		self.update_view(view, method='open')
+		self.ack()
+		return view
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

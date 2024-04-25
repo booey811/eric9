@@ -153,3 +153,12 @@ def stock_check_part_info(ack, body, client):
 	flow_controller = flows.StockFlow(client, ack, body, meta={})
 	flow_controller.show_stock_info([part_id], method='push')
 	return True
+
+
+@slack_app.action("create_waste_entry")
+def create_waste_entry(ack, body, client):
+	log.debug("create_waste_entry ran")
+	log.debug(body)
+	flow_controller = flows.WasteFlow(client, ack, body, meta={})
+	flow_controller.show_waste_form()
+	return True

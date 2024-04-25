@@ -159,6 +159,36 @@ class EntityInformationViews:
 
 		return results
 
+	@staticmethod
+	def waste_recording_entry_point():
+		result = []
+		result.append(
+			blocks.add.input_block(
+				block_title="Search for a part",
+				element=blocks.elements.external_select_element(
+					placeholder='Enter a part name',
+					action_id="stock_check_part",
+					min_query_length=3,
+					focus_on_load=True,
+				),
+				block_id="waste_part",
+				dispatch_action=False,
+				action_id="stock_check_part"
+			)
+		)
+
+		result.append(
+			blocks.add.input_block(
+				block_title='Reason for Waste',
+				element=blocks.elements.text_input_element(
+					placeholder='Enter a reason for the waste',
+				),
+				block_id="waste_reason",
+			)
+		)
+
+		return result
+
 
 class OrderViews:
 

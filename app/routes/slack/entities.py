@@ -2,11 +2,16 @@ import logging
 import re
 from pprint import pprint as p
 
+import config
+
 from ...services.slack import slack_app, builders, blocks, flows
-from ...services import monday
+from ...tasks.monday import stock_control
+from ...utilities import users, notify_admins_of_error
+from ...cache.rq import q_low
 from .exceptions import SlackRoutingError
 
 log = logging.getLogger('eric')
+conf = config.get_config()
 
 
 @slack_app.command("/entity")
@@ -161,4 +166,43 @@ def create_waste_entry(ack, body, client):
 	log.debug(body)
 	flow_controller = flows.WasteFlow(client, ack, body, meta={})
 	flow_controller.show_waste_form()
+	return True
+
+
+@slack_app.view("waste_form")
+def process_waste_entry_submission(ack, body, client):
+	log.debug("process_waste_entry_submission ran")
+	state_values = body['view']['state']['values']
+	waste_part_id = state_values['waste_part']['stock_check_part']['selected_option']['value']
+	waste_reason = state_values['waste_reason']['waste_reason']['value']
+	slack_user_id = body['user']['id']
+	try:
+		user = users.User(slack_id=slack_user_id)
+	except Exception as e:
+		ack({
+			"response_action": "update",
+			"view": builders.ResultScreenViews().get_error_screen(f"Could not find user: {e}")
+		})
+		notify_admins_of_error(f"Waste Records - Could not find user: {e}")
+		raise e
+
+	# ack({
+	# 	"response_action": "clear"
+	# })
+
+	if conf.CONFIG == 'PRODUCTION':
+		q_low.enqueue(
+			stock_control.add_waste_entry,
+			kwargs={
+				"part_id": waste_part_id,
+				"reason": waste_reason,
+				"monday_user_id": user.monday_id
+			}
+		)
+	else:
+		stock_control.add_waste_entry(
+			part_id=waste_part_id,
+			reason=waste_reason,
+			monday_user_id=user.monday_id
+		)
 	return True

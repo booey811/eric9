@@ -111,6 +111,7 @@ def process_refurb_output_item():
 
 
 @stock_control_bp.route("/handle-waste-stock-adjustment", methods=['POST'])
+@monday.monday_challenge
 def handle_waste_stock_adjustment():
 	log.debug('Handling Waste Stock Adjustment')
 	webhook = request.get_data()

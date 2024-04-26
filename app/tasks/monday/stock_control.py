@@ -375,3 +375,21 @@ def add_waste_entry(part_id, reason, monday_user_id):
 	except Exception as e:
 		notify_admins_of_error(f"Could Not Process Waste Entry: {e}")
 		raise e
+
+
+def handle_waste_stock_adjustment(waste_id):
+	waste_record = monday.items.part.WasteItem(waste_id)
+
+	try:
+		waste_record.process_stock_adjustment()
+	except Exception as e:
+		notify_admins_of_error(f"Could Not Process Waste Stock Adjustment: {e}")
+		waste_record.stock_adjust_status = "Error"
+		waste_record.commit()
+		waste_record.add_update(f"Could Not Process Waste Stock Adjustment: {e}")
+		raise e
+
+	waste_record.stock_adjust_status = 'Complete'
+	waste_record.commit()
+
+	return waste_record

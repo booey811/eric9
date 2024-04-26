@@ -108,3 +108,19 @@ def process_refurb_output_item():
 			item_id
 		)
 	return jsonify({'status': 'ok'}), 200
+
+
+@stock_control_bp.route("/handle-waste-stock-adjustment", methods=['POST'])
+def handle_waste_stock_adjustment():
+	log.debug('Handling Waste Stock Adjustment')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	item_id = data['pulseId']
+	if item_id:
+		q_low.enqueue(
+			stock_tasks.handle_waste_stock_adjustment,
+			item_id
+		)
+	return jsonify({'status': 'ok'}), 200

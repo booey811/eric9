@@ -376,6 +376,11 @@ class WasteItem(BaseItemType):
 		else:
 			raise Exception("Part ID and Part Object Provided")
 
+		if self.movement_item_id.value:
+			mov_item = InventoryAdjustmentItem(self.movement_item_id.value)
+			mov_item.void_self()
+			self.movement_item_id = ''
+
 		movement_item = part.adjust_stock_level(-1, self, 'Damaged')
 		self.movement_item_id = str(movement_item.id)
 		self.stock_adjust_status = 'Complete'

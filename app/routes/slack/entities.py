@@ -186,9 +186,9 @@ def process_waste_entry_submission(ack, body, client):
 		notify_admins_of_error(f"Waste Records - Could not find user: {e}")
 		raise e
 
-	# ack({
-	# 	"response_action": "clear"
-	# })
+	ack({
+		"response_action": "clear"
+	})
 
 	if conf.CONFIG == 'PRODUCTION':
 		q_low.enqueue(

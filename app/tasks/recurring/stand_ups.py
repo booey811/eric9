@@ -1,8 +1,14 @@
 import datetime
 
+import pytz
+
+import config
 from app.utilities import users
 from app.services.slack import blocks, slack_app, flows
 from app.cache import get_redis_connection
+from app.cache.rq import q_high
+
+conf = config.get_config()
 
 
 def generate_daily_stand_up_views(user_names=('safan', 'andres', 'ferrari')):
@@ -14,10 +20,26 @@ def generate_daily_stand_up_views(user_names=('safan', 'andres', 'ferrari')):
 	if not isinstance(user_names, (list, tuple)):
 		raise Exception(f"Expected a list or tuple of user names, got {type(user_names)}")
 
+	enqueue_at = datetime.datetime.now(tz=pytz.timezone('Europe/London')).replace(
+		hour=9,
+		minute=0,
+		second=0,
+		microsecond=0
+	)
+	enqueue_at = enqueue_at.astimezone(pytz.utc)
+
 	users_to_request = [users.User(name=n) for n in user_names]
 	flow = flows.StandUpFlow(None, None, None)
 	for user in users_to_request:
 		flow.generate_stand_up_view(user)
+
+	if conf.CONFIG == 'PRODUCTION':
+		q_high.enqueue_at(
+			datetime=enqueue_at,
+			f=request_daily_stand_ups,
+		)
+	else:
+		request_daily_stand_ups(user_names=user_names)
 
 	return user_names
 

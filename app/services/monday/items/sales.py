@@ -94,6 +94,8 @@ class SaleControllerItem(BaseItemType):
 			else:
 				corp_item = self.get_corporate_account_item()
 				invoice_item = corp_item.get_current_invoice()
+				if not main_item.device_id:
+					raise InvoiceDataError("No Device Attached to for Main Item")
 				device = monday.items.device.DeviceItem(main_item.device_id)
 				repairs = [monday.items.sales.SaleLineItem(item_id=item_id) for item_id in self.subitem_ids.value]
 				repair_total = 0

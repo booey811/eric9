@@ -25,7 +25,7 @@ def refresh_cache():
 	q_high.enqueue(utilities.build_product_cache)
 	q_high.enqueue(utilities.build_device_cache)
 	q_high.enqueue(utilities.build_pre_check_cache)
-	return True
+	return jsonify({'status': 'success'}), 200
 
 
 @admin_bp.route('/motion-reschedule', methods=['POST'])
@@ -37,3 +37,4 @@ def force_reschedule():
 	all_users = [users.User(_) for _ in ['safan', 'andres', 'ferrari']]
 	for user in all_users:
 		q_high.enqueue(scheduling.schedule_update, user.repair_group_id)
+	return jsonify({'status': 'success'}), 200

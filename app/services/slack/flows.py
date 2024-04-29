@@ -10,10 +10,11 @@ from zenpy.lib.api_objects import User, Ticket, CustomField
 
 from . import blocks as s_blocks, builders, helpers, exceptions
 from .. import monday, zendesk
-from ...utilities import notify_admins_of_error
+from ...utilities import notify_admins_of_error, users
 from ...errors import EricError
 from ...tasks.sync_platform import sync_to_zendesk
 from ...cache.rq import q_high, q_low
+from ...cache import get_redis_connection
 from ...tasks.notifications import quotes
 from ...tasks.monday import repair_process
 
@@ -631,8 +632,8 @@ class HomeScreenFlow:
 			['Adjust Quote', 'adjust_quote'],
 			['Receive Order', 'receive_order'],
 			['Start Count', 'start_count'],
-			['TechChecks Test', 'checks__test'],
-			['Record Waste', 'create_waste_entry']
+			['Record Waste', 'create_waste_entry'],
+			['Test', 'test'],
 		]
 		buttons = []
 		for button in button_data:
@@ -1058,7 +1059,6 @@ class WasteFlow(FlowController):
 
 	@handle_errors
 	def show_waste_form(self):
-
 		blocks = builders.EntityInformationViews().waste_recording_entry_point()
 		view = self.get_view(
 			"Waste",
@@ -1068,6 +1068,51 @@ class WasteFlow(FlowController):
 		)
 		self.update_view(view, method='open')
 		self.ack()
+		return view
+
+
+class StandUpFlow(FlowController):
+
+	def __init__(self, slack_client, ack, body, meta=None):
+		if not meta:
+			meta = {
+			}
+		super().__init__("stand_up", slack_client, ack, body, meta)
+
+	@staticmethod
+	def _stand_up_cache_key(user: "users.User"):
+		return f"stand_up:{user.name}"
+
+	@handle_errors
+	def generate_stand_up_view(self, user: "users.User"):
+
+		blocks = builders.StandUpViews().get_stand_up_view(user)
+		view = self.get_view(
+			"Stand Up",
+			blocks=blocks,
+			close='Cancel',
+			callback_id='stand_up_form'
+		)
+
+		get_redis_connection().set(
+			name=self._stand_up_cache_key(user),
+			value=json.dumps(view)
+		)
+		return view
+
+	def get_stand_up_view(self, user: "users.User"):
+		loading = builders.ResultScreenViews.get_loading_screen("Loading Stand Up View")
+		loading_view = self.update_view(loading, method='open').data['view']
+		self.ack()
+
+		view = get_redis_connection().get(name=self._stand_up_cache_key(user))
+		if not view:
+			view = self.generate_stand_up_view(user)
+		else:
+			view = json.loads(view)
+
+		self.update_view(view, method='update', view_id=loading_view['id'])
+
 		return view
 
 

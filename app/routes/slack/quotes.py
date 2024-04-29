@@ -8,6 +8,7 @@ from ...services import monday, zendesk
 from ... import tasks
 from ...cache.rq import q_low, q_high
 from .exceptions import SlackRoutingError
+from ...utilities import users
 
 import config
 
@@ -16,7 +17,7 @@ conf = config.get_config()
 log = logging.getLogger('eric')
 
 
-@slack_app.command("/test")
+@slack_app.action("test")
 def test_modal(ack, client, body):
 	raise Exception("Test Error")
 

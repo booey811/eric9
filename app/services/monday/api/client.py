@@ -38,6 +38,7 @@ def get_api_items(item_ids):
 
 
 def get_api_items_by_group(board_id, group_id):
+	results = []
 	try:
 		raw = conn.groups.get_items_by_group(board_id, group_id)
 	except Exception as e:
@@ -46,7 +47,17 @@ def get_api_items_by_group(board_id, group_id):
 	if raw.get("error_message"):
 		raise MondayAPIError(f"Error fetching items from Monday: {raw['errors']}")
 
-	return raw["data"]["boards"][0]["groups"][0]["items_page"]["items"]
+	api_data = raw["data"]["boards"][0]["groups"][0]["items_page"]
+	results.extend(api_data["items"])
+
+	while api_data.get('cursor'):
+		raw = conn.groups.get_items_by_group(board_id, group_id, cursor=api_data['cursor'])
+		if raw.get("error_message"):
+			raise MondayAPIError(f"Error fetching items from Monday: {raw['errors']}")
+		api_data = raw["data"]["boards"][0]["groups"][0]["items_page"]
+		results.extend(api_data["items"])
+
+	return results
 
 
 def get_items_by_board_id(board_id):

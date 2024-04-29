@@ -1,12 +1,14 @@
 import datetime
 from typing import List
 import json
+import pytz
 
 from . import blocks, exceptions
 from .. import monday
-from ..monday import items
+from ..monday import items, api
 from ..zendesk import helpers as zendesk_helpers, client as zendesk_client
 from ...cache import get_redis_connection
+from ...utilities import users
 import config
 
 conf = config.get_config()
@@ -1172,5 +1174,85 @@ class CheckViews:
 			for failure in invalid_checks:
 				text = f":no_entry: {failure[0].name}: No Available Response Options"
 				view_blocks.append(blocks.add.simple_text_display(text))
+
+		return view_blocks
+
+
+class StandUpViews:
+	TECHNICIANS = [
+		'safan',
+		'ferrari',
+		'andres',
+		'dev-slack-workspace',
+	]
+
+	@staticmethod
+	def get_stand_up_view(user: "users.User"):
+		if user.name in StandUpViews.TECHNICIANS:
+			return StandUpViews.get_tech_view(user)
+		else:
+			raise Exception(f"User({user.name}) not authorised to view stand up view")
+
+	@staticmethod
+	def get_tech_view(tech: "users.User"):
+
+		view_blocks = []
+
+		questions = [  # list of questions and their corresponding action/block ids
+			["Do you have any issues from your work yesterday?", 'issue_yesterday'],
+			["Do you have any concerns regarding your work today? (see below)", "issue_today"],
+			["Do you need any repair tools or parts to complete your work today?", "tools_needed"],
+		]
+
+		view_blocks.append(blocks.add.header_block(f"Good Morning {tech.name}!"))
+		for question in questions:
+			view_blocks.append(
+				blocks.add.input_block(
+					block_title=question[0],
+					element=blocks.elements.text_input_element(
+						placeholder='Enter a response',
+						action_id=question[1],
+					),
+					block_id=question[1],
+					action_id=question[1],
+					optional=False
+				)
+			)
+
+		# show list of repairs, from tech group and under repair group
+		tech_group_repair = monday.api.get_api_items_by_group(monday.items.MainItem.BOARD_ID, tech.repair_group_id)
+		under_repairs = monday.api.get_api_items_by_group(monday.items.MainItem.BOARD_ID, conf.UNDER_REPAIR_GROUP_ID)
+
+		repair_ids = [i['id'] for i in tech_group_repair] + [i['id'] for i in under_repairs]
+		repairs_data = monday.api.get_api_items(repair_ids)
+		repairs = [monday.items.MainItem(_['id'], _).load_from_api(_) for _ in repairs_data]
+
+		date_in_future = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(weeks=52)
+		repairs.sort(key=lambda x: x.hard_deadline.value if x.hard_deadline.value else date_in_future)
+
+		view_blocks.append(blocks.add.divider_block())
+		view_blocks.append(blocks.add.header_block("Your Current Repairs"))
+		for repair in repairs:
+			device = monday.items.DeviceItem(repair.device_id or 4028854241)  # other device ID
+			products = repair.products
+			p_names = [p.name.replace(device.name, "") for p in products]
+			if p_names:
+				desc = ", ".join(p_names)
+			else:
+				desc = "No Repairs Description"
+			view_blocks.append(blocks.add.simple_text_display(f"*{device.name}* {repair.name}"))
+			view_blocks.append(blocks.add.simple_text_display(desc))
+			deadline = repair.hard_deadline.value
+			if not deadline:
+				ds = "No Deadline Set"
+			else:
+				if deadline.date() < datetime.datetime.now().date():
+					ds = f":no_entry: *Overdue* {deadline.strftime('%a %dth %b')}"  # overdue
+				elif deadline.date() == datetime.datetime.now().date():
+					ds = f":warning: *Due Today* {deadline.strftime('%H:%M')}"  # today
+				else:
+					ds = f"Due: {deadline.strftime('%a %dth %b %H:%M')}"
+			view_blocks.append(blocks.add.simple_text_display(ds))
+			view_blocks.append(blocks.add.divider_block())
 
 		return view_blocks

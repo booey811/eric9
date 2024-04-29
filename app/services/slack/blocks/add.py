@@ -45,7 +45,11 @@ def input_block(
 	return basic
 
 
-def section_block(title, accessory, block_id=''):
+def section_block(title, accessory=None, block_id='', fields=()):
+
+	if not accessory and not fields:
+		raise ValueError("Either accessory or fields must be provided")
+
 	basic = {
 		"type": "section",
 		"block_id": block_id,
@@ -53,8 +57,11 @@ def section_block(title, accessory, block_id=''):
 			"type": "mrkdwn",
 			"text": title
 		},
-		"accessory": accessory,
 	}
+	if accessory:
+		basic['accessory'] = accessory
+	if fields:
+		basic['fields'] = fields
 	return basic
 
 

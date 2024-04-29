@@ -32,7 +32,7 @@ def schedule_update(repair_group_id):
 
 	# Schedule a new job to update Monday.com after the delay period
 	job = q_high.enqueue_in(
-		time_delta=datetime.timedelta(seconds=10),
+		time_delta=datetime.timedelta(seconds=30),
 		func=sync_repair_schedule,
 		args=(user.repair_group_id,)
 	)
@@ -65,7 +65,21 @@ def sync_repair_schedule(monday_group_id):
 
 		status_valid_under_repair_items = [r for r in assigned_repair_group_item if r.main_status not in statuses_to_ignore]
 
-		repairs = tech_group_items + status_valid_under_repair_items
+		all_repairs = tech_group_items + status_valid_under_repair_items
+		repairs = []
+		for repair in all_repairs:
+			if not repair.hard_deadline.value:
+				log.debug(f"Repair {repair.name} has no deadline, skipping")
+				repair.motion_scheduling_status = 'No Deadline'
+				repair.commit()
+				continue
+			elif repair.hard_deadline.value < datetime.datetime.now(datetime.timezone.utc):
+				log.debug(f"Repair {repair.name} has deadline in past, skipping")
+				repair.motion_scheduling_status = 'Deadline in Past'
+				repair.commit()
+				continue
+			else:
+				repairs.append(repair)
 
 		log.debug(f"Syncing for repairs: {[repair.name for repair in repairs]}")
 

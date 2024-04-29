@@ -40,7 +40,7 @@ USER_DATA = [
 	},
 	{
 		"name": "andres",
-		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"motion_assignee_id": "4jIeCpoWtSStAAGNCrMzzERqsez1",  # andres
 		"slack_id": "D05SXQ1F95Y",  # andres
 		"monday_id": "49001724",  # andres
 		"repair_group_id": "new_group99626",  # andres's group
@@ -48,7 +48,7 @@ USER_DATA = [
 	},
 	{
 		"name": "ferrari",
-		"motion_assignee_id": "ZaLckqS6QDUhF0ZzucTgo1NsdR42",  # safan
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
 		"slack_id": "U06JERUU5RA",  # ferrari
 		"monday_id": "55780786",  # ferrari
 		"repair_group_id": "new_group34603",  # ferrari's group

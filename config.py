@@ -109,8 +109,8 @@ class Config(object):
 		"gabe": os.environ["MOTION_GABE"],
 		"dev": os.environ["MOTION_DEV"],
 		"safan": os.environ['MOTION_SAFAN'],
-		'andres': os.environ['MOTION_GABE'],
-		"ferrari": os.environ['MOTION_SAFAN'],
+		'andres': os.environ['MOTION_ANDRES'],
+		"ferrari": os.environ['MOTION_GABE'],
 		"dev-slack-workspace": os.environ['MOTION_GABE'],
 	}
 

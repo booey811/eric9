@@ -25,7 +25,7 @@ def handle_repair_group_change():
 	old_group_id = data['sourceGroupId']
 	all_users = [users.User(_['name']) for _ in users.USER_DATA]
 	repair_group_ids = [
-		user.repair_group_id for user in all_users if user.name in ('ferrari', 'andres')
+		user.repair_group_id for user in all_users if user.name in ('ferrari', 'andres', 'safan')
 	]
 	log.debug(f"MainItem({main_id}) moved from group({old_group_id}) to group({new_group_id})")
 

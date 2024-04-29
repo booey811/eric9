@@ -32,7 +32,7 @@ def schedule_update(repair_group_id):
 
 	# Schedule a new job to update Monday.com after the delay period
 	job = q_high.enqueue_in(
-		time_delta=datetime.timedelta(seconds=30),
+		time_delta=datetime.timedelta(seconds=15),
 		func=sync_repair_schedule,
 		args=(user.repair_group_id,)
 	)

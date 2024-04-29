@@ -10,6 +10,14 @@ from ...utilities import notify_admins_of_error
 def book_courier(main_id, direction):
 	"""Book a collection for a main item"""
 	main_item = monday.items.MainItem(main_id).load_from_api()
+	if not main_item.booking_date.value and direction == 'incoming':
+		main_item.be_courier_collection = 'Booking Failed'
+		main_item.commit()
+		error_message = (f"{str(main_item)} has no booking date. If you have set a booking date and tried to book the"
+						 f"courier quickly, please wait and try again (it takes 17 seconds for complex columns like "
+						 f"Dates to save their changes). If you have not set a booking date, please do so and try again.")
+		main_item.add_update(error_message, main_item.error_thread_id.value)
+		return False
 	try:
 		log_item = monday.items.misc.CourierDataDumpItem().create(f"{main_item.name}: {direction.capitalize()} Booking")
 	except Exception as e:
@@ -43,7 +51,8 @@ def book_courier(main_id, direction):
 			))
 			zendesk.client.tickets.update(ticket)
 		except Exception as e:
-			main_item.add_update(f"Courier Booked, but could not update ticket with tracking link: {e}", main_item.error_thread_id)
+			main_item.add_update(f"Courier Booked, but could not update ticket with tracking link: {e}",
+								 main_item.error_thread_id)
 			raise e
 		main_item.commit()
 

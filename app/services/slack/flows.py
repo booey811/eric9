@@ -8,7 +8,7 @@ import json
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import User, Ticket, CustomField
 
-from . import blocks as s_blocks, builders, helpers, exceptions
+from . import blocks as s_blocks, builders, helpers, exceptions, slack_app
 from .. import monday, zendesk
 from ...utilities import notify_admins_of_error, users
 from ...errors import EricError
@@ -1114,6 +1114,44 @@ class StandUpFlow(FlowController):
 		self.update_view(view, method='update', view_id=loading_view['id'])
 
 		return view
+
+	def end_flow(self, user: "users.User", state_values: dict):
+
+		# extract answers from state values
+		# generate Slack message
+		# send Slack message
+
+		message_blocks = []
+		message_blocks.append(s_blocks.add.header_block(f"Stand Up for {user.name}"))
+		message_blocks.append(s_blocks.add.simple_context_block([datetime.datetime.now().strftime("%A %d %B %Y")]))
+		message_blocks.append(s_blocks.add.divider_block())
+
+		issue_today = list(state_values['issue_today'].values())[0]['value']
+		message_blocks.append(s_blocks.add.simple_text_display("*Issues Today*"))
+		message_blocks.append(s_blocks.add.simple_context_block([issue_today]))
+
+		issue_yesterday = list(state_values['issue_yesterday'].values())[0]['value']
+		message_blocks.append(s_blocks.add.simple_text_display("*Issues Yesterday*"))
+		message_blocks.append(s_blocks.add.simple_context_block([issue_yesterday]))
+
+		tools_needed = list(state_values['tools_needed'].values())[0]['value']
+		message_blocks.append(s_blocks.add.simple_text_display("*Tools Needed*"))
+		message_blocks.append(s_blocks.add.simple_context_block([tools_needed]))
+
+		if conf.CONFIG == 'PRODUCTION':
+			channel_id = "C0713R9EB5Z"  # daily-stand-ups
+		else:
+			channel_id = "C037P4MLAF4"  # development (dev workspace)
+
+		self.client.chat_postMessage(
+			channel=channel_id,
+			blocks=message_blocks,
+			text=f"Stand Up for {user.name}",
+		)
+
+		get_redis_connection().delete(name=self._stand_up_cache_key(user))
+
+		return message_blocks
 
 
 def get_flow(flow_name, slack_client, ack, body, meta=None):

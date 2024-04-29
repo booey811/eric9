@@ -60,3 +60,14 @@ def show_standup_selection_menu(ack, client, body):
 	user = users.User(slack_id=body['user']['id'])
 	flow.get_stand_up_view(user)
 	return
+
+
+@slack_app.view('stand_up_form')
+def process_standup_submission(ack, client, body):
+	log.info('Processing Stand Up Submission')
+	flow = flows.StandUpFlow(slack_client=client, ack=ack, body=body)
+	user = users.User(slack_id=body['user']['id'])
+	state_values = body['view']['state']['values']
+	ack()
+	flow.end_flow(user, state_values)
+	return

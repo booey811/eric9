@@ -62,7 +62,7 @@ def handle_repair_group_change():
 			if main.products_connect.value:
 				prod_data = monday.api.client.get_api_items(main.products_connect.value)
 				products = [items.ProductItem(p['id'], p) for p in prod_data]
-				duration = max([p.required_minutes for p in products]) or 60
+				duration = max([p.required_minutes.value for p in products]) or 60
 			else:
 				duration = 60
 			task = motion.create_task(

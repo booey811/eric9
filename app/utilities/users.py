@@ -33,7 +33,7 @@ USER_DATA = [
 	{
 		"name": "safan",
 		"motion_assignee_id": "ZaLckqS6QDUhF0ZzucTgo1NsdR42",  # safan
-		"slack_id": "D02LMMHCZPA",  # safan
+		"slack_id": "U02KY1GTC10",  # safan
 		"monday_id": "25304513",  # safan
 		"repair_group_id": "new_group95376",  # safan's group
 		"gcal_sessions_id": "c_70e866788c97a4a92aa6a7a2bd2e0fcc35cce2e9aa18b434f999916d5cacf444@group.calendar.google.com"
@@ -41,7 +41,7 @@ USER_DATA = [
 	{
 		"name": "andres",
 		"motion_assignee_id": "4jIeCpoWtSStAAGNCrMzzERqsez1",  # andres
-		"slack_id": "D05SXQ1F95Y",  # andres
+		"slack_id": "U05SR56SK1U",  # andres
 		"monday_id": "49001724",  # andres
 		"repair_group_id": "new_group99626",  # andres's group
 		"gcal_sessions_id": "c_4c75515d05c8a1f68b8b4ee0f8090832cc350df8d0363896bf59347ec75770fe@group.calendar.google.com"

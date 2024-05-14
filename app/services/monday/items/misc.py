@@ -121,6 +121,7 @@ class TypeFormWalkInResponseItem(BaseItemType):
 		self.device_type = get_answer_by_field_id(typeform_field_refs['device_type'])['choice']['label']
 		self.repair_notes = get_answer_by_field_id(typeform_field_refs['repair_notes'])['text']
 		self.form_type = get_answer_by_field_id(typeform_field_refs['form_type'])['choice']['label']
+		self.commit()
 
 		for field_id in typeform_field_refs['device']:
 			try:

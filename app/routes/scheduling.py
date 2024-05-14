@@ -14,6 +14,19 @@ log = logging.getLogger('eric')
 scheduling_bp = Blueprint('scheduling', __name__, url_prefix="/scheduling")
 
 
+@scheduling_bp.route("/handle-requested-sync", methods=["POST"])
+@monday_challenge
+def handle_requested_sync():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+	group_id = data['groupId']
+	if str(group_id) in [str(user['repair_group_id']) for user in users.USER_DATA]:
+		log.debug(f"Requested Sync for Group({group_id})")
+		scheduling.schedule_update(group_id)
+	return jsonify({'message': 'OK'}), 200
+
+
 @scheduling_bp.route("/repair-moves-group", methods=["POST"])
 @monday_challenge
 def handle_repair_group_change():

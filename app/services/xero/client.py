@@ -79,6 +79,21 @@ def get_contact(contact_id):
 
 
 @with_retries
+def get_contact_by_email(email):
+	"""returns list of contacts filtered by email"""
+	url = _BASE_URL + "/2.0/Contacts"
+	params = {"where": f'EmailAddress=="{email}"'}
+	result = requests.get(url, headers=get_headers(), params=params)
+
+	if result.status_code == 200:
+		return json.loads(result.text)["Contacts"]
+	elif result.status_code == 401:
+		raise XeroAuthError
+	else:
+		raise XeroResponseError(result)
+
+
+@with_retries
 def get_invoices_for_contact_id(contact_id=None, filter_status=None):
 	""""returns list of invoices"""
 	url = _BASE_URL + f"/2.0/Invoices"

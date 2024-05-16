@@ -129,6 +129,69 @@ def get_invoice_by_id(invoice_id):
 
 
 @with_retries
+def create_invoice(contact_id, issue_date, due_date, line_items, reference, line_amount_types="Inclusive"):
+	"""Create an invoice for a contact with the given line items."""
+	url = _BASE_URL + "/2.0/Invoices"
+
+	# Prepare the invoice data
+	invoice_data = {
+		"Type": "ACCREC",
+		"Contact": {
+			"ContactID": contact_id
+		},
+		"Date": issue_date.isoformat(),
+		"DueDate": due_date.isoformat(),
+		"LineItems": line_items,
+		"Reference": reference,
+		"LineAmountTypes": line_amount_types
+	}
+
+	# Make the API request
+	result = requests.put(url, headers=get_headers(), json={"Invoices": [invoice_data]})
+
+	# Check the response
+	if result.status_code == 200:
+		return json.loads(result.text)["Invoices"][0]
+	elif result.status_code == 401:
+		raise XeroAuthError
+	else:
+		raise XeroResponseError(result)
+
+
+@with_retries
+def create_contact(name, email, street_address=None, postal_code=None):
+	"""Create a new contact in Xero."""
+	url = _BASE_URL + "/2.0/Contacts"
+
+	# Prepare the contact data
+	contact_data = {
+		"Name": name,
+		"EmailAddress": email,
+	}
+
+	address = {}
+
+	if street_address:
+		address["AddressLine1"] = street_address
+	if postal_code:
+		address["PostalCode"] = postal_code
+
+	if address:
+		contact_data["Addresses"] = [address]
+
+	# Make the API request
+	result = requests.put(url, headers=get_headers(), json={"Contacts": [contact_data]})
+
+	# Check the response
+	if result.status_code == 200:
+		return json.loads(result.text)["Contacts"][0]
+	elif result.status_code == 401:
+		raise XeroAuthError
+	else:
+		raise XeroResponseError(result)
+
+
+@with_retries
 def update_invoice(invoice_dict):
 	url = _BASE_URL + f"/2.0/Invoices"
 	body = invoice_dict
@@ -174,14 +237,14 @@ def save_quote(quote_dict):
 		raise XeroResponseError(result)
 
 
-def make_line_item(description, quantity, unit_amount, account_code=203, tax_type="OUTPUT2"):
+def make_line_item(description, quantity, unit_amount, account_code=203, tax_type="OUTPUT2", line_amount_types="Exclusive"):
 	return {
 		"Description": description,
 		"Quantity": quantity,
 		"UnitAmount": unit_amount,
 		"AccountCode": account_code,
 		"TaxType": tax_type,
-		"LineAmountTypes": "Exclusive",
+		"LineAmountTypes": line_amount_types,
 	}
 
 

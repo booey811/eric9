@@ -134,6 +134,20 @@ def list_messages(thread_id, limit=20):
 	return result
 
 
+def retrieve_file_content(file_id):
+	contents = client.files.content(file_id)
+	return contents
+
+
+def attach_file_to_vector_store(file_id, vector_store_id):
+	vector_store_file = client.beta.vector_stores.files.create(
+		vector_store_id=vector_store_id,
+		file_id=file_id
+	)
+	print(vector_store_file)
+	return vector_store_file
+
+
 class InvalidRunStatus(EricError):
 
 	def __init__(self, run_id, thread_id, status):

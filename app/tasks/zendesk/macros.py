@@ -14,7 +14,8 @@ def generate_draft_invoice_for_ticket(ticket_id):
 		# remove any existing invoices linked to this ticket, if they have been marked as sent
 		# this is to prevent duplicate invoices being generated
 		try:
-			inv_id_field = [x for x in ticket.custom_fields if x['id'] == zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']][0]
+			inv_id_field = \
+			[x for x in ticket.custom_fields if x['id'] == zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']][0]
 		except IndexError:
 			raise ValueError("Ticket does not have a Xero Invoice ID field")
 
@@ -34,7 +35,8 @@ def generate_draft_invoice_for_ticket(ticket_id):
 			value=str(ticket_id)
 		)
 		if main_item_search.get("error_message"):
-			raise monday.api.exceptions.MondayAPIError(f"Error searching Main Board for Ticket {ticket_id}: {main_item_search['error_message']}")
+			raise monday.api.exceptions.MondayAPIError(
+				f"Error searching Main Board for Ticket {ticket_id}: {main_item_search['error_message']}")
 
 		results = main_item_search['data']['items_page_by_column_values']['items']
 
@@ -119,6 +121,50 @@ def generate_draft_invoice_for_ticket(ticket_id):
 			body=inv_summary
 		)
 
+		zendesk.client.tickets.update(ticket)
+
+		return invoice
+
+	except Exception as e:
+		body = f"Error Generating Invoice: {e}"
+		comment = Comment(public=False, body=body)
+		ticket.comment = comment
+		zendesk.client.tickets.update(ticket)
+		raise e
+
+
+def confirm_invoice(ticket_id):
+	ticket = zendesk.client.tickets(id=int(ticket_id))
+	try:
+		ticket.tags.remove('confirm_invoice')
+	except ValueError:
+		# tag not present
+		pass
+	ticket.status = 'open'
+	try:
+		inv_id_field = \
+		[x for x in ticket.custom_fields if x['id'] == zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']][0]
+		inv_id = inv_id_field['value']
+		if not inv_id:
+			raise ValueError("Ticket does not have a Xero Invoice ID field")
+
+		invoice = xero.client.get_invoice_by_id(inv_id)
+		if not invoice:
+			raise ValueError(f"No Invoice found with ID {inv_id}, please use the 'Draft Invoice Macro First'")
+
+		if invoice['Status'] == 'DRAFT':
+			invoice['Status'] = 'SUBMITTED'
+			xero.client.update_invoice(invoice)
+		else:
+			raise ValueError(f"Invoice is not in DRAFT status, cannot confirm it. Status is {invoice['Status']}")
+
+		edit_url = f"https://go.xero.com/app/!TYR2Z/invoicing/edit/{invoice['InvoiceID']}"
+		payment_url = xero.client.get_payment_url(invoice['InvoiceID'])
+
+		ticket.comment = Comment(
+			public=False,
+			body=f"====== INVOICE CONFIRMED ======\n\nPay Invoice Link: {payment_url}\n\nEdit Invoice Link: {edit_url}"
+		)
 		zendesk.client.tickets.update(ticket)
 
 		return invoice

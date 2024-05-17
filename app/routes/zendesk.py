@@ -35,6 +35,14 @@ def zendesk_creates_monday_ticket():
 				zendesk.macros.generate_draft_invoice_for_ticket,
 				ticket_id
 			)
+	elif event == 'confirm_invoice':
+		if conf.CONFIG in ('DEVELOPMENT', 'TESTING'):
+			zendesk.macros.confirm_invoice(ticket_id)
+		else:
+			q_high.enqueue(
+				zendesk.macros.confirm_invoice,
+				ticket_id
+			)
 	else:
 		raise ValueError(f"Invalid event: {event}")
 

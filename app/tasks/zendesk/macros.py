@@ -6,9 +6,26 @@ from ...services import monday, zendesk, xero
 from ... import tasks
 
 
-def generate_invoice_for_ticket(ticket_id):
+def generate_draft_invoice_for_ticket(ticket_id):
 	ticket = zendesk.client.tickets(id=int(ticket_id))
 	try:
+		# remove any existing invoices linked to this ticket, if they have been marked as sent
+		# this is to prevent duplicate invoices being generated
+		try:
+			inv_id_field = [x for x in ticket.custom_fields if x['id'] == zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']][0]
+		except IndexError:
+			raise ValueError("Ticket does not have a Xero Invoice ID field")
+
+		inv_id = inv_id_field['value']
+		if inv_id:
+			invoice = xero.client.get_invoice_by_id(inv_id)
+			if invoice:
+				if invoice['Status'] == 'DRAFT':
+					invoice['Status'] = 'DELETED'
+					xero.client.update_invoice(invoice)
+				else:
+					raise ValueError(f"Invoice is not in DRAFT status, cannot delete it. Status is {invoice['Status']}")
+
 		main_item_search = monday.api.monday_connection.items.fetch_items_by_column_value(
 			board_id=monday.items.MainItem.BOARD_ID,
 			column_id="text6",
@@ -24,8 +41,6 @@ def generate_invoice_for_ticket(ticket_id):
 
 		main_item = monday.items.MainItem(results[0]['id'], results[0])
 		device = monday.items.DeviceItem(main_item.device_id)
-
-		sale = tasks.monday.sales.create_or_update_sale(main_item.id)
 
 		issue_date = datetime.datetime.now()
 		due_date = issue_date
@@ -81,6 +96,28 @@ def generate_invoice_for_ticket(ticket_id):
 			reference=f"{device.name} Repair",
 			line_amount_types="Inclusive"
 		)
+
+		ticket.custom_fields.append({
+			"id": zendesk.custom_fields.FIELDS_DICT['xero_invoice_id'],
+			"value": invoice['InvoiceID']
+		})
+
+		inv_summary = """====== INVOICE DRAFTED ======
+		Please check the summary below. If correct, please use the 'Confirm Invoice' macro to send receive a link for online payment.\n\n"""
+
+		total = 0
+		for line in line_items:
+			inv_summary += f"{line['Description']}: £{line['UnitAmount']}\n"
+			total += int(line['UnitAmount'])
+
+		inv_summary += f"\n\nTotal: £{total}"
+
+		ticket.comment = Comment(
+			public=False,
+			body=inv_summary
+		)
+
+		zendesk.client.tickets.update(ticket)
 
 		return invoice
 

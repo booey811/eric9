@@ -3,7 +3,7 @@ import json
 from flask import Blueprint, request, jsonify
 
 from ..cache.rq import q_high
-from ..tasks import sync_platform
+from ..tasks import sync_platform, zendesk
 
 import config
 
@@ -25,6 +25,14 @@ def zendesk_creates_monday_ticket():
 		else:
 			q_high.enqueue(
 				sync_platform.sync_to_monday,
+				ticket_id
+			)
+	elif event == 'generate_draft_invoice':
+		if conf.CONFIG in ('DEVELOPMENT', 'TESTING'):
+			zendesk.macros.generate_draft_invoice_for_ticket(ticket_id)
+		else:
+			q_high.enqueue(
+				zendesk.macros.generate_draft_invoice_for_ticket,
 				ticket_id
 			)
 	else:

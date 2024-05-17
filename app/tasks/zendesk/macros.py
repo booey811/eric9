@@ -105,12 +105,12 @@ def generate_draft_invoice_for_ticket(ticket_id):
 		inv_summary = """====== INVOICE DRAFTED ======
 		Please check the summary below. If correct, please use the 'Confirm Invoice' macro to send receive a link for online payment.\n\n"""
 
-		total = 0
+		zen_total = 0
 		for line in line_items:
-			inv_summary += f"{line['Description']}: £{line['UnitAmount']}\n"
+			inv_summary += f"{line['Description']}\n"
 			total += int(line['UnitAmount'])
 
-		inv_summary += f"\n\nTotal: £{total}"
+		inv_summary += f"\n\nTotal: £{zen_total}"
 
 		ticket.comment = Comment(
 			public=False,

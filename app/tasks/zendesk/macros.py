@@ -116,6 +116,9 @@ def generate_draft_invoice_for_ticket(ticket_id):
 
 		inv_summary += f"\n\nTotal: £{zen_total}"
 
+		edit_url = f"https://go.xero.com/app/!TYR2Z/invoicing/edit/{invoice['InvoiceID']}"
+		inv_summary += f"\n\nEdit Invoice Link: {edit_url}"
+
 		ticket.comment = Comment(
 			public=False,
 			body=inv_summary
@@ -153,7 +156,7 @@ def confirm_invoice(ticket_id):
 			raise ValueError(f"No Invoice found with ID {inv_id}, please use the 'Draft Invoice Macro First'")
 
 		if invoice['Status'] == 'DRAFT':
-			invoice['Status'] = 'SUBMITTED'
+			invoice['Status'] = 'AUTHORISED'
 			xero.client.update_invoice(invoice)
 		else:
 			raise ValueError(f"Invoice is not in DRAFT status, cannot confirm it. Status is {invoice['Status']}")

@@ -248,6 +248,16 @@ def make_line_item(description, quantity, unit_amount, account_code=203, tax_typ
 	}
 
 
+def get_payment_url(invoice_id):
+	url = _BASE_URL + f"/2.0/Invoices/{invoice_id}/OnlineInvoice"
+	result = requests.get(url=url, headers=get_headers())
+	if result.status_code == 200:
+		return json.loads(result.text)['OnlineInvoices'][0]['OnlineInvoiceUrl']
+	elif result.status_code == 401:
+		raise XeroAuthError
+	else:
+		raise XeroResponseError(result)
+
 class XeroError(EricError):
 	def __init__(self, message):
 		super().__init__(message)

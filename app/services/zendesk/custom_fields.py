@@ -17,7 +17,8 @@ FIELDS_DICT = {
 	"address_street": 360006582778,
 	"address_postcode": 360006582758,
 	"main_item_id": 360004570218,
-	"tracking_link": 360006704157
+	"tracking_link": 360006704157,
+	"xero_invoice_id": 25137214599697,
 }
 
 

@@ -8,6 +8,8 @@ from ... import tasks
 
 def generate_draft_invoice_for_ticket(ticket_id):
 	ticket = zendesk.client.tickets(id=int(ticket_id))
+	ticket.tags.remove('inv_generation_requested')
+	ticket.status = 'open'
 	try:
 		# remove any existing invoices linked to this ticket, if they have been marked as sent
 		# this is to prevent duplicate invoices being generated
@@ -108,7 +110,7 @@ def generate_draft_invoice_for_ticket(ticket_id):
 		zen_total = 0
 		for line in line_items:
 			inv_summary += f"{line['Description']}\n"
-			total += int(line['UnitAmount'])
+			zen_total += int(line['UnitAmount'])
 
 		inv_summary += f"\n\nTotal: £{zen_total}"
 
@@ -125,6 +127,5 @@ def generate_draft_invoice_for_ticket(ticket_id):
 		body = f"Error Generating Invoice: {e}"
 		comment = Comment(public=False, body=body)
 		ticket.comment = comment
-		ticket.status = 'open'
 		zendesk.client.tickets.update(ticket)
 		raise e

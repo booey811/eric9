@@ -2,7 +2,7 @@ import logging
 from pprint import pprint as p
 import json
 
-from . import quotes as slack_quotes, misc, entities, orders, counts, checks
+from . import quotes as slack_quotes, misc, entities, orders, counts, checks, ai_invoices
 from ...services.slack import slack_app, builders, blocks
 from ...services import monday
 

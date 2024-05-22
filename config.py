@@ -135,6 +135,11 @@ class Config(object):
 		"collection_contact": "Kae Aziz",
 	}
 
+	AI_CHANNEL_IDS = {
+		"invoices": "C074NRQ94G0"  # dev-workspace: ai-invoices
+	}
+
+
 	def get_vars(self):
 		return (
 			f"CONFIG: {self.CONFIG}",
@@ -158,6 +163,10 @@ class ProductionConfig(Config):
 	STUART_ENV = 'production'
 	STUART_CLIENT_ID = os.environ['STUART_ID_PROD']
 	STUART_CLIENT_SECRET = os.environ['STUART_SECRET_PROD']
+
+	AI_CHANNEL_IDS = {
+		"invoices": "C06954NEQ4W"  #icorrect-workspace: eric9:ai-assistant
+	}
 
 
 class DevelopmentConfig(Config):

@@ -129,8 +129,11 @@ def fetch_run(thread_id, run_id):
 	return run_obj
 
 
-def list_messages(thread_id, limit=20):
-	result = client.beta.threads.messages.list(thread_id, limit=limit)
+def list_messages(thread_id, limit=20, run_id=None):
+	if run_id:
+		result = client.beta.threads.messages.list(thread_id, limit=limit, run_id=run_id)
+	else:
+		result = client.beta.threads.messages.list(thread_id, limit=limit)
 	return result
 
 

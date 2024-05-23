@@ -1139,6 +1139,7 @@ class CheckViews:
 		invalid_checks = []
 		view_blocks = []
 		has_power_check = items.misc.CheckItem(special_check_item_ids[0])
+		has_power_check.load_data()
 		has_power_block = has_power_check.get_slack_block()
 		if has_power:
 			has_power_block['element']['initial_option'] = blocks.objects.option_object("Yes", "Yes")

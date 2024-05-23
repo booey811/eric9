@@ -27,7 +27,7 @@ def check_run(thread_id, run_id, channel_id, status_message_ts):
 				text=f"Thread is still running, status: {run.status}",
 				ts=status_message_ts
 			)
-			if conf.CONFIG == 'production':
+			if conf.CONFIG == 'PRODUCTION':
 				q_ai_results.enqueue_in(
 					time_delta=datetime.timedelta(seconds=5),
 					func=check_run,

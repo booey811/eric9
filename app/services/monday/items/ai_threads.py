@@ -4,12 +4,15 @@ from ..api import columns, monday_connection, get_api_items
 
 class BaseAIThreadItem(BaseItemType):
 
+	ASSISTANT_ID = None
+
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 		super().__init__(item_id, api_data, search, cache_data)
 
 
 class InvoiceAssistantThreadItem(BaseAIThreadItem):
 	BOARD_ID = 6682296586
+	ASSISTANT_ID = "asst_n6uFW0EtkuBfEbEHtUUbqsvT"
 
 	@classmethod
 	def get_by_message_ts(cls, message_ts):
@@ -31,4 +34,6 @@ class InvoiceAssistantThreadItem(BaseAIThreadItem):
 	def __init__(self, item_id=None, api_data: dict = None, search=False, cache_data=None):
 		self.thread_id = columns.TextValue('text__1')
 		self.message_ts = columns.TextValue('text1__1')
+		self.slack_user_id = columns.TextValue('text3__1')
+		self.slack_user_name = columns.TextValue('text6__1')
 		super().__init__(item_id, api_data, search, cache_data)

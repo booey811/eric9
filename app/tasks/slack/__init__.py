@@ -1,1 +1,1 @@
-from . import submissions
+from . import submissions, ai_threads

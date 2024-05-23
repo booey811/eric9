@@ -4,7 +4,7 @@ import time
 import config
 
 from ....services.openai import utils as ai_utils
-from ....services import slack
+from ....services import slack, monday
 from ....cache.rq import q_ai_results
 
 conf = config.get_config()
@@ -20,6 +20,28 @@ def check_run(thread_id, run_id, channel_id, status_message_ts):
 				text=recent_message,
 				ts=status_message_ts
 			)
+			try:
+				thread_store = monday.items.ai_threads.InvoiceAssistantThreadItem.get_by_thread_id(thread_id)
+				prompt_cost = int(run.usage.prompt_tokens) * 0.0000001 * 5  # gpt-4o PROMPT: $5.00/1M tokens
+				output_cost = int(run.usage.completion_tokens) * 0.0000001 * 15  # gpt-4o PROMPT: $5.00/1M tokens
+				total_cost = max(prompt_cost + output_cost, 0.01)  # 0.01 is the minimum we can be physically charged
+
+				update = f"""RUN INFO\n\n{recent_message}\n\nPrompt Tokens: {run.usage.prompt_tokens}
+				Output Tokens: {run.usage.completion_tokens}\nTotal Cost: ${total_cost:.2f} ({run.model})"""
+
+				thread_store.add_update(update)
+
+				running_cost = thread_store.running_cost.value
+				if not running_cost:
+					running_cost = 0
+
+				running_cost += total_cost
+				thread_store.running_cost = running_cost
+				thread_store.commit()
+
+			except monday.api.items.MondayAPIError as e:
+				pass
+
 		elif run.status in ('running', 'queued', 'in_progress'):
 			# job still being completed, requeue
 			slack.slack_app.client.chat_update(

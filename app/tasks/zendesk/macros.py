@@ -26,8 +26,10 @@ def generate_draft_invoice_for_ticket(ticket_id):
 				if invoice['Status'] == 'DRAFT':
 					invoice['Status'] = 'DELETED'
 					xero.client.update_invoice(invoice)
+				elif invoice['Status'] == 'VOIDED' or invoice['Status'] == 'DELETED':
+					pass
 				else:
-					raise ValueError(f"Invoice is not in DRAFT status, cannot delete it. Status is {invoice['Status']}")
+					raise ValueError(f"Invoice is not in DRAFT or VOIDED status, cannot delete it. Status is {invoice['Status']}")
 
 		main_item_search = monday.api.monday_connection.items.fetch_items_by_column_value(
 			board_id=monday.items.MainItem.BOARD_ID,

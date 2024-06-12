@@ -38,7 +38,9 @@ def create_app():
 		return response
 
 	# Here, import and register blueprints
-	from .routes import scheduling, slack, monday as monday_routes, ai as ai_routes, zendesk as zendesk_routes, admin_routes
+	from .routes import (scheduling, slack, monday as monday_routes, ai as ai_routes, zendesk as zendesk_routes,
+						 admin_routes, xero_webhooks)
+
 	app.register_blueprint(scheduling.scheduling_bp)
 	app.register_blueprint(ai_routes.ai_bp)
 	app.register_blueprint(monday_routes.main_board.main_board_bp)
@@ -51,6 +53,5 @@ def create_app():
 	app.register_blueprint(monday_routes.financial.monday_sales_bp)
 	app.register_blueprint(monday_routes.repair_process.repair_process_bp)
 	app.register_blueprint(admin_routes.admin_bp)
+	app.register_blueprint(xero_webhooks.xero_bp)
 	return app
-
-

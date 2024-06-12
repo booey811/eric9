@@ -1,8 +1,10 @@
 import datetime
 from dateutil.parser import parse
 
+from zenpy.lib.api_objects import Comment
+
 from ...errors import EricError
-from ...services import monday, zendesk
+from ...services import monday, zendesk, xero
 from ...utilities import notify_admins_of_error
 
 
@@ -169,6 +171,47 @@ def calculate_profit_and_loss(wiwi_id):
 		notify_admins_of_error(f"Task: Error calculating profit and loss: {e}")
 		wiwi.calculation_status = "Error"
 		wiwi.commit()
+		raise e
+
+
+def notify_of_xero_invoice_payment(invoice_id):
+	try:
+		invoice = xero.client.get_invoice_by_id(invoice_id)
+		zendesk_query = zendesk.client.search(type="ticket", fieldvalue=invoice_id)
+		if len(zendesk_query) != 1:
+			raise ValueError(f"Expected 1 ticket for Xero Invoice ID {invoice_id}, found {len(zendesk_query)}")
+
+		if invoice['Status'] == 'PAID':
+			update = f"Xero Invoice {invoice['InvoiceNumber']} of £{invoice['Total']} has been paid"
+			ticket = next(zendesk_query)
+			try:
+				ticket.comment = Comment(public=False, body=update)
+				zendesk.client.tickets.update(ticket)
+			except Exception as e:
+				raise e
+			try:
+				main_id_field = [f for f in ticket.custom_fields if f['id'] == zendesk.custom_fields.FIELDS_DICT['main_item_id']][0]
+				main_id = main_id_field['value']
+				if main_id:
+					main_item = monday.items.MainItem(main_id)
+					main_item.add_update(update, thread_id=main_item.high_level_thread_id.value)
+				elif not main_id:
+					raise ValueError("No Main Item ID found in ticket, should be impossible")
+			except Exception as e:
+				raise e
+		elif invoice['Status'] in ('VOIDED', 'DELETED'):
+			zendesk_query = zendesk.client.search(type="ticket", fieldvalue=invoice_id)
+			ticket = next(zendesk_query)
+			ticket.comment = Comment(public=False, body=f"Xero Invoice has been voided or deleted. Check Xero for details.")
+			ticket.custom_fields[zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']] = None
+			zendesk.client.update_ticket(ticket)
+		elif invoice['Status'] == 'DRAFT':
+			pass
+		else:
+			raise ValueError(f"Xero Invoice Status is not PAID, VOIDED or DELETED: {invoice['Status']}")
+
+	except Exception as e:
+		notify_admins_of_error(f"Task: Error notifying of Xero invoice payment: {e}")
 		raise e
 
 

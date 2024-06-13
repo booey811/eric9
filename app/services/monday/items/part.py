@@ -14,6 +14,8 @@ class PartItem(BaseCacheableItem):
 		self.supplier_connect = columns.ConnectBoards("connect_boards")
 		self.reorder_level = columns.NumberValue("numbers")
 
+		self.all_refurb_components_connect = columns.ConnectBoards("connect_boards__1")
+
 		self._product_ids = None
 
 		super().__init__(item_id, api_data, search)
@@ -328,7 +330,6 @@ class RefurbMenuItem(BaseItemType):
 	BOARD_ID = 1106794399
 
 	def __init__(self, item_id=None, api_data=None, search=False):
-
 		self.processing_status = columns.StatusValue("status2")
 
 		self.part_connect = columns.ConnectBoards("connect_boards")
@@ -338,11 +339,9 @@ class RefurbMenuItem(BaseItemType):
 
 
 class RefurbOutputItem(BaseItemType):
-
 	BOARD_ID = 3382612900
 
 	def __init__(self, item_id=None, api_data=None, search=False):
-
 		self.part_id = columns.TextValue("text")
 		self.parts_movement_id = columns.TextValue("text__1")
 
@@ -352,6 +351,84 @@ class RefurbOutputItem(BaseItemType):
 		self.parts_adjustment_status = columns.StatusValue("status6")
 
 		super().__init__(item_id, api_data, search)
+
+
+class RefurbOutputSubItem(BaseItemType):
+	BOARD_ID = 3382624519
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+		self.refurb_component_id = columns.TextValue("text")
+		self.quantity_used = columns.NumberValue('numbers')
+		self.stock_adjust_status = columns.StatusValue("status7")
+		self.movement_item_id = columns.TextValue("text2")
+
+		super().__init__(item_id, api_data, search)
+
+
+class RefurbComponentItem(BaseItemType):
+	BOARD_ID = 3382291117
+
+	def __init__(self, item_id=None, api_data=None, search=False):
+
+		self.stock_level = columns.NumberValue("numbers0")
+
+		super().__init__(item_id, api_data, search)
+
+	def adjust_stock_level(self, adjustment_quantity, source_item, movement_type):
+		desired_quantity = self.stock_level.value + adjustment_quantity
+		return self.set_stock_level(desired_quantity, source_item, movement_type)
+
+	def set_stock_level(self, desired_quantity, source_item, movement_type):
+
+		quantity_before = self.stock_level.value
+		difference = desired_quantity - quantity_before
+		quantity_after = desired_quantity
+
+		if difference < 0:
+			movement_direction = "Out"
+		else:
+			movement_direction = 'In'
+
+		adjustment = RefurbComponentAdjustmentItem()
+
+		adjustment.quantity_before = int(quantity_before)
+		adjustment.difference = int(difference)
+		adjustment.quantity_after = int(quantity_after)
+		adjustment.source_item_id = str(source_item.id)
+		adjustment.source_url = [source_item.name,
+								 f"https://icorrect.monday.com/boards/{source_item.BOARD_ID}/pulses/{source_item.id}"]
+		adjustment.movement_type = str(movement_type)
+		adjustment.movement_direction = movement_direction
+
+		adjustment.refurb_component_id = str(self.id)
+
+		adjustment.create(name=str(self.name))
+
+		self.stock_level = desired_quantity
+		self.commit()
+
+		adjustment.part_url = [self.name, f"https://icorrect.monday.com/boards/{RefurbComponentAdjustmentItem.BOARD_ID}/pulses/{self.id}"]
+		adjustment.commit()
+
+		return adjustment
+
+
+class RefurbComponentAdjustmentItem(BaseItemType):
+	BOARD_ID = 3390050868
+
+	def __init__(self, item_id=None, api_data: dict | None = None, search=False):
+		self.quantity_before = columns.NumberValue("numbers")
+		self.difference = columns.NumberValue("numbers_1")
+		self.quantity_after = columns.NumberValue("numbers7")
+		self.movement_type = columns.StatusValue("status1")
+		self.movement_direction = columns.StatusValue("status9")
+
+		self.refurb_component_id = columns.TextValue("text")
+
+		self.source_url = columns.LinkURLValue("link__1")
+
+		super().__init__(item_id, api_data, search)
+
 
 
 class WasteItem(BaseItemType):

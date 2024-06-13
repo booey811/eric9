@@ -55,61 +55,61 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 				mov_item.void_self()
 			monday.api.monday_connection.items.delete_item_by_id(line.id)
 
-		repair_id_lists = main_item.generate_repair_map_value_list()
+		# repair_id_lists = main_item.generate_repair_map_value_list()
 
-		def calculate_parts_from_repair_maps(p_status):
-			map_items = []
-			for combined_id, dual_id in repair_id_lists:
-				comb_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(combined_id)
-				if comb_id_result:
-					map_items.append(comb_id_result[0])
-				else:
-					dual_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(dual_id)
-					if dual_id_result:
-						map_items.append(dual_id_result[0])
-					else:
-						# need to create
-						blank = monday.items.part.RepairMapItem()
-						blank.combined_id = str(combined_id)
-						blank.dual_id = str(dual_id)
-
-						d_id, pu_id = dual_id.split("-")
-						pu_text = \
-							main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[
-								0]
-						device_text = \
-							main_item.convert_dropdown_ids_to_labels([d_id],
-																	 main_item.device_deprecated_dropdown.column_id)[0]
-						name = f"{device_text} {pu_text}"
-						if main_item.device_colour.value and main_item.device_colour.value != 'Not Selected':
-							name = f"{device_text} {pu_text} {main_item.device_colour.value}"
-
-						map_items.append(blank.create(name))
-
-			missing_part_ids = []
-			for map_item in map_items:
-				if not map_item.part_ids.value:
-					missing_part_ids.append(map_item)
-				elif len(map_item.part_ids.value) > 1:
-					p_status = "User Input Required"
-					checkout_controller.add_update(
-						f"Multiple Parts Attached to {map_item.name} - User Input Required"
-						f"\n\nPlease delete any parts that are not required and set Profile Status to 'Complete'"
-					)
-
-			if missing_part_ids:
-				urls = [
-					f"https://icorrect.monday.com/boards/{monday.items.part.PartItem.BOARD_ID}/pulses/{_.id}" for _ in
-					missing_part_ids
-				]
-				raise monday.api.exceptions.MondayDataError(
-					f"No Parts Attached to {len(missing_part_ids)} RepairMaps: {urls}")
-
-			p_ids = []
-			for map_item in map_items:
-				p_ids.extend(map_item.part_ids.value)
-
-			return p_ids, p_status
+		# def calculate_parts_from_repair_maps(p_status):
+		# 	map_items = []
+		# 	for combined_id, dual_id in repair_id_lists:
+		# 		comb_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(combined_id)
+		# 		if comb_id_result:
+		# 			map_items.append(comb_id_result[0])
+		# 		else:
+		# 			dual_id_result = monday.items.part.RepairMapItem.fetch_by_combined_ids(dual_id)
+		# 			if dual_id_result:
+		# 				map_items.append(dual_id_result[0])
+		# 			else:
+		# 				# need to create
+		# 				blank = monday.items.part.RepairMapItem()
+		# 				blank.combined_id = str(combined_id)
+		# 				blank.dual_id = str(dual_id)
+		#
+		# 				d_id, pu_id = dual_id.split("-")
+		# 				pu_text = \
+		# 					main_item.convert_dropdown_ids_to_labels([pu_id], main_item.parts_used_dropdown.column_id)[
+		# 						0]
+		# 				device_text = \
+		# 					main_item.convert_dropdown_ids_to_labels([d_id],
+		# 															 main_item.device_deprecated_dropdown.column_id)[0]
+		# 				name = f"{device_text} {pu_text}"
+		# 				if main_item.device_colour.value and main_item.device_colour.value != 'Not Selected':
+		# 					name = f"{device_text} {pu_text} {main_item.device_colour.value}"
+		#
+		# 				map_items.append(blank.create(name))
+		#
+		# 	missing_part_ids = []
+		# 	for map_item in map_items:
+		# 		if not map_item.part_ids.value:
+		# 			missing_part_ids.append(map_item)
+		# 		elif len(map_item.part_ids.value) > 1:
+		# 			p_status = "User Input Required"
+		# 			checkout_controller.add_update(
+		# 				f"Multiple Parts Attached to {map_item.name} - User Input Required"
+		# 				f"\n\nPlease delete any parts that are not required and set Profile Status to 'Complete'"
+		# 			)
+		#
+		# 	if missing_part_ids:
+		# 		urls = [
+		# 			f"https://icorrect.monday.com/boards/{monday.items.part.PartItem.BOARD_ID}/pulses/{_.id}" for _ in
+		# 			missing_part_ids
+		# 		]
+		# 		raise monday.api.exceptions.MondayDataError(
+		# 			f"No Parts Attached to {len(missing_part_ids)} RepairMaps: {urls}")
+		#
+		# 	p_ids = []
+		# 	for map_item in map_items:
+		# 		p_ids.extend(map_item.part_ids.value)
+		#
+		# 	return p_ids, p_status
 
 		def calculate_parts_from_connect_column(p_status):
 

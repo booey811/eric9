@@ -356,6 +356,41 @@ def process_refurb_output_item(refurb_output_id):
 		refurb_output.commit()
 		raise e
 
+	try:
+		list_refurb_components(refurb_output_id, refurb_output)
+	except Exception as e:
+		notify_admins_of_error(f"Could Not List Refurb Components: {e}")
+		raise e
+
+
+def list_refurb_components(refurb_output_id, refurb_output=None):
+	if not refurb_output:
+		refurb_output = monday.items.part.RefurbOutputItem(refurb_output_id)
+		refurb_output.load_data()
+
+	try:
+		part = monday.items.PartItem(refurb_output.part_id.value)
+		part.load_from_api()
+		if not part.all_refurb_components_connect.value:
+			raise monday.api.exceptions.MondayDataError(f"{part.name} has no Refurb Components Connected")
+		refurb_component_data = monday.api.get_api_items(part.all_refurb_components_connect.value)
+		refurb_components = [monday.items.part.RefurbComponentItem(_['id'], _) for _ in refurb_component_data]
+		for component in refurb_components:
+			blank = monday.items.part.RefurbOutputSubItem()
+			blank.refurb_component_id = str(component.id)
+			monday.api.monday_connection.items.create_subitem(
+				parent_item_id=refurb_output.id,
+				subitem_name=component.name,
+				column_values=blank.staged_changes
+			)
+		refurb_output.refurb_consumption_status = "Waiting for User Input"
+		refurb_output.commit()
+	except Exception as e:
+		refurb_output.refurb_consumption_status = "Error"
+		refurb_output.commit()
+		refurb_output.add_update(f"Could Not List Refurb Components: {e}")
+		raise e
+
 
 def add_waste_entry(part_id, reason, monday_user_id):
 	# first create the waste item, then use this as a source for stock adjustment

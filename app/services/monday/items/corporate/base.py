@@ -49,7 +49,7 @@ class CorporateAccountItem(BaseItemType):
 
 		super().__init__(item_id, api_data, search)
 
-	def get_current_invoice(self):
+	def get_current_invoice(self, user_name=None):
 		"""Get the current invoice for this account"""
 
 		if self.invoicing_style.value == "Pay Per Repair":
@@ -86,7 +86,10 @@ class CorporateAccountItem(BaseItemType):
 		invoice_item.corporate_account_connect = [int(self.id)]
 		invoice_item.corporate_account_item_id = str(self.id)
 		invoice_item.invoice_status = "DRAFT"
-		invoice_item.create(f"{self.name}")
+		name = f"{self.name}"
+		if user_name:
+			name = f"{name}: {user_name}"
+		invoice_item.create(name)
 
 		return invoice_item
 

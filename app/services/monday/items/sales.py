@@ -93,7 +93,7 @@ class SaleControllerItem(BaseItemType):
 				return self
 			else:
 				corp_item = self.get_corporate_account_item()
-				invoice_item = corp_item.get_current_invoice()
+				invoice_item = corp_item.get_current_invoice(self.name)
 				if not main_item.device_id:
 					raise InvoiceDataError("No Device Attached to for Main Item")
 				device = monday.items.device.DeviceItem(main_item.device_id)

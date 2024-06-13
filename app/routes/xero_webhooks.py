@@ -7,6 +7,9 @@ import base64
 
 from flask import Blueprint, request
 
+from ..cache import rq
+from .. import tasks
+
 log = logging.getLogger('eric')
 
 xero_bp = Blueprint('xero', __name__, url_prefix="/xero")
@@ -54,6 +57,10 @@ def process_invoice_update():
 		# The payload is valid
 		log.debug("Received Xero Invoice Update")
 		log.debug(request.get_json())
+		rq.q_high.enqueue(
+			tasks.monday.sales.notify_of_xero_invoice_payment,
+			request.get_json()['events'][0]['resourceId']
+		)
 		return "OK", 200
 	else:
 		# The payload is not valid

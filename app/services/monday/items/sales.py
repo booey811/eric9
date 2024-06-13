@@ -149,21 +149,24 @@ class SaleControllerItem(BaseItemType):
 						description = f"{len(courier_item_search)} Jobs @ {one_way} each"
 						source = corp_item
 					else:
-						courier_items = [
-							monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_item_search
-						]
-						courier_costs = 0
-						for courier in courier_items:
-							courier_costs += float(courier.cost_inc_vat.value)
-						description = f"{len(courier_item_search)} Jobs ({self.get_main_item().address_postcode.value})"
-						source = courier_items[0]
-					invoice_line_item = invoice_item.add_invoice_line(
-						item_name="Courier Costs",
-						description=description,
-						total_price=courier_costs,
-						line_type="Logistics",
-						source_item=source
-					)
+						try:
+							courier_items = [
+								monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_item_search
+							]
+							courier_costs = 0
+							for courier in courier_items:
+								courier_costs += float(courier.cost_inc_vat.value)
+							description = f"{len(courier_item_search)} Jobs ({self.get_main_item().address_postcode.value})"
+							source = courier_items[0]
+							invoice_line_item = invoice_item.add_invoice_line(
+								item_name="Courier Costs",
+								description=description,
+								total_price=courier_costs,
+								line_type="Logistics",
+								source_item=source
+							)
+						except ValueError:
+							pass
 
 				self.invoicing_status = "Pushed to Invoicing"
 				self.commit()

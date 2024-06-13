@@ -392,6 +392,46 @@ def list_refurb_components(refurb_output_id, refurb_output=None):
 		raise e
 
 
+def process_refurb_consumption(refurb_output_id):
+	refurb_output = monday.items.part.RefurbOutputItem(refurb_output_id)
+	refurb_output.load_data()
+
+	try:
+		subitem_data = monday.api.monday_connection.items.fetch_subitems(refurb_output_id)['data']['items'][0]['subitems']
+		subitems = [monday.items.part.RefurbOutputSubItem(_['id'], _) for _ in subitem_data]
+
+		for subitem in subitems:
+			try:
+				if not subitem.quantity_used.value:
+					quantity_used = 0
+				else:
+					quantity_used = -abs(subitem.quantity_used.value)
+				refurb_component = monday.items.part.RefurbComponentItem(subitem.refurb_component_id.value)
+				refurb_component.load_data()
+
+				inv_mov = refurb_component.adjust_stock_level(
+					adjustment_quantity=quantity_used,
+					source_item=refurb_output,
+					movement_type="Refurb Consumption",
+				)
+
+				subitem.movement_item_id = str(inv_mov.id)
+				subitem.stock_adjust_status = "Complete"
+				subitem.commit()
+			except Exception as e:
+				subitem.stock_adjust_status = "Error"
+				subitem.commit()
+				subitem.add_update(f"Could Not Process Refurb Consumption: {e}")
+				raise e
+
+		refurb_output.commit()
+	except Exception as e:
+		refurb_output.refurb_consumption_status = "Error"
+		refurb_output.commit()
+		refurb_output.add_update(f"Could Not Process Refurb Consumption: {e}")
+		raise e
+
+
 def add_waste_entry(part_id, reason, monday_user_id):
 	# first create the waste item, then use this as a source for stock adjustment
 	part = monday.items.PartItem(part_id)

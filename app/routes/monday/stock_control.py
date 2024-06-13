@@ -110,6 +110,23 @@ def process_refurb_output_item():
 	return jsonify({'status': 'ok'}), 200
 
 
+@stock_control_bp.route("/process-refurb-output-components", methods=['POST'])
+@monday.monday_challenge
+def process_refurb_output_components():
+	log.debug('Processing Refurb Output Components')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	item_id = data['pulseId']
+	if item_id:
+		q_low.enqueue(
+			stock_tasks.process_refurb_consumption,
+			item_id
+		)
+	return jsonify({'status': 'ok'}), 200
+
+
 @stock_control_bp.route("/handle-waste-stock-adjustment", methods=['POST'])
 @monday.monday_challenge
 def handle_waste_stock_adjustment():

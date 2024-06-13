@@ -139,6 +139,8 @@ class MainItem(items.BaseItemType):
 					parts = [PartItem(_['id'], _) for _ in parts_data]
 					for part in parts:
 						update += f"{part.name}: {part.stock_level}\n"
+						if part.stock_level.value < 1:
+							in_stock = False
 
 			if in_stock:
 				update += "All parts in stock"

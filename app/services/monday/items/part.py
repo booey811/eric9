@@ -116,6 +116,8 @@ class PartItem(BaseCacheableItem):
 		self.stock_level = desired_quantity
 		self.commit()
 
+		self.save_to_cache()
+
 		adjustment.parts_connect = [self.id]
 		adjustment.commit()
 

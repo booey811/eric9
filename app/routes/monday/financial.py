@@ -28,6 +28,23 @@ def re_process_sales_item():
 	return jsonify({'message': 'OK'}), 200
 
 
+@monday_sales_bp.route('/manual-sale-creation-request', methods=['POST'])
+@monday.monday_challenge
+def manual_creation_of_sale_item_requested():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	main_id = data['pulseId']
+
+	q_high.enqueue(
+		sales_tasks.create_or_update_sale,
+		args=(main_id, True)
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
 @monday_sales_bp.route("/generate-invoice-item", methods=["POST"])
 @monday.monday_challenge
 def add_line_to_invoice_item():

@@ -8,7 +8,7 @@ from ...services import monday, zendesk, xero
 from ...utilities import notify_admins_of_error
 
 
-def create_or_update_sale(main_id):
+def create_or_update_sale(main_id, report_to_main=False):
 	# get the main item
 	main_item = monday.items.MainItem(main_id)
 
@@ -87,6 +87,12 @@ def create_or_update_sale(main_id):
 		sale_controller.processing_status = "Complete"
 
 		sale_controller.commit()
+
+		if report_to_main:
+			main_item.add_update(
+				f"Sale: https://icorrect.monday.com/boards/6285416596/views/136781267/pulses/{sale_controller.id}",
+				thread_id=main_item.high_level_thread_id.value
+			)
 
 		return sale_controller
 

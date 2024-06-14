@@ -32,6 +32,7 @@ def generate_job_data(main_board_item: monday.items.MainItem, direction, client_
 	if not str(main_board_item.phone.value).isdigit():
 		raise exceptions.AddressError(f"Invalid Phone Number: {phone}")
 
+	phone = phone.replace(" ", "")
 
 	icorrect_contact = {
 		"firstname": conf.ICORRECT_ADDRESS_INFO['collection_contact'].split()[0],

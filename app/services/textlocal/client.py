@@ -54,6 +54,8 @@ def attempt_to_deliver_text_message(main_id):
 		return "Notifications turned off"
 	try:
 		return texter.send_text_notification(main_item)
+	except messages.TextMessageNotWritten:
+		pass
 	except Exception as e:
 		main_item.add_update(f"Failed to send text message: {e}", main_item.error_thread_id.value)
 		return f"Failed to send text message: {e}"

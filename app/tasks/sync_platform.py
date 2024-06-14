@@ -304,17 +304,17 @@ def sync_to_monday(ticket_id):
 
 			for f in ticket.custom_fields:
 				if f['id'] == 360006582778:  # street
-					ticket_street = cf['value']
+					ticket_street = f['value']
 					break
 
 			for f in ticket.custom_fields:
 				if f['id'] == 360006582758:  # postcode
-					ticket_post = cf['value']
+					ticket_post = f['value']
 					break
 
 			for f in ticket.custom_fields:
 				if f['id'] == 360006582798:  # address notes
-					ticket_notes = cf['value']
+					ticket_notes = f['value']
 					break
 
 			# fetch from user

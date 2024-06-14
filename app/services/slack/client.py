@@ -11,6 +11,7 @@ conf = config.get_config()
 slack_app = App(token=conf.SLACK_BOT, signing_secret=conf.SLACK_SIGNING_SECRET)
 slack_client = slack_app.client
 
-if os.environ['SLACK_SOCKET'] == 'on' and os.environ['PROC_TYPE'] == 'web':
-	handler = SocketModeHandler(slack_app, conf.SLACK_APP)
-	handler.connect()
+if os.environ.get('JOB_TYPE', 'web') != 'scheduled':
+	if os.environ['SLACK_SOCKET'] == 'on' and os.environ['PROC_TYPE'] == 'web':
+		handler = SocketModeHandler(slack_app, conf.SLACK_APP)
+		handler.connect()

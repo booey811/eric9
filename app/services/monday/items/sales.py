@@ -253,6 +253,12 @@ class InvoiceControllerItem(BaseItemType):
 			self.xero_sync_status = "Error"
 			self.commit()
 			self.add_update(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} Not Found")
+			return False
+		elif xero_data['Status'] != "DRAFT":
+			self.add_update(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} is not in DRAFT status")
+			self.xero_sync_status = "Error"
+			self.commit()
+			return False
 
 		inv_lines_from_monday = [monday.items.sales.InvoiceLineItem(item_id=item_id) for item_id in
 								 self.subitem_ids.value]

@@ -46,6 +46,7 @@ def show_stock_count_form(ack, body, client):
 	selected_device_ids = [device['value'] for device in selected_devices]
 	if 'all' in selected_device_ids:
 		selected_devices = monday.items.DeviceItem.fetch_all()
+		selected_devices = [d for d in selected_devices if selected_device_type.lower() in d.device_type.value.lower()]
 		selected_device_ids = [str(device.id) for device in selected_devices]
 	log.debug(f"Selected devices: {selected_devices}")
 	selected_part_type = \

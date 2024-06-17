@@ -867,6 +867,9 @@ class CountsFlow(FlowController):
 	@handle_errors
 	def show_stock_count_form(self, device_ids, part_type):
 
+		devices_without_products = []
+		products_without_parts = []
+
 		loading_view = builders.ResultScreenViews.get_loading_screen("Fetching Devices....", modal=True)
 		loading_view['external_id'] = 'loading_screen'
 		f = self.ack({
@@ -876,7 +879,7 @@ class CountsFlow(FlowController):
 		devices = monday.items.DeviceItem.get(device_ids)
 		loading_screen = self.client.views_update(
 			external_id='loading_screen',
-			view=builders.ResultScreenViews.get_loading_screen(f"Fetching Parts....\n\n{','.join([d.name for d in devices])}", modal=True)
+			view=builders.ResultScreenViews.get_loading_screen(f"Fetching Parts....\n\n{', '.join([d.name for d in devices])}", modal=True)
 		)
 
 		# if device_type.lower() == 'test' and part_type.lower() == 'test':
@@ -901,7 +904,11 @@ class CountsFlow(FlowController):
 		log.debug(f"Devices for count: {devices}")
 
 		for device in devices:
-			products = device.products
+			product_ids = device.products_connect.value
+			if not product_ids:
+				devices_without_products.append(device)
+				continue
+			products = monday.items.ProductItem.get(product_ids)
 			for product in products:
 				try:
 					part_type_from_monday = product.product_type.value.lower()
@@ -910,6 +917,9 @@ class CountsFlow(FlowController):
 					continue
 
 				if part_type_from_monday in part_type.lower():
+					if not product.part_ids:
+						products_without_parts.append(product)
+						continue
 					part_ids.extend(product.part_ids)
 
 		parts_data = monday.api.get_api_items(part_ids)
@@ -935,6 +945,19 @@ class CountsFlow(FlowController):
 			})
 
 		blocks = builders.StockCountViews.stock_count_form(parts_info)
+
+		if devices_without_products:
+			blocks.append(s_blocks.add.simple_text_display(f"The following devices have no products attached, so I "
+														   f"can't fetch their"
+														   f" Products:\n\n"
+														   f"{', '.join([d.name for d in devices_without_products])}"))
+
+		if products_without_parts:
+			blocks.append(s_blocks.add.simple_text_display(f"The following products have no parts attached, so I can't "
+														   f"add them to "
+														   f"the count:\n\n"
+														   f"{', '.join([p.name for p in products_without_parts])}"))
+
 		view = self.get_view(
 			"Stock Count",
 			blocks=blocks,

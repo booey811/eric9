@@ -949,7 +949,7 @@ class CountsFlow(FlowController):
 		if devices_without_products:
 			blocks.append(s_blocks.add.simple_text_display(f"The following devices have no products attached, so I "
 														   f"can't fetch their"
-														   f" Products:\n\n"
+														   f" Products and connected Parts:\n\n"
 														   f"{', '.join([d.name for d in devices_without_products])}"))
 
 		if products_without_parts:

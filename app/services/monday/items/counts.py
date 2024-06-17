@@ -28,7 +28,6 @@ class CountLineItem(BaseItemType):
 
 		self.counted = columns.NumberValue("numbers")
 		self.expected = columns.NumberValue("numbers2")
-		self.supply_price = columns.NumberValue("numbers1")
 
 		self.adjustment_status = columns.StatusValue("status1")
 

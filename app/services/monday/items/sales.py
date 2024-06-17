@@ -199,6 +199,7 @@ class InvoiceControllerItem(BaseItemType):
 
 		self.corporate_account_item_id = columns.TextValue("text9")
 		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")
+		self.po_number = columns.TextValue("text__1")
 
 		self.invoice_id = columns.TextValue("text8")
 		self.invoice_number = columns.TextValue("text0")
@@ -267,6 +268,10 @@ class InvoiceControllerItem(BaseItemType):
 					unit_amount=round(line.price_inc_vat.value / 1.2, 2),
 				)
 			)
+
+		if self.po_number.value:
+			xero_data['Reference'] = self.po_number.value
+
 		xero_invoice = xero.client.update_invoice(xero_data)
 		for line_item in xero_invoice['LineItems']:
 			for line in inv_lines_from_monday:

@@ -239,13 +239,13 @@ def update_corporate_invoicing_status(invoice_id):
 		corporate_invoicing = monday.items.sales.InvoiceControllerItem(results[0]['id'], results[0])
 
 		if invoice['Status'] == 'PAID':
-			corporate_invoicing.invoicing_status = "PAID"
+			corporate_invoicing.invoice_status = "PAID"
 			corporate_invoicing.commit()
 		elif invoice['Status'] == 'AUTHORISED':
-			corporate_invoicing.invoicing_status = "AUTHORISED"
+			corporate_invoicing.invoice_status = "AUTHORISED"
 			corporate_invoicing.commit()
 		elif invoice['Status'] in ('VOIDED', 'DELETED'):
-			corporate_invoicing.invoicing_status = "VOIDED"
+			corporate_invoicing.invoice_status = "VOIDED"
 			corporate_invoicing.commit()
 		elif invoice['Status'] == 'DRAFT':
 			pass

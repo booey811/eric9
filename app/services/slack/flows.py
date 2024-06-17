@@ -847,8 +847,8 @@ class CountsFlow(FlowController):
 		super().__init__("count", slack_client, ack, body, meta)
 
 	@handle_errors
-	def show_stock_count_entry_point(self):
-		blocks = builders.StockCountViews.stock_count_entry_point()
+	def show_stock_count_entry_point(self, device_type=None):
+		blocks = builders.StockCountViews.stock_count_entry_point(device_type)
 		view = self.get_view(
 			"Generate Stock Count",
 			blocks=blocks,
@@ -856,12 +856,16 @@ class CountsFlow(FlowController):
 			submit="Generate",
 			callback_id='stock_count_entry_point'
 		)
-		self.update_view(view, method='open')
+		if device_type:
+			method = 'update'
+		else:
+			method = 'open'
+		self.update_view(view, method=method)
 		self.ack()
 		return view
 
 	@handle_errors
-	def show_stock_count_form(self, device_type, part_type):
+	def show_stock_count_form(self, device_ids, part_type):
 
 		loading_view = builders.ResultScreenViews.get_loading_screen("Fetching Devices....", modal=True)
 		loading_view['external_id'] = 'loading_screen'
@@ -869,47 +873,46 @@ class CountsFlow(FlowController):
 			"response_action": "push",
 			"view": loading_view
 		})
+		devices = monday.items.DeviceItem.get(device_ids)
+		loading_screen = self.client.views_update(
+			external_id='loading_screen',
+			view=builders.ResultScreenViews.get_loading_screen(f"Fetching Parts....\n\n{','.join([d.name for d in devices])}", modal=True)
+		)
 
-		if device_type.lower() == 'test' and part_type.lower() == 'test':
-			loading_screen = self.client.views_update(
-				external_id='loading_screen',
-				view=builders.ResultScreenViews.get_loading_screen("Fetching TESTS....", modal=True)
-			)
-			parts_data = monday.api.get_api_items(conf.MONDAY_TEST_ITEM_IDS['parts'])
-		else:
-			all_devices = monday.items.DeviceItem.fetch_all()
-			devices = []
-			part_ids = []
-			for device in all_devices:
+		# if device_type.lower() == 'test' and part_type.lower() == 'test':
+		# 	loading_screen = self.client.views_update(
+		# 		external_id='loading_screen',
+		# 		view=builders.ResultScreenViews.get_loading_screen("Fetching TESTS....", modal=True)
+		# 	)
+		# 	parts_data = monday.api.get_api_items(conf.MONDAY_TEST_ITEM_IDS['parts'])
+		# else:
+		# devices = []
+		part_ids = []
+		# for device in all_devices:
+		# 	try:
+		# 		device_type_from_monday = device.device_type.value.lower()
+		# 	except AttributeError:
+		# 		notify_admins_of_error(f"Device {device.id} has no device type: Cannot Add to Count")
+		# 		continue
+		#
+		# 	if device_type_from_monday == device_type.lower():
+		# 		devices.append(device)
+
+		log.debug(f"Devices for count: {devices}")
+
+		for device in devices:
+			products = device.products
+			for product in products:
 				try:
-					device_type_from_monday = device.device_type.value.lower()
+					part_type_from_monday = product.product_type.value.lower()
 				except AttributeError:
-					notify_admins_of_error(f"Device {device.id} has no device type: Cannot Add to Count")
+					notify_admins_of_error(f"Product {product.id} has no part type: Cannot Add to Count")
 					continue
 
-				if device_type_from_monday == device_type.lower():
-					devices.append(device)
+				if part_type_from_monday in part_type.lower():
+					part_ids.extend(product.part_ids)
 
-			log.debug(f"Devices for count: {devices}")
-
-			for device in devices:
-				products = device.products
-				for product in products:
-					try:
-						part_type_from_monday = product.product_type.value.lower()
-					except AttributeError:
-						notify_admins_of_error(f"Product {product.id} has no part type: Cannot Add to Count")
-						continue
-
-					if part_type_from_monday in part_type.lower():
-						part_ids.extend(product.part_ids)
-
-			loading_screen = self.client.views_update(
-				external_id='loading_screen',
-				view=builders.ResultScreenViews.get_loading_screen("Fetching Parts....", modal=True)
-			)
-
-			parts_data = monday.api.get_api_items(part_ids)
+		parts_data = monday.api.get_api_items(part_ids)
 
 		existing_ids = set()
 		all_parts = []

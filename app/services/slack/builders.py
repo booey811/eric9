@@ -860,7 +860,7 @@ class QuoteInformationViews:
 class StockCountViews:
 
 	@staticmethod
-	def stock_count_entry_point():
+	def stock_count_entry_point(device_type=None):
 		"""show options for generating the subsequent count forms"""
 		view_blocks = []
 
@@ -877,9 +877,33 @@ class StockCountViews:
 					options=[blocks.objects.option_object(_, _.lower()) for _ in device_types]
 				),
 				block_id="device_type_select",
-				action_id="stock_count_device_type"
+				action_id="stock_count_device_type",
+				dispatch_action=True
 			)
 		)
+
+		if device_type:
+			all_devices = items.DeviceItem.fetch_all()
+			selected_devices = []
+			for device in all_devices:
+				if device.device_type.value:
+					if device.device_type.value.lower() in device_type.lower():
+						selected_devices.append([device.name, device.id])
+			selected_devices.append(['All Devices', 'all'])
+			selected_devices.sort(key=lambda x: x[0])
+			view_blocks.append(
+				blocks.add.input_block(
+					block_title="Select desired devices",
+					element=blocks.elements.multi_select_element(
+						placeholder="Select devices",
+						action_id="stock_count_select_devices",
+						options=[blocks.objects.option_object(_[0], _[1]) for _ in selected_devices]
+					),
+					block_id="device_select",
+					action_id="stock_count_select_devices",
+					dispatch_action=False
+				)
+			)
 
 		part_types = ['Screen/LCD', 'Battery', 'Rear Camera', 'Other']
 		if conf.CONFIG == 'TESTING':

@@ -24,18 +24,36 @@ def show_stock_count_entry_point(ack, client, body):
 	return True
 
 
+@slack_app.action("stock_count_device_type")
+def show_available_devices_for_stock_count(ack, client, body):
+	log.info('showing devices for stock count')
+	selected_device_type = body['actions'][0]['selected_option']['value']
+	log.debug(f"Selected device type: {selected_device_type}")
+	flow_controller = flows.CountsFlow(slack_client=client, ack=ack, body=body, meta={})
+	flow_controller.show_stock_count_entry_point(selected_device_type)
+	return True
+
+
 @slack_app.view("stock_count_entry_point")
 def show_stock_count_form(ack, body, client):
 	log.info('showing stock count form')
 	meta = json.loads(body['view']['private_metadata'])
 
 	selected_device_type = \
-	body['view']['state']['values']['device_type_select']['stock_count_device_type']['selected_option']['value']
+		body['view']['state']['values']['device_type_select']['stock_count_device_type']['selected_option']['value']
+	log.debug(f"Selected device type: {selected_device_type}")
+	selected_devices = body['view']['state']['values']['device_select']['stock_count_select_devices']['selected_options']
+	selected_device_ids = [device['value'] for device in selected_devices]
+	if 'all' in selected_device_ids:
+		selected_devices = monday.items.DeviceItem.fetch_all()
+		selected_device_ids = [str(device.id) for device in selected_devices]
+	log.debug(f"Selected devices: {selected_devices}")
 	selected_part_type = \
-	body['view']['state']['values']['part_type_select']['stock_count_part_type']['selected_option']['value']
+		body['view']['state']['values']['part_type_select']['stock_count_part_type']['selected_option']['value']
+	log.debug(f"Selected part type: {selected_part_type}")
 
 	flow_controller = flows.CountsFlow(slack_client=client, ack=ack, body=body, meta=meta)
-	flow_controller.show_stock_count_form(selected_device_type, selected_part_type)
+	flow_controller.show_stock_count_form(selected_device_ids, selected_part_type)
 	return True
 
 

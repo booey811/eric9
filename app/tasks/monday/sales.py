@@ -221,5 +221,41 @@ def notify_of_xero_invoice_payment(invoice_id):
 		raise e
 
 
+def update_corporate_invoicing_status(invoice_id):
+	try:
+		invoice = xero.client.get_invoice_by_id(invoice_id)
+		invoice_item_search = monday.api.monday_connection.items.fetch_items_by_column_value(
+			board_id=monday.items.sales.InvoiceControllerItem.BOARD_ID,
+			column_id="text8",
+			value=invoice_id
+		)
+		if invoice_item_search.get('error_code'):
+			raise ValueError(f"Error fetching invoice item from Monday: {invoice_item_search['error_message']}")
+
+		results = invoice_item_search['data']['items_page_by_column_values']['items']
+		if not results:
+			return False
+
+		corporate_invoicing = monday.items.sales.InvoiceControllerItem(results[0]['id'], results[0])
+
+		if invoice['Status'] == 'PAID':
+			corporate_invoicing.invoicing_status = "PAID"
+			corporate_invoicing.commit()
+		elif invoice['Status'] == 'AUTHORISED':
+			corporate_invoicing.invoicing_status = "AUTHORISED"
+			corporate_invoicing.commit()
+		elif invoice['Status'] in ('VOIDED', 'DELETED'):
+			corporate_invoicing.invoicing_status = "VOIDED"
+			corporate_invoicing.commit()
+		elif invoice['Status'] == 'DRAFT':
+			pass
+		else:
+			raise ValueError(f"Xero Invoice Status is not PAID, VOIDED or DELETED: {invoice['Status']}")
+
+	except Exception as e:
+		notify_admins_of_error(f"Task: Error updating corporate invoicing status: {e}")
+		raise e
+
+
 class SalesError(EricError):
 	pass

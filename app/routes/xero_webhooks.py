@@ -61,6 +61,10 @@ def process_invoice_update():
 			tasks.monday.sales.notify_of_xero_invoice_payment,
 			request.get_json()['events'][0]['resourceId']
 		)
+		rq.q_high.enqueue(
+			tasks.monday.sales.update_corporate_invoicing_status,
+			request.get_json()['events'][0]['resourceId']
+		)
 		return "OK", 200
 	else:
 		# The payload is not valid

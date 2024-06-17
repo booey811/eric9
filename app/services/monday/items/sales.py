@@ -244,7 +244,8 @@ class InvoiceControllerItem(BaseItemType):
 				"Contact": {
 					"ContactID": str(corp_item.xero_contact_id.value)
 				},
-				"LineItems": []
+				"LineItems": [],
+				"Status": "DRAFT",
 			}
 		else:
 			xero_data = xero.client.get_invoice_by_id(self.invoice_id.value)

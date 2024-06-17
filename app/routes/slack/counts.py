@@ -84,7 +84,7 @@ def process_stock_count_form_submission(ack, body):
 		raise SlackRoutingError("Error processing stock count form submission")
 
 	exceptions.save_metadata(meta, "count_form_submission_error")
-	ack()
+	ack({"response_action": "clear"})
 	if conf.CONFIG in ("DEVELOPMENT", "TESTING"):
 		process_slack_stock_count(meta)
 	else:

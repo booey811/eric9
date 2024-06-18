@@ -1,3 +1,5 @@
+import math
+
 from ....errors import EricError
 from ....utilities import notify_admins_of_error, users
 from ... import zendesk, monday, xero
@@ -144,35 +146,41 @@ class SaleControllerItem(BaseItemType):
 				self.invoice_line_item_connect = [int(line_item.id)]
 				self.invoice_line_item_id = str(line_item.id)
 
-				courier_item_search = monday.items.misc.CourierDataDumpItem(search=True).search_board_for_items(
-					"main_item_id",
-					str(self.main_item_id.value)
-				)
-				if courier_item_search:
+				if corp_item.courier_price.value == 0:
+					# corporate account does not pay for couriers
+					pass
+				else:
 					if corp_item.courier_price.value:
-						one_way = corp_item.courier_price.value
-						courier_costs = float(one_way) * len(courier_item_search)
-						description = f"{len(courier_item_search)} Jobs @ {one_way} each"
+						# corporate account has a fixed courier price
+						courier_costs = round(float(corp_item.courier_price.value) * 2, 2)
 						source = corp_item
 					else:
-						try:
-							courier_items = [
-								monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_item_search
-							]
-							courier_costs = 0
-							for courier in courier_items:
-								courier_costs += float(courier.cost_inc_vat.value)
-							description = f"{len(courier_item_search)} Jobs ({self.get_main_item().address_postcode.value})"
-							source = courier_items[0]
-							invoice_line_item = invoice_item.add_invoice_line(
-								item_name="Courier Costs",
-								description=description,
-								total_price=courier_costs,
-								line_type="Logistics",
-								source_item=source
-							)
-						except ValueError:
-							pass
+						courier_item_search = monday.items.misc.CourierDataDumpItem(search=True).search_board_for_items(
+							"main_item_id",
+							str(self.main_item_id.value)
+						)
+						if courier_item_search:
+							try:
+								courier_item = [
+									monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_item_search
+								][0]
+								courier_costs = math.ceil(courier_item.cost_inc_vat.value * 2)
+								source = courier_item
+							except ValueError:
+								courier_costs = 20
+								source = None
+						else:
+							courier_costs = 20
+							source = None
+
+					description = f"Courier Service ({self.get_main_item().address_postcode.value})"
+					invoice_line_item = invoice_item.add_invoice_line(
+						item_name="Courier Costs",
+						description=description,
+						total_price=courier_costs,
+						line_type="Logistics",
+						source_item=source
+					)
 
 				self.invoicing_status = "Pushed to Invoicing"
 				self.commit()

@@ -111,6 +111,24 @@ def update_stock_checkouts(main_id, create_sc_item=False):
 		#
 		# 	return p_ids, p_status
 
+		if not main_item.parts_connect.value:
+			main_item.main_status = 'Missing Parts Used'
+			main_item.commit()
+			main_item.add_update(
+				"Please indicate which parts you have used by filling in the 'Parts Used' column. If "
+				"you have not used any parts, please select 'No Parts Used'",
+				main_item.high_level_thread_id.value
+			)
+			technician = users.User(monday_id=main_item.technician_id.value[0])
+			monday.api.monday_connection.items.move_item_to_group(
+				main_item.id,
+				technician.repair_group_id,
+			)
+			raise monday.api.exceptions.MondayDataError(
+				"No Parts Connected to Main Item, ask the technician in charge of the repair to fill in the 'Parts Used'"
+				" column"
+			)
+
 		def calculate_parts_from_connect_column(p_status):
 
 			if not main_item.parts_connect.value:

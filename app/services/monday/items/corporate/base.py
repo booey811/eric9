@@ -32,8 +32,6 @@ class CorporateAccountItem(BaseItemType):
 		self.zen_org_id = columns.TextValue("text9")
 		self.xero_contact_id = columns.TextValue("text")
 
-		self.current_invoice_id = columns.TextValue("text1")
-
 		self.invoicing_style = columns.StatusValue("status7")
 
 		self.req_po = columns.CheckBoxValue("checkbox6")
@@ -56,12 +54,12 @@ class CorporateAccountItem(BaseItemType):
 			# we will create and return a new invoice item
 			pass
 		elif self.invoicing_style.value in ("Monthly Payments", "Batch"):
-			# get and return a draft invoice item
+			# get and return a draft or un-synced invoice item
 			search = monday.items.sales.InvoiceControllerItem(search=True).search_board_for_items(
 				'corporate_account_item_id', str(self.id)
 			)
 			all_inv_items = [monday.items.sales.InvoiceControllerItem(i['id'], i) for i in search]
-			draft_items = [i for i in all_inv_items if i.invoice_status.value == "DRAFT"]
+			draft_items = [i for i in all_inv_items if i.invoice_status.value in ("DRAFT", "NOT ON XERO")]
 			if not draft_items:
 				# create and return an invoice item
 				pass
@@ -85,7 +83,6 @@ class CorporateAccountItem(BaseItemType):
 		invoice_item = monday.items.sales.InvoiceControllerItem()
 		invoice_item.corporate_account_connect = [int(self.id)]
 		invoice_item.corporate_account_item_id = str(self.id)
-		invoice_item.invoice_status = "DRAFT"
 		name = f"{self.name}"
 		if user_name:
 			name = f"{name}: {user_name}"

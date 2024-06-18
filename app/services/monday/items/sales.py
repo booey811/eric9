@@ -60,7 +60,7 @@ class SaleControllerItem(BaseItemType):
 				corporate_account_item_id = organization.organization_fields['monday_corporate_id']
 				if not corporate_account_item_id:
 					raise InvoiceDataError(
-						f"No corporate account reference found for {organization['name']}, please assign a Corporate Account Link")
+						f"No corporate account reference found for {organization.name}, please assign a Corporate Account Link")
 				i = monday.items.corporate.base.CorporateAccountItem(corporate_account_item_id)
 			self._corporate_account_item = i
 			self.corporate_account_item_id = str(self._corporate_account_item.id)

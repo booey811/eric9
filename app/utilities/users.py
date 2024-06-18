@@ -54,6 +54,23 @@ USER_DATA = [
 		"repair_group_id": "new_group34603",  # ferrari's group
 		"gcal_sessions_id": "c_c1522dbbb23a4d3f64454d7d9bba44510b4e21eb78b298ddd6059bd254750671@group.calendar.google.com"
 	},
+	{
+		"name": "ricky",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U0254LU0CRJ",  # ricky
+		"monday_id": "1034414",  # ricky
+		"repair_group_id": "new_group80898",  # ricky's group
+		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
+	},
+	{
+		"name": "kae",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U06C3VBCK2N",  # kae
+		"monday_id": "53760140",  # kae
+		"repair_group_id": "new_group6580",  # client services group
+		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
+	},
+
 ]
 
 

@@ -306,6 +306,7 @@ class InvoiceControllerItem(BaseItemType):
 			self.invoice_id = xero_invoice['InvoiceID']
 			self.invoice_number = xero_invoice['InvoiceNumber']
 
+			self.invoice_status = "DRAFT"
 			self.xero_sync_status = "Synced"
 			self.commit()
 		except Exception as e:

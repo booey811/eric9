@@ -60,7 +60,9 @@ class SaleControllerItem(BaseItemType):
 				corporate_account_item_id = organization.organization_fields['monday_corporate_id']
 				if not corporate_account_item_id:
 					raise InvoiceDataError(
-						f"No corporate account reference found for {organization.name}, please assign a Corporate Account Link")
+						f"No corporate account reference found for {organization.name}, please select a Corporate "
+						f"Account in the 'Corporate Account' column"
+					)
 				i = monday.items.corporate.base.CorporateAccountItem(corporate_account_item_id)
 			self._corporate_account_item = i
 			self.corporate_account_item_id = str(self._corporate_account_item.id)
@@ -88,8 +90,12 @@ class SaleControllerItem(BaseItemType):
 				self.commit()
 				return self
 			elif self.processing_status.value != "Complete":
-				self.invoicing_status = "Missing Info"
+				self.invoicing_status = "No Products"
 				self.commit()
+				self.add_update(
+					"Cannot add to invoice as there is no product data for the item. Go Back to the default view and "
+					"ensure the Product Assignment Process has been completed for this Sale"
+				)
 				return self
 			else:
 				corp_item = self.get_corporate_account_item()

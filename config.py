@@ -113,6 +113,8 @@ class Config(object):
 		'andres': os.environ['MOTION_ANDRES'],
 		"ferrari": os.environ['MOTION_GABE'],
 		"dev-slack-workspace": os.environ['MOTION_GABE'],
+		"ricky": os.environ['MOTION_GABE'],
+		"kae": os.environ['MOTION_GABE'],
 	}
 
 	# MOTION REFERENCES

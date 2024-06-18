@@ -85,9 +85,8 @@ class SaleControllerItem(BaseItemType):
 				self.invoicing_status = "Warranty"
 				self.commit()
 				return self
-			elif self.invoice_line_item_id.value:
-				notify_admins_of_error(f"Blocked attempt to regenerate invoice: {str(self)}")
-				self.add_update("Already pushed to invoicing, please delete any connected items and try again.")
+			elif self.invoice_line_item_connect.value:
+				self.add_update("Already pushed to invoicing, please delete the connected line item to re-add to invoice")
 				self.invoicing_status = "Pushed to Invoicing"
 				self.commit()
 				return self
@@ -103,7 +102,7 @@ class SaleControllerItem(BaseItemType):
 				corp_item = self.get_corporate_account_item()
 				invoice_item = corp_item.get_current_invoice(self.name)
 				if not main_item.device_id:
-					raise InvoiceDataError("No Device Attached to for Main Item")
+					raise InvoiceDataError("No Device Attached to Main Item. This is required for invoicing")
 				device = monday.items.device.DeviceItem(main_item.device_id)
 				repairs = [monday.items.sales.SaleLineItem(item_id=item_id) for item_id in self.subitem_ids.value]
 				repair_total = 0
@@ -187,8 +186,6 @@ class SaleControllerItem(BaseItemType):
 
 		except Exception as e:
 			notify_admins_of_error(f"Error adding sale to invoice: {e}")
-			if invoice_item:
-				monday.api.monday_connection.items.delete_item_by_id(int(invoice_item.id))
 			self.invoicing_status = "Error"
 			self.commit()
 			self.add_update(f"Error adding sale to invoice: {e}")

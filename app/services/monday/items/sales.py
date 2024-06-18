@@ -249,62 +249,70 @@ class InvoiceControllerItem(BaseItemType):
 		return InvoiceLineItem(r['data']['create_subitem']['id'], r['data']['create_subitem'])
 
 	def sync_to_xero(self):
+		try:
+			if not self.po_number.value:
+				corporate_account_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_item_id.value)
+				if corporate_account_item.req_po.value:
+					raise InvoiceDataError(
+						"A PO Number is required for this Corporate Account. Please add this to the 'PO Number/Invoice"
+						" Reference' column and try again"
+					)
 
-		if not self.invoice_id.value:
-			# we will need to create the invoice in xero
-			corp_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_item_id.value)
-			xero_data = {
-				"Type": "ACCREC",
-				"Contact": {
-					"ContactID": str(corp_item.xero_contact_id.value)
-				},
-				"LineItems": [],
-				"Status": "DRAFT",
-			}
-		else:
-			xero_data = xero.client.get_invoice_by_id(self.invoice_id.value)
+			if not self.invoice_id.value:
+				# we will need to create the invoice in xero
+				corp_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_item_id.value)
+				xero_data = {
+					"Type": "ACCREC",
+					"Contact": {
+						"ContactID": str(corp_item.xero_contact_id.value)
+					},
+					"LineItems": [],
+					"Status": "DRAFT",
+				}
+			else:
+				xero_data = xero.client.get_invoice_by_id(self.invoice_id.value)
 
-		if not xero_data:
-			self.xero_sync_status = "Error"
-			self.commit()
-			self.add_update(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} Not Found")
-			return False
-		elif xero_data['Status'] != "DRAFT":
-			self.add_update(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} is not in DRAFT status")
-			self.xero_sync_status = "Error"
-			self.commit()
-			return False
+			if not xero_data:
+				raise InvoiceDataError(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} Not Found")
+			elif xero_data['Status'] != "DRAFT":
+				raise InvoiceDataError(f"Cannot Sync to Xero: Invoice {self.invoice_id.value} is not in DRAFT status")
 
-		inv_lines_from_monday = [monday.items.sales.InvoiceLineItem(item_id=item_id) for item_id in
-								 self.subitem_ids.value]
+			inv_lines_from_monday = [
+				monday.items.sales.InvoiceLineItem(item_id=item_id) for item_id in self.subitem_ids.value
+			]
 
-		xero_data['LineItems'] = []
+			xero_data['LineItems'] = []
 
-		for line in inv_lines_from_monday:
-			self.add_update("Adding Line Item to Invoice: " + line.line_description.value)
-			xero_data['LineItems'].append(
-				xero.client.make_line_item(
-					description=line.line_description.value,
-					quantity=1,
-					unit_amount=round(line.price_inc_vat.value / 1.2, 2),
-				)
-			)
-
-		if self.po_number.value:
-			xero_data['Reference'] = self.po_number.value
-
-		xero_invoice = xero.client.update_invoice(xero_data)
-		for line_item in xero_invoice['LineItems']:
 			for line in inv_lines_from_monday:
-				if line.line_description.value == line_item['Description']:
-					line.line_item_id = line_item['LineItemID']
-					line.commit()
+				self.add_update("Adding Line Item to Invoice: " + line.line_description.value)
+				xero_data['LineItems'].append(
+					xero.client.make_line_item(
+						description=line.line_description.value,
+						quantity=1,
+						unit_amount=round(line.price_inc_vat.value / 1.2, 2),
+					)
+				)
 
-		self.invoice_id = xero_invoice['InvoiceID']
-		self.invoice_number = xero_invoice['InvoiceNumber']
+			if self.po_number.value:
+				xero_data['Reference'] = self.po_number.value
 
-		self.xero_sync_status = "Synced"
-		self.commit()
+			xero_invoice = xero.client.update_invoice(xero_data)
+			for line_item in xero_invoice['LineItems']:
+				for line in inv_lines_from_monday:
+					if line.line_description.value == line_item['Description']:
+						line.line_item_id = line_item['LineItemID']
+						line.commit()
+
+			self.invoice_id = xero_invoice['InvoiceID']
+			self.invoice_number = xero_invoice['InvoiceNumber']
+
+			self.xero_sync_status = "Synced"
+			self.commit()
+		except Exception as e:
+			self.xero_sync_status = "Error"
+			self.commit()
+			self.add_update(f"Error syncing to xero: {e}")
+			raise e
 
 
 class InvoiceLineItem(BaseItemType):

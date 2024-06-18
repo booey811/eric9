@@ -24,12 +24,10 @@ def book_courier(main_id, direction):
 			main_item.add_update(f"Could not generate job data: {e}", main_item.error_thread_id)
 			monday.api.monday_connection.items.delete_item_by_id(log_item.id)
 			raise e
-		try:
-			response = stuart.client.create_job(job_data)
-			response = response.json()
-		except Exception as e:
-			main_item.add_update(f"Could not create job: {e}", main_item.error_thread_id)
-			raise e
+		response = stuart.client.create_job(job_data)
+		response = response.json()
+		if response.get('error'):
+			raise ValueError(response['data'])
 		log_job_data(job_data, response, main_item, log_item)
 		if direction == 'incoming':
 			main_item.be_courier_collection = 'Booking Complete'
@@ -44,13 +42,11 @@ def book_courier(main_id, direction):
 			))
 			zendesk.client.tickets.update(ticket)
 		except Exception as e:
-			main_item.add_update(f"Courier Booked, but could not update ticket with tracking link: {e}",
-								 main_item.error_thread_id)
-			raise e
+			raise monday.api.MondayAPIError(f"Courier Booked, but could not update ticket with tracking link: {e}",)
+
 		main_item.commit()
 
 	except Exception as e:
-		notify_admins_of_error(e)
 		if direction == 'incoming':
 			main_item.be_courier_collection = 'Booking Failed'
 		elif direction == 'outgoing':
@@ -58,6 +54,7 @@ def book_courier(main_id, direction):
 		main_item.main_status = "Error"
 		notify_admins_of_error(f"Error booking courier for {str(main_item)}: {e}")
 		main_item.commit()
+		main_item.add_update(f"Error booking courier: {e}", main_item.error_thread_id.value)
 		raise e
 
 

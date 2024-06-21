@@ -110,7 +110,7 @@ def show_checks_form(ack, body, client):
 @slack_app.action(re.compile(r"checks_conditional__(\w+)"))
 def adjust_checks_form_from_conditional(ack, body, client):
 	meta = json.loads(body['view']['private_metadata'])
-	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....')
+	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....\nThis takes 5-10 seconds.')
 	loading['external_id'] = "checks_conditional_adjustments"
 	data = client.views_update(
 		view_id=body['view']['id'],

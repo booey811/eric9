@@ -97,7 +97,7 @@ def show_checks_form(ack, body, client):
 	main_id = body['message']['metadata']['event_payload']['main_id']
 	checkpoint = body['message']['metadata']['event_payload']['check_point_name']
 	external_id = f"checks__{main_id}"
-	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....')
+	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....\nThis takes 5-10 seconds.')
 	loading['external_id'] = external_id
 	new_view = client.views_open(
 		trigger_id=body['trigger_id'],

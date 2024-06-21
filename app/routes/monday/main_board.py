@@ -204,12 +204,6 @@ def handle_main_status_adjustment():
 				"create_sc_item": True
 			}
 		)
-	elif new_label == 'Under Repair':
-		monday.repair_process.request_checks_from_technician(
-			main_item_id=data['pulseId'],
-			checkpoint_name='tech_post_check',
-			monday_user_id=data['userId']
-		)
 
 	return jsonify({'message': 'OK'}), 200
 

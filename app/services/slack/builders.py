@@ -1174,6 +1174,7 @@ class CheckViews:
 
 		device = items.DeviceItem(device_id)
 		check_set = device.pre_check_set
+		check_set.load_from_api()
 		check_items = check_set.get_check_items(checkpoint_name)
 		sorted_check_items = sorted(
 			check_items,

@@ -167,6 +167,14 @@ def handle_main_status_adjustment():
 				'monday_user_id': data['userId']
 			}
 		)
+		q_high.enqueue(
+			monday.repair_process.request_checks_from_technician,
+			kwargs={
+				"main_item_id": data['pulseId'],
+				"checkpoint_name": "tech_pre_check",
+				"monday_user_id": data['userId']
+			}
+		)
 	else:
 		q_low.enqueue(
 			sessions.end_session,

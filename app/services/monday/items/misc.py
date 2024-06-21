@@ -243,8 +243,9 @@ class RepairProfitModelItem(BaseItemType):
 class PreCheckSet(BaseCacheableItem):
 	BOARD_ID = 4347106321
 
-	AVAILABLE_CHECKPOINTS = [
+	AVAILABLE_CHECKPOINTS = [  # Checkpoint Name, Connect Column Attribute Name
 		["cs_walk_pre_check", 'cs_walk_pre_check_connect'],  # walk-ins
+		["tech_pre_check", "tech_post_check_connect"],  # technicians before a repair
 		["tech_post_check", "tech_post_check_connect"]  # technicians following a repair
 	]
 

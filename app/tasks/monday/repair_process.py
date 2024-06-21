@@ -60,13 +60,54 @@ def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id
 	else:
 		user_id = user.slack_id
 
+	# tech pre-checks should only be completed once
+	if checkpoint_name == 'tech_pre_check':
+
+		# check whether this checkpoint has already been requested
+		check_results_board_query = mon_obj.api.monday_connection.items.fetch_items_by_column_value(
+			board_id=mon_obj.items.misc.CheckResultItem.BOARD_ID,
+			column_id="text__1",
+			value=str(main_item_id)
+		)
+		if check_results_board_query.get('errors'):
+			# no results item found for this repair, proceed with creating a new one
+			pass
+		elif check_results_board_query['data']['items_page_by_column_values']['items']:
+			# results item already exists for this repair, get subitems and check checkpoint names
+			subitem_data = mon_obj.api.monday_connection.items.fetch_subitems(
+				parent_item_id=check_results_board_query['data']['items_page_by_column_values']['items'][0]['id']
+			)
+			if subitem_data.get('errors'):
+				# subitem retrieval error, proceed with creating a new one
+				pass
+			elif subitem_data['data']['items'][0]['subitems']:
+				for subitem in subitem_data['data']['items']:
+					# subitems found, check if this checkpoint has already been requested
+					try:
+						checkpoint_name_col = [
+							col for col in subitem_data['data']['items'][0]['subitems'][0]['column_values'] if
+							col['id'] == 'text55__1'
+						][0]
+						if checkpoint_name_col['text'] == checkpoint_name:
+							# checkpoint already requested, do not proceed
+							return True
+						else:
+							# checkpoint not requested, proceed
+							pass
+					except IndexError:
+						# error, create a new one and request checks anyway
+						pass
+
 	blocks = [
 		slack.blocks.add.simple_text_display(
 			text=f"*Check Request:* {main_item.name} _({device.name})_"
 		),
 		slack.blocks.add.simple_context_block(
 			list_of_texts=[timestamp]
-		)
+		),
+		slack.blocks.add.simple_context_block(
+			list_of_texts=[checkpoint_name.replace("_", " ").title()]
+		),
 	]
 	blocks.append(slack.blocks.add.actions_block(
 		block_elements=[slack.blocks.elements.button_element(
@@ -93,7 +134,6 @@ def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id
 
 
 def print_check_results_main_item(main_item_id, results_subitem_id):
-
 	all_checks = mon_obj.items.misc.CheckItem.get_all()
 	main_item = mon_obj.items.MainItem(main_item_id)
 	result_data = mon_obj.api.get_api_items([results_subitem_id])[0]
@@ -114,7 +154,8 @@ def print_check_results_main_item(main_item_id, results_subitem_id):
 		update = f"==== CHECKS RESULTS ====\n<b>Timestamp:</b> {timestamp}\n"
 
 		for q, a in checks_with_answers:
-			positive_response_labels = q.convert_dropdown_ids_to_labels(q.positive_responses.value, q.positive_responses.column_id)
+			positive_response_labels = q.convert_dropdown_ids_to_labels(q.positive_responses.value,
+																		q.positive_responses.column_id)
 			if not a:
 				continue
 			if not positive_response_labels:
@@ -131,4 +172,3 @@ def print_check_results_main_item(main_item_id, results_subitem_id):
 		main_item.add_update(f"Could Not Print Device Check Data: {e}", main_item.notes_thread_id.value)
 		notify_admins_of_error(f"Could Not Print Device Check Data: {e}")
 		raise e
-

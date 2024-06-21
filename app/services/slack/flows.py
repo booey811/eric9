@@ -1021,10 +1021,18 @@ class ChecksFlow(FlowController):
 			results_item = monday.items.misc.CheckResultItem(results_item_data[0]['id'],
 															 results_item_data[0]).load_from_api()
 		else:
-			name = f"Check Results for {main_id}"
+			main_item = monday.items.MainItem(main_id).load_from_api()
+			date_str = datetime.datetime.now().strftime("%d-%m-%Y")
+			name = f"Check Results for {main_item.name}: {date_str}"
 			results_item = monday.items.misc.CheckResultItem()
 			results_item.main_item_id = str(main_id)
+			results_item.imei_sn = main_item.imeisn.value or 'No IMEI/SN Provided'
 			results_item = results_item.create(name)
+			if main_item.device_id:
+				device = monday.items.DeviceItem(main_item.device_id)
+				device.load_data()
+				results_item.device = device.name
+				results_item.commit()
 
 		results_item.slack_answer_values = json.dumps(submission_values)
 		results_item.commit()

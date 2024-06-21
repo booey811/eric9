@@ -433,6 +433,9 @@ class CheckResultItem(BaseItemType):
 	def __init__(self, item_id=None, api_data: dict | None = None, search: bool = False):
 		self.main_item_id = columns.TextValue("text__1")
 
+		self.imei_sn = columns.TextValue("text8__1")
+		self.device = columns.TextValue("text7__1")
+
 		super().__init__(item_id=item_id, api_data=api_data, search=search)
 
 

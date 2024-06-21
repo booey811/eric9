@@ -4,6 +4,7 @@ import functools
 import traceback
 import os
 import json
+import datetime
 
 from zenpy.lib.exception import APIException
 from zenpy.lib.api_objects import User, Ticket, CustomField
@@ -12,7 +13,7 @@ from . import blocks as s_blocks, builders, helpers, exceptions, slack_app
 from .. import monday, zendesk
 from ...utilities import notify_admins_of_error, users
 from ...errors import EricError
-from ...tasks.sync_platform import sync_to_zendesk
+from ...tasks.slack import submissions
 from ...cache.rq import q_high, q_low
 from ...cache import get_redis_connection
 from ...tasks.notifications import quotes
@@ -1067,7 +1068,16 @@ class ChecksFlow(FlowController):
 				col_data = check_item.get_result_column_data(answer)
 			except monday.items.misc.CheckDataError:
 				repair_process.sync_check_items_and_results_columns()
-				col_data = check_item.get_result_column_data(answer)
+				q_low.enqueue_in(
+					datetime.timedelta(seconds=30),
+					func=submissions.process_check_submission,
+					kwargs={
+						"main_id": main_id,
+						"submission_values": submission_values,
+						"checkpoint_name": checkpoint_name
+					}
+				)
+				return False
 
 			results_col_data.update(col_data)
 

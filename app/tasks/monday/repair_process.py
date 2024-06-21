@@ -14,8 +14,8 @@ def sync_check_items_and_results_columns():
 
 	# get all the items on the check item board
 	item_data = mon_obj.api.get_items_by_board_id(check_board_id)  # Checks Items Board ID
-	check_item_data = mon_obj.api.get_api_items([i['id'] for i in item_data])  # Check Results Board ID
-	check_items = [mon_obj.items.misc.CheckItem(_['id'], _) for _ in item_data]
+	check_item_data = mon_obj.api.get_api_items([i['id'] for i in item_data])
+	check_items = [mon_obj.items.misc.CheckItem(_['id'], _) for _ in check_item_data]
 
 	# for each item, check the results_column_id field
 	for check in check_items:

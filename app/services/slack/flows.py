@@ -976,15 +976,20 @@ class ChecksFlow(FlowController):
 				"checks": [],
 				"has_power": True,
 				"main_id": "",
-				"checkpoint_name": ""
+				"checkpoint_name": "",
+				"message_ts": "",
 			}
 		super().__init__("checks", slack_client, ack, body, meta)
 
 	@handle_errors
-	def show_check_form(self, main_id, checkpoint_name, view_id=''):
+	def show_check_form(self, main_id, checkpoint_name, view_id='', message_ts="", channel_id=""):
 
 		self.meta['main_id'] = main_id
 		self.meta['checkpoint_name'] = checkpoint_name
+		if message_ts:
+			self.meta['message_ts'] = message_ts
+		if channel_id:
+			self.meta['channel_id'] = channel_id
 
 		main_item = monday.items.MainItem(main_id).load_from_api()
 		device_id = main_item.device_id
@@ -1004,6 +1009,7 @@ class ChecksFlow(FlowController):
 
 	@staticmethod
 	def process_submission_data(main_id, submission_values, checkpoint_name="Test"):
+
 
 		# get the results item, if None, create it
 		try:
@@ -1056,7 +1062,13 @@ class ChecksFlow(FlowController):
 				answer = None
 
 			check_item = [_ for _ in check_items if str(_.id) == str(check_id)][0]
-			col_data = check_item.get_result_column_data(answer)
+
+			try:
+				col_data = check_item.get_result_column_data(answer)
+			except monday.items.misc.CheckDataError:
+				repair_process.sync_check_items_and_results_columns()
+				col_data = check_item.get_result_column_data(answer)
+
 			results_col_data.update(col_data)
 
 		create_subitem = monday.api.monday_connection.items.create_subitem(

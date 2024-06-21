@@ -3,6 +3,8 @@ import re
 
 from ...services.slack import slack_app, blocks, builders, flows
 from ...services import monday
+from ... import tasks
+from ...cache import rq
 
 
 @slack_app.action("checks__test")
@@ -97,11 +99,11 @@ def show_checks_form(ack, body, client):
 	external_id = f"checks__{main_id}"
 	loading = builders.ResultScreenViews.get_loading_screen('Loading Check Items....')
 	loading['external_id'] = external_id
-	body = client.views_open(
+	new_view = client.views_open(
 		trigger_id=body['trigger_id'],
 		view=loading)
-	flow = flows.ChecksFlow(client, ack, body)
-	flow.show_check_form(main_id, checkpoint)
+	flow = flows.ChecksFlow(client, ack, new_view)
+	flow.show_check_form(main_id, checkpoint, message_ts=body['message']['ts'], channel_id=body['channel']['id'])
 	return True
 
 
@@ -135,18 +137,25 @@ def adjust_checks_form_from_conditional(ack, body, client):
 def checks_form_submission(ack, body, client):
 	success = builders.ResultScreenViews.get_success_screen("Check Form Submitted! :+1:")
 	success['clear_on_close'] = True
+	meta = json.loads(body['view']['private_metadata'])
 	ack({
 		"response_action": "update",
 		"view": success
 	})
 
-	meta = json.loads(body['view']['private_metadata'])
+	rq.q_low.enqueue(
+		tasks.slack.submissions.process_check_submission,
+		kwargs={
+			"main_id": meta['main_id'],
+			"submission_values": body['view']['state']['values'],
+			"checkpoint_name": meta['checkpoint_name']
+		}
+	)
 
-	flow = flows.ChecksFlow(client, ack, body, meta)
-	flow.process_submission_data(
-		main_id=meta['main_id'],
-		submission_values=body['view']['state']['values'],
-		checkpoint_name=meta['checkpoint_name']
+	client.chat_update(
+		channel=meta['channel_id'],
+		ts=meta['message_ts'],
+		text="Check Form Submitted! :+1:",
 	)
 
 	return

@@ -159,7 +159,7 @@ def handle_main_status_adjustment():
 	new_label = data['value']['label']['text']
 
 	if new_label in under_repair_statuses:
-		q_high.enqueue(
+		q_low.enqueue(
 			sessions.begin_new_session,
 			kwargs={
 				'main_id': data['pulseId'],

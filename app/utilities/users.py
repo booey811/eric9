@@ -70,7 +70,14 @@ USER_DATA = [
 		"repair_group_id": "new_group6580",  # client services group
 		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
 	},
-
+	{
+		"name": "michael",
+		"motion_assignee_id": "vpCL0oYJ2Ocm6WrWXAS1AZXlrPw2",  # gabe
+		"slack_id": "U025NA4UB96",  # michael mcadam
+		"monday_id": "11140118",  # michael mcadam
+		"repair_group_id": "new_group38737",  # mike group
+		"gcal_sessions_id": "c_1d8f88cda4a5ca857417b6ec8a6dfeff86d4757ff2463ccf1842d58187175285@group.calendar.google.com"
+	}
 ]
 
 

@@ -135,7 +135,7 @@ class User:
 		self._slack_id = str(user_data.get('slack_id'))
 		self._monday_id = str(user_data.get('monday_id'))
 		self._repair_group_id = str(user_data.get('repair_group_id'))
-		self._motion_api_key = conf.MOTION_KEYS[self._name]
+		self._motion_api_key = conf.MOTION_KEYS.get(self._name, 'gabe')
 		self._gcal_sessions_id = str(user_data.get('gcal_sessions_id'))
 
 	@property

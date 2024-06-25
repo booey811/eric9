@@ -47,10 +47,14 @@ def sync_check_items_and_results_columns():
 		continue
 
 
-def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id):
+def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id=None):
 	slack_cli = slack.slack_app.client
-	user = users.User(monday_id=monday_user_id)
 	main_item = mon_obj.items.MainItem(main_item_id)
+	if monday_user_id or not main_item.technician_id.value:
+		user = users.User(monday_id=monday_user_id)
+	else:
+		monday_user_id = main_item.technician_id.value[0]
+		user = users.User(monday_id=monday_user_id)
 	device = mon_obj.items.DeviceItem(main_item.device_id)
 	timestamp = main_item.repaired_date.value
 	if not timestamp:

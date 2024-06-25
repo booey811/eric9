@@ -172,7 +172,6 @@ def handle_main_status_adjustment():
 			kwargs={
 				"main_item_id": data['pulseId'],
 				"checkpoint_name": "tech_pre_check",
-				"monday_user_id": data['userId']
 			}
 		)
 	else:
@@ -189,7 +188,6 @@ def handle_main_status_adjustment():
 		monday.repair_process.request_checks_from_technician(
 			main_item_id=data['pulseId'],
 			checkpoint_name='tech_post_check',
-			monday_user_id=data['userId']
 		)
 		q_high.enqueue(
 			monday.sales.create_or_update_sale,

@@ -324,8 +324,10 @@ class RepairViewFlow(FlowController):
 				check_dicts.append(check_meta)
 				self.meta['pre_checks'] = check_dicts
 
+		check_item_data = {_['id']: _ for _ in monday.api.get_api_items([_['id'] for _ in check_dicts])}
 		for check in check_dicts:
-			pre_check_item = monday.items.misc.CheckItem(check['id']).load_from_cache()
+			check_id = check['id']
+			pre_check_item = monday.items.misc.CheckItem(check_id, check_item_data[check_id])
 			available_responses = pre_check_item.get_available_responses(labels=True)
 			options = []
 			for available_response in available_responses:

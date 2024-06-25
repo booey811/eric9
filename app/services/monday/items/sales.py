@@ -1,4 +1,7 @@
+import datetime
 import math
+import json
+from dateutil.parser import parse
 
 from ....errors import EricError
 from ....utilities import notify_admins_of_error, users
@@ -86,7 +89,8 @@ class SaleControllerItem(BaseItemType):
 				self.commit()
 				return self
 			elif self.invoice_line_item_connect.value:
-				self.add_update("Already pushed to invoicing, please delete the connected line item to re-add to invoice")
+				self.add_update(
+					"Already pushed to invoicing, please delete the connected line item to re-add to invoice")
 				self.invoicing_status = "Pushed to Invoicing"
 				self.commit()
 				return self
@@ -161,7 +165,8 @@ class SaleControllerItem(BaseItemType):
 						if courier_item_search:
 							try:
 								courier_item = [
-									monday.items.misc.CourierDataDumpItem(item['id'], item) for item in courier_item_search
+									monday.items.misc.CourierDataDumpItem(item['id'], item) for item in
+									courier_item_search
 								][0]
 								courier_costs = math.ceil(courier_item.cost_inc_vat.value * 2)
 								source = courier_item
@@ -248,7 +253,8 @@ class InvoiceControllerItem(BaseItemType):
 	def sync_to_xero(self):
 		try:
 			if not self.po_number.value:
-				corporate_account_item = monday.items.corporate.base.CorporateAccountItem(self.corporate_account_item_id.value)
+				corporate_account_item = monday.items.corporate.base.CorporateAccountItem(
+					self.corporate_account_item_id.value)
 				if corporate_account_item.req_po.value:
 					raise InvoiceDataError(
 						"A PO Number is required for this Corporate Account. Please add this to the 'PO Number/Invoice"
@@ -512,6 +518,142 @@ class WasItWorthItLineItem(BaseItemType):
 		self.notes = columns.LongTextValue("long_text")
 
 		super().__init__(item_id, api_data, search, cache_data)
+
+
+class ProductSalesLedgerItem(BaseItemType):
+	BOARD_ID = 6894117865
+
+	def __init__(self, item_id=None, api_data=None, search=None):
+
+		self.date_sold = columns.DateValue("date4")
+		self.device_id = columns.TextValue("text9__1")
+		self.device_name = columns.TextValue("text__1")
+		self.device_type = columns.TextValue("text7__1")
+		self.product_id = columns.TextValue("text5__1")
+		self.product_type = columns.TextValue("text2__1")
+		self.sale_subitem_id = columns.TextValue("text55__1")
+		self.price_at_pos = columns.NumberValue("numbers__1")
+		self.sale_item_id = columns.TextValue("text74__1")
+		self.sale_subitem_type = columns.StatusValue("status__1")
+
+		super().__init__(item_id, api_data, search)
+
+	@classmethod
+	def create_new_record(cls, sale_item_id):
+		comments = []
+		try:
+			sale_item = SaleControllerItem(sale_item_id)
+			sale_item.load_from_api()
+			main_item = sale_item.get_main_item()
+			if main_item.device_id:
+				try:
+					device = monday.items.DeviceItem.get([main_item.device_id])[0]
+				except IndexError:
+					# use default device
+					comments.append('Could Not Find Device, Using Default Device (Other Device)')
+					device = monday.items.DeviceItem(4028854241)  # other device ID
+			else:
+				# use default device
+				comments.append('Device Not Assigned to Main Item, Using Default Device (Other Device)')
+				device = monday.items.DeviceItem(4028854241)  # other device ID
+			device_id = device.id
+			device_name = device.name
+			device_type = device.device_type.value
+			subitem_query = monday.api.monday_connection.items.fetch_subitems(sale_item_id)
+			if subitem_query.get('error_message'):
+				new = cls()
+				new.sale_item_id = str(sale_item_id)
+				new.create(f"{sale_item.name} - Error Fetching Subitems")
+				raise Exception(f"Error fetching Sale Subitems: {subitem_query['error_message']}")
+			else:
+				subitem_data = subitem_query['data']['items'][0]['subitems']
+			for sale_subitem_id in [int(_['id']) for _ in subitem_data]:
+				try:
+					# check record doesn't already exist
+					existing_query = monday.api.monday_connection.items.fetch_items_by_column_value(
+						board_id=cls.BOARD_ID,
+						column_id="text55__1",  # sale_subitem_id
+						value=str(sale_subitem_id)
+					)
+					if existing_query.get('error_message'):
+						raise Exception(
+							f"Error checking if Product Ledger Record Exists: {existing_query['error_message']}")
+					elif existing_query['data']['items_page_by_column_values']['items']:
+						# delete the item, we will make a new one
+						monday.api.monday_connection.items.delete_item_by_id(
+							existing_query['data']['items_page_by_column_values']['items'][0]['id']
+						)
+					elif not existing_query['data']['items_page_by_column_values']['items']:
+						pass
+
+					# get the sale subitem
+					sale_subitem = SaleLineItem(sale_subitem_id)
+					new = cls()
+					if sale_subitem.line_type.value == "Custom Quote":
+						subitem_type = "Custom Quote"
+						product_type = "Custom Product"
+						product_id = "Custom Product"
+					elif sale_subitem.line_type.value == "Standard Product":
+						subitem_type = "Standard Product"
+						product = monday.items.product.ProductItem(sale_subitem.source_id.value)
+						product_id = product.id
+						product_type = product.product_type.value
+					else:
+						subitem_type = "Other"
+						product_type = 'Unknown'
+						product_id = "Unknown"
+						comments.append(f"Unknown Sale Subitem Type: {sale_subitem.line_type.value}, setting to Other")
+						comments.append("Could not find any product info, using 'Unknown' for product type")
+
+					date = sale_item.date_added.value
+					if not date:
+						comments.append("Sale Item missing date info, getting from Main Item")
+						date = main_item.repaired_date.value
+						if not date:
+							for col_data in sale_subitem._column_data:
+								if col_data['id'] == 'creation_log__1':
+									created_at_dict = json.loads(col_data['value'])
+									created_at_dt = parse(created_at_dict['created_at'])
+									date = created_at_dt
+									break
+							else:
+								comments.append("Could not find any date info, using today's date")
+								date = datetime.datetime.now()
+
+					new.sale_item_id = str(sale_item_id)
+					new.date_sold = date
+					new.device_id = str(device_id)
+					new.device_name = str(device_name)
+					new.device_type = str(device_type)
+					new.price_at_pos = sale_subitem.price_inc_vat.value
+					new.sale_subitem_id = str(sale_subitem_id)
+					new.sale_subitem_type = subitem_type
+					new.product_id = str(product_id)
+					new.product_type = str(product_type)
+
+					new.create(sale_subitem.name)
+
+					if comments:
+						new.add_update("\n".join(comments))
+
+				except Exception as e:
+					try:
+						error_messages = "\n".join(comments)
+						error_messages += f"\n{str(e)}"
+						monday.api.monday_connection.updates.create_update(
+							item_id=sale_subitem_id,
+							body=f"Error creating Product Ledger Record\n\n{error_messages}",
+						)
+					except Exception as e:
+						notify_admins_of_error(f"Error reporting errors for Sales Ledger creation: {e}")
+
+		except Exception as e:
+			notify_admins_of_error(f"Error creating Product Ledger Record: {e}")
+			monday.api.monday_connection.updates.create_update(
+				item_id=sale_item_id,
+				update_value=f"Error creating Product Ledger Record: {e}",
+			)
+			raise e
 
 
 class InvoicingError(EricError):

@@ -306,7 +306,7 @@ class RepairViewFlow(FlowController):
 
 			loading_screen = self.client.views_update(
 				view_id=loading_screen.data['view']['id'],
-				view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks", modal=True)
+				view=builders.ResultScreenViews.get_loading_screen("Fetching Pre Checks (can take 10 seconds)", modal=True)
 			)
 
 			pre_checks = pre_check_set.get_check_items('cs_walk_pre_check')
@@ -325,10 +325,13 @@ class RepairViewFlow(FlowController):
 				self.meta['pre_checks'] = check_dicts
 
 		check_item_data = {_['id']: _ for _ in monday.api.get_api_items([_['id'] for _ in check_dicts])}
+		check_board_data = monday.api.monday_connection.boards.fetch_boards_by_id(
+			monday.items.misc.CheckItem.BOARD_ID
+		)['data']['boards'][0]
 		for check in check_dicts:
 			check_id = check['id']
 			pre_check_item = monday.items.misc.CheckItem(check_id, check_item_data[check_id])
-			available_responses = pre_check_item.get_available_responses(labels=True)
+			available_responses = pre_check_item.get_available_responses(labels=True, board_data=check_board_data)
 			options = []
 			for available_response in available_responses:
 				option = {

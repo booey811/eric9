@@ -190,9 +190,12 @@ class BaseItemType:
 
 		return att.search_for_board_items(self.BOARD_ID, value)
 
-	def convert_dropdown_ids_to_labels(self, ids_list, column_id):
+	def convert_dropdown_ids_to_labels(self, ids_list, column_id, board_data=None):
 		try:
-			board = conn.boards.fetch_boards_by_id(self.BOARD_ID)['data']['boards'][0]
+			if board_data is None:
+				board = conn.boards.fetch_boards_by_id(self.BOARD_ID)['data']['boards'][0]
+			else:
+				board = board_data
 			column_data = [
 				_ for _ in
 				board['columns'] if

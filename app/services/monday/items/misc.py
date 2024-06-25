@@ -345,7 +345,7 @@ class CheckItem(BaseCacheableItem):
 		item_data = get_api_items(self.check_sets_connect.value)
 		return [PreCheckSet(i['id'], i) for i in item_data]
 
-	def get_available_responses(self, labels=True):
+	def get_available_responses(self, labels=True, board_data=None):
 		result_ids = self.available_responses.value
 		if not result_ids:
 			self.load_from_api()
@@ -353,7 +353,11 @@ class CheckItem(BaseCacheableItem):
 			if not result_ids:
 				raise CheckDataError(f"{self} could not load available responses: {self._api_data}")
 		if labels:
-			labels = self.convert_dropdown_ids_to_labels(result_ids, self.available_responses.column_id)
+			labels = self.convert_dropdown_ids_to_labels(
+				result_ids,
+				self.available_responses.column_id,
+				board_data=board_data,
+			)
 			return labels
 		else:
 			return result_ids

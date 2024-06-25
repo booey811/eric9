@@ -1,6 +1,8 @@
 # This file contains tasks that are run periodically to track and reconcile web enquiries
 import datetime
 
+import pytz
+
 
 def reconcile_enquiry_conversions(start=datetime.datetime.now() - datetime.timedelta(days=1, hours=1)):
 	from app.services import zendesk, monday
@@ -8,6 +10,7 @@ def reconcile_enquiry_conversions(start=datetime.datetime.now() - datetime.timed
 	r = zendesk.client.search(tags="web_enquiry", created_between=[start, today])
 	main_item_field_id = zendesk.custom_fields.FIELDS_DICT['main_item_id']
 	count = 1
+	start = start.replace(tzinfo=pytz.timezone("Europe/London"))
 	for ticket in r:
 		print(f"Processing ticket {count}")
 		main_item_field = [field for field in ticket.custom_fields if field['id'] == main_item_field_id][0]

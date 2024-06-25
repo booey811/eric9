@@ -539,12 +539,22 @@ class ProductSalesLedgerItem(BaseItemType):
 		super().__init__(item_id, api_data, search)
 
 	@classmethod
-	def create_new_record(cls, sale_item_id):
+	def create_new_record(cls, sale_item_id, delete_old_record=True):
 		comments = []
 		try:
 			sale_item = SaleControllerItem(sale_item_id)
 			sale_item.load_from_api()
-			main_item = sale_item.get_main_item()
+			try:
+				main_item = sale_item.get_main_item()
+			except Exception as e:
+				new = cls()
+				new.sale_item_id = str(sale_item_id)
+				new.create(f"{sale_item.name} - Error Fetching Main Item")
+				monday.api.monday_connection.updates.create_update(
+					item_id=new.id,
+					body=f"Error creating Product Ledger Record\n\nError Fetching Main Item: {str(e)}",
+				)
+				return False
 			if main_item.device_id:
 				try:
 					device = monday.items.DeviceItem.get([main_item.device_id])[0]
@@ -579,6 +589,8 @@ class ProductSalesLedgerItem(BaseItemType):
 						raise Exception(
 							f"Error checking if Product Ledger Record Exists: {existing_query['error_message']}")
 					elif existing_query['data']['items_page_by_column_values']['items']:
+						if not delete_old_record:
+							continue
 						# delete the item, we will make a new one
 						monday.api.monday_connection.items.delete_item_by_id(
 							existing_query['data']['items_page_by_column_values']['items'][0]['id']
@@ -637,15 +649,12 @@ class ProductSalesLedgerItem(BaseItemType):
 						new.add_update("\n".join(comments))
 
 				except Exception as e:
-					try:
-						error_messages = "\n".join(comments)
-						error_messages += f"\n{str(e)}"
-						monday.api.monday_connection.updates.create_update(
-							item_id=sale_subitem_id,
-							body=f"Error creating Product Ledger Record\n\n{error_messages}",
-						)
-					except Exception as e:
-						notify_admins_of_error(f"Error reporting errors for Sales Ledger creation: {e}")
+					error_messages = "\n".join(comments)
+					error_messages += f"\n{str(e)}"
+					monday.api.monday_connection.updates.create_update(
+						item_id=sale_subitem_id,
+						body=f"Error creating Product Ledger Record\n\n{error_messages}",
+					)
 
 		except Exception as e:
 			notify_admins_of_error(f"Error creating Product Ledger Record: {e}")

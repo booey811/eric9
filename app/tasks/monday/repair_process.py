@@ -5,17 +5,20 @@ from ...utilities import notify_admins_of_error, users
 from ...services import monday as mon_obj, slack
 
 
-def sync_check_items_and_results_columns():
+def sync_check_items_and_results_columns(check_item_id=None):
 	results_board_id = 6487504495
 	results_sub_board_id = 6487518414
 	check_board_id = 4455646189
 
 	results_columns = mon_obj.api.boards.get_board(results_sub_board_id)['columns']
 
-	# get all the items on the check item board
-	item_data = mon_obj.api.get_items_by_board_id(check_board_id)  # Checks Items Board ID
-	check_item_data = mon_obj.api.get_api_items([i['id'] for i in item_data])
-	check_items = [mon_obj.items.misc.CheckItem(_['id'], _) for _ in check_item_data]
+	if check_item_id:
+		check_items = [mon_obj.items.misc.CheckItem(check_item_id).load_from_api()]
+	else:
+		# get all the items on the check item board
+		item_data = mon_obj.api.get_items_by_board_id(check_board_id)  # Checks Items Board ID
+		check_item_data = mon_obj.api.get_api_items([i['id'] for i in item_data])
+		check_items = [mon_obj.items.misc.CheckItem(_['id'], _) for _ in check_item_data]
 
 	# for each item, check the results_column_id field
 	for check in check_items:

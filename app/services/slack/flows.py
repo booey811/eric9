@@ -1081,7 +1081,7 @@ class ChecksFlow(FlowController):
 			try:
 				col_data = check_item.get_result_column_data(answer)
 			except monday.items.misc.CheckDataError:
-				repair_process.sync_check_items_and_results_columns()
+				repair_process.sync_check_items_and_results_columns(check_item.id)
 				q_low.enqueue_in(
 					datetime.timedelta(seconds=30),
 					func=submissions.process_check_submission,

@@ -310,6 +310,13 @@ class RepairViewFlow(FlowController):
 			)
 
 			pre_checks = pre_check_set.get_check_items('cs_walk_pre_check')
+			sort_order = [
+				'Initial', 'Device Info', 'Physical Condition', 'Hardware Buttons', 'Connectivity', 'Display', 'Cameras and Speakers', 'Device History'
+			]
+			pre_checks = sorted(
+				pre_checks,
+				key=lambda pc: sort_order.index(pc.check_category.value) if pc.check_category.value in sort_order else len(sort_order)
+			)
 
 			check_dicts = []
 			for pre_check in pre_checks:

@@ -192,7 +192,7 @@ class BaseItemType:
 
 	def convert_dropdown_ids_to_labels(self, ids_list, column_id):
 		try:
-			board = board_cache.get_board(self.BOARD_ID)
+			board = conn.boards.fetch_boards_by_id(self.BOARD_ID)['data']['boards'][0]
 			column_data = [
 				_ for _ in
 				board['columns'] if

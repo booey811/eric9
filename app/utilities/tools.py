@@ -2,6 +2,8 @@ import inspect
 import importlib
 import pkgutil
 
+import html2text
+
 from ..services.monday import items as items_package, api as api_package
 from ..services.monday.api.columns import ValueType
 
@@ -49,3 +51,20 @@ class MondayTools:
 
 		return unused_ids
 
+	@staticmethod
+	def convert_updates_to_text_file(updates, file_path):
+		"""
+		Convert a list of updates to a text file
+		"""
+
+		# Create a new HTML2Text object
+		h = html2text.HTML2Text()
+		# Ignore converting links from HTML
+		h.ignore_links = True
+
+		with open(file_path, 'w') as f:
+			for update in updates:
+				text = h.handle(update['body'])
+				final = f"Note from User({update['creator']['id']})\nTimestamp:{update['created_at']}\n\n{text}\n====================\n\n"
+				f.write(final)
+		return file_path

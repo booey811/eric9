@@ -28,6 +28,22 @@ def re_process_sales_item():
 	return jsonify({'message': 'OK'}), 200
 
 
+@monday_sales_bp.route('/re-process-sales-ledger-item', methods=['POST'])
+@monday.monday_challenge
+def re_process_sales_ledger_item():
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+	sale_id = data['pulseId']
+
+	q_low.enqueue(
+		sales_tasks.create_or_update_sales_ledger_item,
+		sale_id
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
 @monday_sales_bp.route('/manual-sale-creation-request', methods=['POST'])
 @monday.monday_challenge
 def manual_creation_of_sale_item_requested():

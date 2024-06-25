@@ -104,6 +104,10 @@ def create_or_update_sale(main_id, report_to_main=False):
 		raise e
 
 
+def create_or_update_sales_ledger_item(sale_id):
+	monday.items.sales.ProductSalesLedgerItem.create_new_record(sale_id)
+
+
 def generate_invoice_from_sale(sale_item_id):
 	try:
 		sale_item = monday.items.sales.SaleControllerItem(sale_item_id).load_from_api()

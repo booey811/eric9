@@ -124,7 +124,7 @@ def request_checks_from_technician(main_item_id, checkpoint_name, monday_user_id
 
 	res = slack_cli.chat_postMessage(
 		channel=user_id,
-		text=f'Post Check Request: {main_item.name}',
+		text=f'Repair Checks Request: {main_item.name}',
 		blocks=blocks,
 		metadata={
 			"event_type": "request_checks",

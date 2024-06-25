@@ -4,7 +4,7 @@ import json
 
 from ...cache.rq import q_low, q_high
 from ...services import monday
-from ...tasks.monday import web_bookings, product_management, sales, misc
+from ...tasks.monday import web_bookings, product_management, sales, misc, repair_process
 from ...tasks import sync_platform
 from ...utilities import notify_admins_of_error
 import config
@@ -144,6 +144,22 @@ def convert_financial_item_to_sales():
 		kwargs={
 			"main_id": main_id,
 		}
+	)
+
+	return jsonify({'message': 'OK'}), 200
+
+
+@monday_misc_bp.route('/sync-check-item-to-results-column', methods=["POST"])
+@monday.monday_challenge
+def create_new_check_results_column():
+	log.debug('Responding to new item in checks board')
+	webhook = request.get_data()
+	data = webhook.decode('utf-8')
+	data = json.loads(data)['event']
+
+	q_low.enqueue(
+		repair_process.sync_check_items_and_results_columns,
+		data['pulseId']
 	)
 
 	return jsonify({'message': 'OK'}), 200

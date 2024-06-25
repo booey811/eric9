@@ -1,3 +1,4 @@
+import logging
 import datetime
 import math
 import json
@@ -9,6 +10,8 @@ from ... import zendesk, monday, xero
 from ..api.items import BaseItemType
 from ..api import columns
 from . import MainItem
+
+log = logging.getLogger('eric')
 
 
 class SaleControllerItem(BaseItemType):
@@ -543,6 +546,7 @@ class ProductSalesLedgerItem(BaseItemType):
 		comments = []
 		try:
 			sale_item = SaleControllerItem(sale_item_id)
+			log.info(f"Creating Product Ledger Record for Sale Item: {sale_item.name} ({sale_item.date_added.value})")
 			sale_item.load_from_api()
 			try:
 				main_item = sale_item.get_main_item()
@@ -662,7 +666,6 @@ class ProductSalesLedgerItem(BaseItemType):
 				item_id=sale_item_id,
 				update_value=f"Error creating Product Ledger Record: {e}",
 			)
-			raise e
 
 
 class InvoicingError(EricError):

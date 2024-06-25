@@ -552,7 +552,7 @@ class ProductSalesLedgerItem(BaseItemType):
 				new.create(f"{sale_item.name} - Error Fetching Main Item")
 				monday.api.monday_connection.updates.create_update(
 					item_id=new.id,
-					body=f"Error creating Product Ledger Record\n\nError Fetching Main Item: {str(e)}",
+					update_value=f"Error creating Product Ledger Record\n\nError Fetching Main Item: {str(e)}",
 				)
 				return False
 			if main_item.device_id:
@@ -653,7 +653,7 @@ class ProductSalesLedgerItem(BaseItemType):
 					error_messages += f"\n{str(e)}"
 					monday.api.monday_connection.updates.create_update(
 						item_id=sale_subitem_id,
-						body=f"Error creating Product Ledger Record\n\n{error_messages}",
+						update_value=f"Error creating Product Ledger Record\n\n{error_messages}",
 					)
 
 		except Exception as e:

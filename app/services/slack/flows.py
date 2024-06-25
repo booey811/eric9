@@ -338,6 +338,8 @@ class RepairViewFlow(FlowController):
 		for check in check_dicts:
 			check_id = check['id']
 			pre_check_item = monday.items.misc.CheckItem(check_id, check_item_data[check_id])
+			if pre_check_item.response_type.value in ("Text Input", "Number Input"):
+				continue
 			available_responses = pre_check_item.get_available_responses(labels=True, board_data=check_board_data)
 			options = []
 			for available_response in available_responses:

@@ -310,6 +310,7 @@ class RepairViewFlow(FlowController):
 			)
 
 			pre_checks = pre_check_set.get_check_items('cs_walk_pre_check')
+			pre_checks = [_ for _ in pre_checks if _.response_type.value in ('Single Select', 'Multi-Select')]
 			sort_order = [
 				'Initial', 'Device Info', 'Physical Condition', 'Hardware Buttons', 'Connectivity', 'Display', 'Cameras and Speakers', 'Device History'
 			]

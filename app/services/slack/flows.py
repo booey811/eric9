@@ -1009,6 +1009,13 @@ class ChecksFlow(FlowController):
 
 		main_item = monday.items.MainItem(main_id).load_from_api()
 		device_id = main_item.device_id
+		if not main_item.device_id:
+			view = builders.ResultScreenViews.get_error_screen(
+				"No Device Selected for this Repair, go back to Monday and assign a "
+				"Device in the Device Column. Then try your checks again"
+			)
+			self.update_view(view, method='update', view_id=view_id)
+			return False
 
 		blocks = builders.CheckViews.show_check_form(device_id, checkpoint_name, has_power=self.meta['has_power'])
 		view = self.get_view(

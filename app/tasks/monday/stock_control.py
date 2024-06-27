@@ -242,8 +242,7 @@ def process_complete_order_item(order_item_id):
 					part.commit()
 				except Exception as e:
 					line_price = float(line.price.value)
-					line_amount = int(line.quantity.value)
-					part.supply_price = line_price * line_amount
+					part.supply_price = line_price
 					part.commit()
 
 				part.adjust_stock_level(

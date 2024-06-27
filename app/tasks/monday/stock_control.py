@@ -239,10 +239,12 @@ def process_complete_order_item(order_item_id):
 
 					new_price = total / new_total_stock
 					part.supply_price = new_price
+					part.commit()
 				except Exception as e:
 					line_price = float(line.price.value)
 					line_amount = int(line.quantity.value)
-					part.supply_price = line_price / line_amount
+					part.supply_price = line_price * line_amount
+					part.commit()
 
 				part.adjust_stock_level(
 					adjustment_quantity=line.quantity.value,

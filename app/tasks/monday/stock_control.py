@@ -220,11 +220,36 @@ def process_complete_order_item(order_item_id):
 		for line in order_lines:
 			try:
 				part = monday.items.PartItem(line.part_id.value)
+				try:
+					if part.supply_price.value:
+						current_supply = float(part.supply_price.value)
+					else:
+						raise Exception("No Supply Price")
+
+					if part.stock_level.value:
+						current_stock = int(part.stock_level.value)
+					else:
+						current_stock = 0
+
+					new_total_stock = current_stock + line.quantity.value
+
+					total_on_hand = current_supply * current_stock
+					total_from_line = float(line.price.value) * int(line.quantity.value)
+					total = total_on_hand + total_from_line
+
+					new_price = total / new_total_stock
+					part.supply_price = new_price
+				except Exception as e:
+					line_price = float(line.price.value)
+					line_amount = int(line.quantity.value)
+					part.supply_price = line_price / line_amount
+
 				part.adjust_stock_level(
 					adjustment_quantity=line.quantity.value,
 					source_item=order_item,
 					movement_type="Order"
 				)
+
 				line.processing_status = "Complete"
 				line.commit()
 			except Exception as e:

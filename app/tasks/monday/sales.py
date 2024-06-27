@@ -86,6 +86,14 @@ def create_or_update_sale(main_id, report_to_main=False):
 				)
 		sale_controller.processing_status = "Complete"
 
+		if main_item.device_id:
+			device = monday.items.device.DeviceItem(main_item.device_id)
+			device_type = device.device_type.value
+		else:
+			device_type = "Other Device"
+
+		sale_controller.device_type = device_type
+
 		sale_controller.commit()
 
 		if report_to_main:

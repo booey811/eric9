@@ -38,6 +38,8 @@ class SaleControllerItem(BaseItemType):
 		self.date_added = columns.DateValue("date4")
 
 		self.subitem_ids = columns.ConnectBoards("subitems")
+		self.device_type = columns.TextValue("text__1")
+		self.parts_cost = columns.NumberValue("numbers7__1")
 
 		# properties
 		self._main_item = None

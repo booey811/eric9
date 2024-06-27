@@ -462,11 +462,12 @@ def push_web_enquiry_to_zendesk(web_enquiry_id):
 		search_results = zendesk.helpers.search_zendesk(str(enquiry.email.value))
 		if not search_results:
 			if enquiry.phone.value:
+				phone = enquiry.phone.value.replace(" ", "")
 				user = zendesk.client.users.create(
 					User(
 						name=str(enquiry.name).capitalize(),
 						email=str(enquiry.email.value),
-						phone=int(enquiry.phone.value)
+						phone=phone
 					)
 				)
 			else:

@@ -94,6 +94,20 @@ def create_or_update_sale(main_id, report_to_main=False):
 
 		sale_controller.device_type = device_type
 
+		stock_checkout_item = monday.items.part.StockCheckoutControlItem().search_board_for_items(
+			"main_item_id", str(main_id)
+		)
+		if stock_checkout_item:
+			stock_checkout_item = monday.items.part.StockCheckoutControlItem(stock_checkout_item[0]['id'])
+			if stock_checkout_item.checkout_line_ids.value:
+				line_item_data = monday.api.get_api_items(stock_checkout_item.checkout_line_ids.value)
+				line_items = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in line_item_data]
+				parts_cost = sum(float(_.parts_cost.value) for _ in line_items if _.parts_cost.value)
+			else:
+				parts_cost = 0
+
+			sale_controller.parts_cost = parts_cost
+
 		sale_controller.commit()
 
 		if report_to_main:
@@ -208,7 +222,8 @@ def notify_of_xero_invoice_payment(invoice_id):
 			except Exception as e:
 				raise e
 			try:
-				main_id_field = [f for f in ticket.custom_fields if f['id'] == zendesk.custom_fields.FIELDS_DICT['main_item_id']][0]
+				main_id_field = \
+				[f for f in ticket.custom_fields if f['id'] == zendesk.custom_fields.FIELDS_DICT['main_item_id']][0]
 				main_id = main_id_field['value']
 				if main_id:
 					main_item = monday.items.MainItem(main_id)
@@ -220,7 +235,8 @@ def notify_of_xero_invoice_payment(invoice_id):
 		elif invoice['Status'] in ('VOIDED', 'DELETED'):
 			zendesk_query = zendesk.client.search(type="ticket", fieldvalue=invoice_id)
 			ticket = next(zendesk_query)
-			ticket.comment = Comment(public=False, body=f"Xero Invoice has been voided or deleted. Check Xero for details.")
+			ticket.comment = Comment(public=False,
+									 body=f"Xero Invoice has been voided or deleted. Check Xero for details.")
 			ticket.custom_fields[zendesk.custom_fields.FIELDS_DICT['xero_invoice_id']] = None
 			zendesk.client.update_ticket(ticket)
 		elif invoice['Status'] == 'DRAFT':

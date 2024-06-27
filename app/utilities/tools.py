@@ -116,3 +116,51 @@ class ETLFunctions:
 				ci.etl_to_sale = "f"
 				ci.commit()
 				continue
+
+	@staticmethod
+	def extract_historic_supply_price_to_parts():
+		"""fetches all parts that have a supply price of exactly one (should never happen in practice)
+		and sets the supply price to the supply price of the last recevied order"""
+
+		parts_search = monday.items.PartItem().search_board_for_items(
+			"supply_price", 1
+		)
+		parts_with_bad_supply_price_query = monday.api.monday_connection.items.fetch_items_by_column_value(
+			monday.items.part.PartItem.BOARD_ID,
+			"supply_price",
+			1
+		)
+
+		while parts_with_bad_supply_price_query['data']['items_page_by_column_values']['items']:
+			parts_with_bad_supply_price = [monday.items.PartItem(_['id'], _) for _ in parts_with_bad_supply_price_query['data']['items_page_by_column_values']['items']]
+			for part in parts_with_bad_supply_price:
+				print(f"Processing {part.name}")
+				try:
+					last_order_query = monday.api.monday_connection.items.fetch_items_by_column_value(
+						monday.items.part.OrderLineItem.BOARD_ID,
+						"text",
+						str(part.id),
+						limit=1,
+					)
+					last_order_data = last_order_query.get('data')
+					if last_order_data:
+						print(f"Got {len(last_order_data['items_page_by_column_values']['items'])} Order Lines")
+						if last_order_data['items_page_by_column_values']['items']:
+							item_data = last_order_data['items_page_by_column_values']['items'][0]
+							order_line = monday.items.part.OrderLineItem(item_data['id'], item_data)
+							print(f"Setting Supply Price to {order_line.price.value}")
+							part.supply_price = order_line.price.value
+							part.commit()
+
+				except Exception as e:
+					print(f"Error: {str(e)}")
+
+			if not parts_with_bad_supply_price_query['data']['items_page_by_column_values']['cursor']:
+				break
+
+			parts_with_bad_supply_price_query = monday.api.monday_connection.items.fetch_items_by_column_value(
+				monday.items.part.PartItem.BOARD_ID,
+				"supply_price",
+				1,
+				cursor=parts_with_bad_supply_price_query['data']['items_page_by_column_values']['cursor']
+			)

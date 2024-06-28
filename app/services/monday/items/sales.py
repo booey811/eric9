@@ -336,6 +336,9 @@ class InvoiceLineItem(BaseItemType):
 		self.source_item_id = columns.TextValue("text1")
 		self.source_item_url = columns.LinkURLValue('link')
 
+		self.connect_main_item = columns.ConnectBoards("connect_boards__1")
+		self.zendesk_url = columns.LinkURLValue("link__1")
+
 		super().__init__(item_id, api_data, search, cache_data)
 
 

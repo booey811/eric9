@@ -75,6 +75,7 @@ class ETLFunctions:
 
 	@staticmethod
 	def etl_device_type_in_sales():
+		"""fetches all items on the sales board and updates the device type"""
 		api_data = monday.api.get_items_by_board_id(6285416596)
 		sales = [monday.items.sales.SaleControllerItem(_['id'], _) for _ in api_data]
 		for sale in sales:
@@ -93,6 +94,7 @@ class ETLFunctions:
 
 	@staticmethod
 	def etl_parts_costs_to_sales():
+		"""fetches all items on the stock checkouts board and updates the parts cost in the sales board"""
 		api_data = monday.api.get_items_by_board_id(6267736041)  # stock checkout board
 		checkout_items = [monday.items.part.StockCheckoutControlItem(_['id'], _) for _ in api_data]
 		for ci in checkout_items:
@@ -164,3 +166,42 @@ class ETLFunctions:
 				1,
 				cursor=parts_with_bad_supply_price_query['data']['items_page_by_column_values']['cursor']
 			)
+
+	@staticmethod
+	def update_sales_parts_costs(sales: list = None):
+		"""given items from the sales board, fetch the current supply price of the parts used and update the
+		parts cost column in the sales board"""
+		if not sales:
+			api_data = monday.api.get_items_by_board_id(6285416596)
+			sales = [monday.items.sales.SaleControllerItem(_['id'], _) for _ in api_data]
+		print(f"Got {len(sales)} sales to process")
+		for sale in sales:
+			print(f"Processing Sale {sale.name}")
+			try:
+				thinking = []
+				main_id = sale.main_item_id.value
+				sc_search = monday.items.part.StockCheckoutControlItem().search_board_for_items(
+					"main_item_id", str(main_id)
+				)
+				if not sc_search:
+					raise Exception(f"No Stock Checkout Item Found for {sale.name}")
+				sc_id = sc_search[0]['id']
+				sc_subitem_query = monday.api.monday_connection.items.fetch_subitems(
+					sc_id
+				)
+				sc_subitem_data = sc_subitem_query['data']['items'][0]['subitems']
+				sc_subitems = [monday.items.part.StockCheckoutLineItem(_['id'], _) for _ in sc_subitem_data]
+				part_ids = [_.part_id.value for _ in sc_subitems]
+				part_data = monday.api.get_api_items(part_ids)
+				parts = [monday.items.part.PartItem(_['id'], _) for _ in part_data]
+				for _ in parts:
+					thinking.append(f"{_.name} has supply price £{_.supply_price.value}")
+				parts_cost = sum(float(_.supply_price.value) for _ in parts if _.supply_price.value)
+				print(f"Setting Parts Cost: {parts_cost}")
+				sale.parts_cost = parts_cost
+				sale.commit()
+				update = "\n".join(thinking)
+				sale.add_update(update)
+			except Exception as e:
+				print(f"Error: {str(e)}")
+				continue

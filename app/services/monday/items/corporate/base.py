@@ -29,7 +29,7 @@ class CorporateAccountItem(BaseItemType):
 
 		self.repair_board_id = columns.TextValue("text6")
 
-		self.zen_org_id = columns.TextValue("text9")
+		# self.zen_org_id = columns.TextValue("text9")
 		self.xero_contact_id = columns.TextValue("text")
 
 		self.invoicing_style = columns.StatusValue("status7")

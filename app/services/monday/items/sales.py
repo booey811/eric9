@@ -149,7 +149,9 @@ class SaleControllerItem(BaseItemType):
 					description=repair_description,
 					total_price=repair_total,
 					line_type="Repairs",
-					source_item=self
+					source_item=self,
+					main_item_id=self.main_item_id.value,
+					zendesk_id=main_item.ticket_id.value
 				)
 				self.invoice_line_item_connect = [int(line_item.id)]
 				self.invoice_line_item_id = str(line_item.id)
@@ -233,7 +235,7 @@ class InvoiceControllerItem(BaseItemType):
 
 		super().__init__(item_id, api_data, search, cache_data)
 
-	def add_invoice_line(self, item_name, description, total_price, line_type, source_item) -> "InvoiceLineItem":
+	def add_invoice_line(self, item_name, description, total_price, line_type, source_item, main_item_id=None, zendesk_id=None) -> "InvoiceLineItem":
 		if not self.id:
 			raise ValueError(f"{str(self)} Cannot create subitem as it has no parent item ID")
 		blank = InvoiceLineItem()
@@ -243,6 +245,12 @@ class InvoiceControllerItem(BaseItemType):
 		blank.source_item_id = str(source_item.id)
 		blank.source_item_url = [str(source_item.name),
 								 f"https://icorrect.monday.com/boards/{source_item.BOARD_ID}/pulses/{source_item.id}"]
+		if main_item_id:
+			blank.connect_main_item = [int(main_item_id)]
+		if zendesk_id:
+			blank.zendesk_url = [
+				zendesk_id, f"https://icorrect.zendesk.com/agent/tickets/{zendesk_id}"
+			]
 		r = monday.api.monday_connection.items.create_subitem(
 			parent_item_id=int(self.id),
 			subitem_name=item_name,

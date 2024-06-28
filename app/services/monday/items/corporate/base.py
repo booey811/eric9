@@ -82,7 +82,7 @@ class CorporateAccountItem(BaseItemType):
 		# create and return a new invoice item
 		invoice_item = monday.items.sales.InvoiceControllerItem()
 		invoice_item.corporate_account_connect = [int(self.id)]
-		invoice_item.corporate_account_item_id = str(self.id)
+		# invoice_item.corporate_account_item_id = str(self.id)
 		name = f"{self.name}"
 		if user_name:
 			name = f"{name}: {user_name}"

@@ -220,7 +220,7 @@ class InvoiceControllerItem(BaseItemType):
 
 	def __init__(self, item_id=None, api_data=None, search=None, cache_data=None):
 
-		self.corporate_account_item_id = columns.TextValue("text9")
+		# self.corporate_account_item_id = columns.TextValue("text9")
 		self.corporate_account_connect = columns.ConnectBoards("connect_boards0")
 		self.po_number = columns.TextValue("text__1")
 
